@@ -7,6 +7,29 @@ import { Search, Menu, BookOpen, Star, Moon, Sun } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion, AnimatePresence } from 'framer-motion'
+import { initializeApp } from "firebase/app";
+
+
+const firebaseConfig = {
+
+  apiKey: "AIzaSyDNLW6B1Twtz--zRNIhxyJ8ercYUtMRdPU",
+
+  authDomain: "novel-hub-34b1b.firebaseapp.com",
+
+  projectId: "novel-hub-34b1b",
+
+  storageBucket: "novel-hub-34b1b.appspot.com",
+
+  messagingSenderId: "76649685525",
+
+  appId: "1:76649685525:web:3c3c98bfbbbcf394f4641c"
+
+};
+
+
+// Initialize Firebase
+
+const app = initializeApp(firebaseConfig);
 
 const genreColors = {
   Fantasy: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900 text-purple-100' },
