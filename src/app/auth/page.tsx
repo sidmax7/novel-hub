@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { EyeIcon, EyeOffIcon } from 'lucide-react'
 import { auth, db } from '@/lib/firebaseConfig'
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, setDoc, Timestamp } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../authcontext'
 
@@ -48,7 +48,7 @@ export default function AuthPage() {
           uid: userCredential.user.uid,
           username: username,
           email: email,
-          timeCreated: new Date().toISOString()
+          timeCreated: Timestamp.now()
         })
       }
       router.push('/')
