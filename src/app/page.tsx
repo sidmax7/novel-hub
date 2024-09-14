@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -27,21 +27,13 @@ export const genreColors = {
 export default function ModernLightNovelsHomepage() {
   const [darkMode, setDarkMode] = useState(false)
   const [hoveredNovel, setHoveredNovel] = useState<number | null>(null)
-  const { user, loading } = useAuth()
+  const { user } = useAuth()
   const router = useRouter()
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }, [darkMode])
 
   const handleLogout = async () => {
     try {
       await signOut(auth)
-      router.push('/auth')
+      router.push('/')
     } catch (error) {
       console.error('Error signing out:', error)
     }
@@ -60,10 +52,6 @@ export default function ModernLightNovelsHomepage() {
         staggerChildren: 0.1
       }
     }
-  }
-
-  if (loading) {
-    return <div>Loading...</div>
   }
 
   return (
@@ -161,6 +149,7 @@ export default function ModernLightNovelsHomepage() {
           </div>
         </div>
       </header>
+
       <main className="flex-grow">
         <section className="py-12 md:py-24 bg-gradient-to-br from-purple-500 to-pink-500 dark:from-purple-900 dark:to-pink-900">
           <div className="container mx-auto px-4">

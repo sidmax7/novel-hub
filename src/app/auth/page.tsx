@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { EyeIcon, EyeOffIcon } from 'lucide-react'
-import { auth } from '@/lib/firebaseConfig'
+import { auth, db } from '@/lib/firebaseConfig'
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth'
 import { useRouter } from 'next/navigation'
+
 import { useAuth } from '../authcontext'
 
 export default function AuthPage() {
@@ -46,6 +47,12 @@ export default function AuthPage() {
       } else {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password)
         await updateProfile(userCredential.user, { displayName: username })
+
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
+          username,
+          email,
+          createdAt: serverTimestamp(),
+        })
         router.push('./') // Redirect to dashboard after successful signup
       }
     } catch (error) {
@@ -54,6 +61,10 @@ export default function AuthPage() {
     }
 
     setLoading(false)
+  }
+
+  const handleContinueWithoutSignIn = () => {
+    router.push('./') // Redirect to the desired page without authentication
   }
 
   return (
@@ -179,7 +190,11 @@ export default function AuthPage() {
                 >
                   {isLogin ? 'Sign up' : 'Sign in'}
                 </button>
-              </p>
+                </p>
+                <Button variant="outline" onClick={handleContinueWithoutSignIn} className="mt-4 ">
+                  Continue without signing in
+                </Button>
+              
             </div>
           </motion.div>
         </AnimatePresence>
@@ -187,3 +202,15 @@ export default function AuthPage() {
     </div>
   )
 }
+
+function setDoc(arg0: any, arg1: { username: string; email: string; createdAt: any }) {
+  throw new Error('Function not implemented.')
+}
+function doc(db: any, arg1: string, uid: string): any {
+  throw new Error('Function not implemented.')
+}
+
+function serverTimestamp(): any {
+  throw new Error('Function not implemented.')
+}
+
