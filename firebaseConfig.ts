@@ -2,12 +2,18 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyDNLW6B1Twtz--zRNIhxyJ8ercYUtMRdPU",
+
+  authDomain: "novel-hub-34b1b.firebaseapp.com",
+
+  projectId: "novel-hub-34b1b",
+
+  storageBucket: "novel-hub-34b1b.appspot.com",
+
+  messagingSenderId: "76649685525",
+
+  appId: "1:76649685525:web:3c3c98bfbbbcf394f4641c"
+
 };
 
 const app = initializeApp(firebaseConfig);

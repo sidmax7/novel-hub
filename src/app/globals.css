@@ -58,6 +58,22 @@
     --chart-5: 340 75% 55%;
   }
 }
+body.dark {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+body.dark .bg-white {
+  background-color: #1e1e1e;
+}
+
+body.dark .text-purple-800 {
+  color: #bb86fc;
+}
+
+body.dark .text-gray-600 {
+  color: #b0b0b0;
+}
 
 @layer base {
   * {

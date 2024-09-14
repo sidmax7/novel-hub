@@ -10,37 +10,21 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { initializeApp } from "firebase/app";
 
 
-const firebaseConfig = {
-
-  apiKey: "AIzaSyDNLW6B1Twtz--zRNIhxyJ8ercYUtMRdPU",
-
-  authDomain: "novel-hub-34b1b.firebaseapp.com",
-
-  projectId: "novel-hub-34b1b",
-
-  storageBucket: "novel-hub-34b1b.appspot.com",
-
-  messagingSenderId: "76649685525",
-
-  appId: "1:76649685525:web:3c3c98bfbbbcf394f4641c"
-
-};
 
 
-// Initialize Firebase
+export const genreColors = {
+    Fantasy: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900 text-purple-100' },
+    "Sci-Fi": { light: 'bg-blue-100 text-blue-800', dark: 'bg-blue-900 text-blue-100' },
+    Romance: { light: 'bg-pink-100 text-pink-800', dark: 'bg-pink-900 text-pink-100' },
+    Action: { light: 'bg-red-100 text-red-800', dark: 'bg-red-900 text-red-100' },
+    Mystery: { light: 'bg-yellow-100 text-yellow-800', dark: 'bg-yellow-900 text-yellow-100' },
+    "Slice of Life": { light: 'bg-green-100 text-green-800', dark: 'bg-green-900 text-green-100' },
+    Isekai: { light: 'bg-indigo-100 text-indigo-800', dark: 'bg-indigo-900 text-indigo-100' },
+    Horror: { light: 'bg-gray-100 text-gray-800', dark: 'bg-gray-900 text-gray-100' },
+  }
 
-const app = initializeApp(firebaseConfig);
 
-const genreColors = {
-  Fantasy: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900 text-purple-100' },
-  "Sci-Fi": { light: 'bg-blue-100 text-blue-800', dark: 'bg-blue-900 text-blue-100' },
-  Romance: { light: 'bg-pink-100 text-pink-800', dark: 'bg-pink-900 text-pink-100' },
-  Action: { light: 'bg-red-100 text-red-800', dark: 'bg-red-900 text-red-100' },
-  Mystery: { light: 'bg-yellow-100 text-yellow-800', dark: 'bg-yellow-900 text-yellow-100' },
-  "Slice of Life": { light: 'bg-green-100 text-green-800', dark: 'bg-green-900 text-green-100' },
-  Isekai: { light: 'bg-indigo-100 text-indigo-800', dark: 'bg-indigo-900 text-indigo-100' },
-  Horror: { light: 'bg-gray-100 text-gray-800', dark: 'bg-gray-900 text-gray-100' },
-}
+
 
 export default function ModernLightNovelsHomepage() {
   const [darkMode, setDarkMode] = useState(false)
@@ -266,69 +250,61 @@ export default function ModernLightNovelsHomepage() {
             </motion.div>
           </div>
         </section>
-        <section className="py-12 bg-gray-100 dark:bg-gray-900">
-          <div className="container mx-auto px-4">
-            <motion.h2 
-              className="text-3xl font-bold mb-8 text-gray-900 dark:text-gray-100"
-              variants={fadeIn}
-            >
-              Explore Genres
-            </motion.h2>
-            <motion.div 
-              className="grid grid-cols-2 md:grid-cols-4 gap-4"
-              variants={staggerChildren}
-            >
-              {Object.entries(genreColors).map(([genre, colors]) => (
-                <motion.div
-                  key={genre}
-                  variants={fadeIn}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Link href={`/genre/${genre.toLowerCase()}`} className={`p-4 rounded-lg shadow-md text-center block transition-colors ${darkMode ? colors.dark : colors.light}`}>
-                    <span className="font-medium">{genre}</span>
-                  </Link>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
         <section className="py-12 bg-white dark:bg-gray-800">
-          <div className="container mx-auto px-4">
-            <motion.h2 
-              className="text-3xl font-bold mb-8 text-gray-900 dark:text-gray-100"
-              variants={fadeIn}
-            >
-              Upcoming Releases
-            </motion.h2>
-            <motion.div 
-              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8"
-              variants={staggerChildren}
-            >
-              {[1, 2, 3].map((release) => (
-                <motion.div 
-                  key={release}
-                  className="flex items-center space-x-4 bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md"
-                  variants={fadeIn}
-                  whileHover={{ scale: 1.03 }}
-                >
-                  <Image
-                    src={`/assets/cover.jpg`}
-                    alt={`Upcoming Release ${release}`}
-                    width={100}
-                    height={150}
-                    className="rounded shadow-md"
-                  />
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">Upcoming Title {release}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Release Date: June 1, 2023</p>
-                    <Button variant="link" className="text-purple-600 dark:text-purple-400 p-0 h-auto mt-2">Pre-order Now</Button>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
+  <div className="container mx-auto px-4">
+    <motion.h2 
+      className="text-3xl font-bold mb-8 text-gray-900 dark:text-gray-100"
+      variants={fadeIn}
+    >
+      Explore Genres
+    </motion.h2>
+    <motion.div 
+      className="grid grid-cols-2 md:grid-cols-4 gap-4"
+      variants={staggerChildren}
+    >
+      {Object.entries(genreColors).map(([genre, colors]) => (
+        <motion.div
+          key={genre}
+          variants={fadeIn}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Link href={`/genre/${genre.toLowerCase()}`} className={`p-4 rounded-lg shadow-md text-center block transition-colors ${darkMode ? colors.dark : colors.light}`}>
+            <span className="font-medium">{genre}</span>
+          </Link>
+        </motion.div>
+      ))}
+    </motion.div>
+  </div>
+</section>
+<section className="py-12 bg-white dark:bg-gray-800">
+  <div className="container mx-auto px-4">
+    <motion.h2 
+      className="text-3xl font-bold mb-8 text-gray-900 dark:text-gray-100"
+      variants={fadeIn}
+    >
+      Upcoming Releases
+    </motion.h2>
+    <motion.div 
+      className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8"
+      variants={staggerChildren}
+    >
+      {[1, 2, 3].map((release) => (
+        <motion.div 
+          key={release}
+          className="flex items-center space-x-4 bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md"
+          variants={fadeIn}
+          whileHover={{ scale: 1.03 }}
+        >
+          <Image
+            src={`/assets/cover.jpg`}
+            alt={`Upcoming Release ${release}`}
+          />
+        </motion.div>
+      ))}
+    </motion.div>
+  </div>
+</section>
       </main>
       <footer className="border-t py-8 bg-white dark:bg-gray-800 dark:border-gray-700">
         <div className="container mx-auto px-4 md:flex md:items-center md:justify-between">
