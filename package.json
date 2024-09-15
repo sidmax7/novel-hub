@@ -9,7 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.1",
     "@radix-ui/react-label": "^2.1.0",
+    "@radix-ui/react-select": "^2.1.1",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-switch": "^1.1.0",
     "@react-native-firebase/auth": "^20.5.0",
@@ -21,6 +23,7 @@
     "next": "14.2.11",
     "react": "^18",
     "react-dom": "^18",
+    "react-hot-toast": "^2.4.1",
     "react-router-dom": "^6.26.2",
     "shadcn-ui": "^0.2.3",
     "tailwind-merge": "^2.5.2",
