@@ -139,7 +139,7 @@ export default function ModernLightNovelsHomepage() {
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Discover Your Next Adventure</h2>
             <p className="text-xl text-purple-100 mb-8">Explore thousands of light novels across various genres</p>
-            <Button size="lg" className="bg-white text-purple-600 hover:bg-purple-50">Start Reading Now</Button>
+            <Button className="bg-white text-purple-600 hover:bg-purple-50">Start Reading Now</Button>
           </div>
         </section>
         <section className="py-12 bg-white dark:bg-gray-800">
