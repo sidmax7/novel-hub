@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/app/authcontext'
 import { db, storage } from '@/lib/firebaseConfig'
-import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, orderBy } from 'firebase/firestore'
+import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, orderBy } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,8 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast, Toaster } from 'react-hot-toast'
-import { PlusIcon, Pencil, Trash, Upload } from 'lucide-react'
+import { PlusIcon, Pencil, Trash, Upload, AlertTriangle } from 'lucide-react'
 import Image from 'next/image'
 import { StarRating } from '@/components/ui/starrating'
 
@@ -21,6 +22,7 @@ interface Novel {
   id?: string
   name: string
   author: string
+  authorId: string
   synopsis: string
   genre: string
   tags: string[]
@@ -46,6 +48,7 @@ const types = [
 export default function AdminDashboard() {
   const [novels, setNovels] = useState<Novel[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [currentNovel, setCurrentNovel] = useState<Novel | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
@@ -53,30 +56,48 @@ export default function AdminDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    fetchNovels()
-  }, [])
+    if (user) {
+      fetchNovels()
+    } else {
+      setError("User not authenticated. Please log in.")
+      setLoading(false)
+    }
+  }, [user])
 
   const fetchNovels = async () => {
+    if (!user) return
     setLoading(true)
+    setError(null)
     try {
-      const q = query(collection(db, 'novels'), orderBy('name'))
+      const q = query(
+        collection(db, 'novels'),
+        where('authorId', '==', user.uid),
+        orderBy('name')
+      )
       const querySnapshot = await getDocs(q)
       const fetchedNovels = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Novel))
       setNovels(fetchedNovels)
     } catch (error) {
       console.error('Error fetching novels:', error)
-      toast.error('Failed to fetch novels')
+      if (error instanceof Error && error.name === 'FirebaseError' && error.message.includes('index')) {
+        setError('The database index is being created. This may take a few minutes. Please try again shortly.')
+      } else {
+        setError(`Failed to fetch novels: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
+      toast.error('Failed to fetch novels. Please try again.')
     }
     setLoading(false)
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    try {
-      if (!currentNovel) return
+    if (!user || !currentNovel) return
 
+    try {
       const novelData = {
         ...currentNovel,
+        author: user.displayName || 'Anonymous',
+        authorId: user.uid,
         lastUpdated: new Date().toISOString(),
         rating: Number(currentNovel.rating),
         chapters: Number(currentNovel.chapters),
@@ -95,7 +116,7 @@ export default function AdminDashboard() {
       fetchNovels()
     } catch (error) {
       console.error('Error saving novel:', error)
-      toast.error('Failed to save novel')
+      toast.error(`Failed to save novel: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -107,7 +128,7 @@ export default function AdminDashboard() {
         fetchNovels()
       } catch (error) {
         console.error('Error deleting novel:', error)
-        toast.error('Failed to delete novel')
+        toast.error(`Failed to delete novel: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     }
   }
@@ -128,33 +149,48 @@ export default function AdminDashboard() {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file || !user) return
 
     setUploadingImage(true)
     try {
-      const storageRef = ref(storage, `novel-cover/${file.name}`)
+      const storageRef = ref(storage, `novel-cover/${user.uid}/${file.name}`)
       await uploadBytes(storageRef, file)
       const downloadURL = await getDownloadURL(storageRef)
       setCurrentNovel(prev => ({ ...prev!, coverUrl: downloadURL }))
       toast.success('Image uploaded successfully')
     } catch (error) {
       console.error('Error uploading image:', error)
-      toast.error('Failed to upload image')
+      toast.error(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
     setUploadingImage(false)
   }
 
   if (!user) {
-    return <div className="p-4">You must be logged in to access this page.</div>
+    return (
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Authentication Error</AlertTitle>
+        <AlertDescription>
+          You must be logged in to access this page. Please log in and try again.
+        </AlertDescription>
+      </Alert>
+    )
   }
 
   return (
     <div className="container mx-auto p-4">
       <Toaster />
       <h1 className="text-2xl font-bold mb-4">Novel Admin Dashboard</h1>
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogTrigger asChild>
-          <Button onClick={() => setCurrentNovel({} as Novel)} className="mb-4">
+          <Button onClick={() => setCurrentNovel({ author: user.displayName || 'Anonymous', authorId: user.uid } as Novel)} className="mb-4">
             <PlusIcon className="mr-2 h-4 w-4" /> Add New Novel
           </Button>
         </DialogTrigger>
@@ -169,7 +205,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <Label htmlFor="author">Author</Label>
-              <Input id="author" name="author" value={currentNovel?.author || ''} onChange={handleInputChange} required />
+              <Input id="author" name="author" value={currentNovel?.author || user.displayName || 'Anonymous'} disabled />
             </div>
             <div>
               <Label htmlFor="synopsis">Synopsis</Label>

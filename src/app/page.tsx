@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { Search, Menu, BookOpen, Moon, Sun, LogOut } from "lucide-react"
+import { Search, Menu, BookOpen, Moon, Sun, LogOut, Pencil, ChevronsLeftRightIcon } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion, AnimatePresence } from 'framer-motion'
@@ -116,6 +116,12 @@ export default function ModernLightNovelsHomepage() {
               <Sun className="h-4 w-4 text-yellow-500" />
               <Moon className="h-4 w-4 text-blue-500" />
             </Switch>
+            {user && (
+              <Button variant="ghost" onClick={() => router.push('/admin')}>
+                <ChevronsLeftRightIcon className="h-5 w-5 mr-2" />
+                Admin Console
+              </Button>
+            )}
             {user ? (
               <Button variant="ghost" onClick={handleLogout}>
                 <LogOut className="h-5 w-5 mr-2" />
