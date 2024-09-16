@@ -222,8 +222,8 @@ export default function ChapterManagement() {
               <Input id="title" name="title" value={currentChapter?.title || ''} onChange={handleInputChange} required />
             </div>
             <div>
-              <Label htmlFor="content">Chapter Link</Label>
-              <Textarea id="content" name="content" value={currentChapter?.link || ''} onChange={handleInputChange} required rows={4} />
+              <Label htmlFor="link">Chapter Link</Label>
+              <Textarea id="link" name="link" value={currentChapter?.link || ''} onChange={handleInputChange} required rows={10} />
             </div>
             <div>
               <Label htmlFor="chapter">Chapter Number</Label>
