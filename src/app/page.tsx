@@ -160,13 +160,13 @@ export default function ModernLightNovelsHomepage() {
                     onHoverStart={() => setHoveredNovel(novel.id)}
                     onHoverEnd={() => setHoveredNovel(null)}
                   >
-                    <div className="relative overflow-hidden rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+                    <div className="relative overflow-hidden rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 aspect-[3/4]">
                       <Image
                         src={novel.coverUrl || '/assets/cover.jpg'}
                         alt={novel.name}
-                        width={300}
-                        height={400}
-                        className="w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                        layout="fill"
+                        objectFit="cover"
+                        className="transition-transform duration-300 group-hover:scale-110"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </div>
