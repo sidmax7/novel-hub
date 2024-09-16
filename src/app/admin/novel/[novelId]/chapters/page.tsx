@@ -20,8 +20,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 interface Chapter {
   id?: string
   title: string
-  content: string
-  orderNumber: number
+  link: string
+  chapter: number
 }
 
 interface Novel {
@@ -72,7 +72,7 @@ export default function ChapterManagement() {
     setError(null)
     try {
       const chaptersRef = collection(db, 'novels', novelId, 'chapters')
-      const q = query(chaptersRef, orderBy('orderNumber'))
+      const q = query(chaptersRef, orderBy('chapter'))
       const querySnapshot = await getDocs(q)
       const fetchedChapters = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Chapter))
       setChapters(fetchedChapters)
@@ -91,7 +91,7 @@ export default function ChapterManagement() {
     try {
       const chapterData = {
         ...currentChapter,
-        orderNumber: Number(currentChapter.orderNumber)
+        chapter: Number(currentChapter.chapter)
       }
 
       if (currentChapter.id) {
@@ -143,13 +143,13 @@ export default function ChapterManagement() {
       return
     }
 
-    const tempOrderNumber = chapter.orderNumber
-    chapter.orderNumber = swapChapter.orderNumber
-    swapChapter.orderNumber = tempOrderNumber
+    const tempchapter = chapter.chapter
+    chapter.chapter = swapChapter.chapter
+    swapChapter.chapter = tempchapter
 
     try {
-      await updateDoc(doc(db, 'novels', novelId, 'chapters', chapter.id!), { orderNumber: chapter.orderNumber })
-      await updateDoc(doc(db, 'novels', novelId, 'chapters', swapChapter.id!), { orderNumber: swapChapter.orderNumber })
+      await updateDoc(doc(db, 'novels', novelId, 'chapters', chapter.id!), { chapter: chapter.chapter })
+      await updateDoc(doc(db, 'novels', novelId, 'chapters', swapChapter.id!), { chapter: swapChapter.chapter })
       toast.success('Chapter order updated successfully')
       fetchChapters()
     } catch (error) {
@@ -208,7 +208,7 @@ export default function ChapterManagement() {
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogTrigger asChild>
-          <Button onClick={() => setCurrentChapter({ title: '', content: '', orderNumber: chapters.length + 1 })} className="mb-4">
+          <Button onClick={() => setCurrentChapter({ title: '', link: '', chapter: chapters.length + 1 })} className="mb-4">
             <PlusIcon className="mr-2 h-4 w-4" /> Add New Chapter
           </Button>
         </DialogTrigger>
@@ -222,17 +222,17 @@ export default function ChapterManagement() {
               <Input id="title" name="title" value={currentChapter?.title || ''} onChange={handleInputChange} required />
             </div>
             <div>
-              <Label htmlFor="content">Content</Label>
-              <Textarea id="content" name="content" value={currentChapter?.content || ''} onChange={handleInputChange} required rows={10} />
+              <Label htmlFor="content">Chapter Link</Label>
+              <Textarea id="content" name="content" value={currentChapter?.link || ''} onChange={handleInputChange} required rows={4} />
             </div>
             <div>
-              <Label htmlFor="orderNumber">Order Number</Label>
+              <Label htmlFor="chapter">Chapter Number</Label>
               <Input 
-                id="orderNumber" 
-                name="orderNumber" 
+                id="chapter" 
+                name="chapter" 
                 type="number" 
                 min="1" 
-                value={currentChapter?.orderNumber || ''} 
+                value={currentChapter?.chapter || ''} 
                 onChange={handleInputChange} 
                 required 
               />
@@ -250,7 +250,7 @@ export default function ChapterManagement() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Order</TableHead>
+              <TableHead>Chapter</TableHead>
               <TableHead>Title</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -258,7 +258,7 @@ export default function ChapterManagement() {
           <TableBody>
             {chapters.map((chapter, index) => (
               <TableRow key={chapter.id}>
-                <TableCell>{chapter.orderNumber}</TableCell>
+                <TableCell>{chapter.chapter}</TableCell>
                 <TableCell>{chapter.title}</TableCell>
                 <TableCell>
                   <div className="flex space-x-2">

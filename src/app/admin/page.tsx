@@ -340,12 +340,12 @@ export default function AdminDashboard() {
                     <Pencil className="h-4 w-4" />
                     <span className="sr-only">Edit {novel.name}</span>
                   </Button>
-                  <Link href={`/admin/chapters`} passHref>
-  <Button variant="outline" size="sm">
-    <BookOpen className="mr-2 h-4 w-4" />
-    Manage Chapters
-  </Button>
-</Link>
+                  <Link href={`/admin/novel/${novel.id}/chapters`} passHref>
+                    <Button variant="outline" size="sm" className="mr-2">
+                      <BookOpen className="h-4 w-4" />
+                      <span className="sr-only">Manage Chapters for {novel.name}</span>
+                    </Button>
+                  </Link>
                   <Button variant="outline" size="sm" onClick={() => novel.id && handleDelete(novel.id)}>
                     <Trash className="h-4 w-4" />
                     <span className="sr-only">Delete {novel.name}</span>
