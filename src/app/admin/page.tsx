@@ -14,9 +14,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast, Toaster } from 'react-hot-toast'
-import { PlusIcon, Pencil, Trash, Upload, AlertTriangle } from 'lucide-react'
+import { PlusIcon, Pencil, Trash, Upload, AlertTriangle, BookOpen } from 'lucide-react'
 import Image from 'next/image'
 import { StarRating } from '@/components/ui/starrating'
+import Link from 'next/link'
 
 interface Novel {
   id?: string
@@ -79,11 +80,7 @@ export default function AdminDashboard() {
       setNovels(fetchedNovels)
     } catch (error) {
       console.error('Error fetching novels:', error)
-      if (error instanceof Error && error.name === 'FirebaseError' && error.message.includes('index')) {
-        setError('The database index is being created. This may take a few minutes. Please try again shortly.')
-      } else {
-        setError(`Failed to fetch novels: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      }
+      setError(`Failed to fetch novels: ${error instanceof Error ? error.message : 'Unknown error'}`)
       toast.error('Failed to fetch novels. Please try again.')
     }
     setLoading(false)
@@ -343,6 +340,12 @@ export default function AdminDashboard() {
                     <Pencil className="h-4 w-4" />
                     <span className="sr-only">Edit {novel.name}</span>
                   </Button>
+                  <Link href={`/admin/chapters`} passHref>
+  <Button variant="outline" size="sm">
+    <BookOpen className="mr-2 h-4 w-4" />
+    Manage Chapters
+  </Button>
+</Link>
                   <Button variant="outline" size="sm" onClick={() => novel.id && handleDelete(novel.id)}>
                     <Trash className="h-4 w-4" />
                     <span className="sr-only">Delete {novel.name}</span>
