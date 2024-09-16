@@ -148,9 +148,9 @@ export default function AdminDashboard() {
     const file = e.target.files?.[0]
     if (!file || !user) return
 
-    setUploadingImage(true)
+    await setUploadingImage(true)
     try {
-      const storageRef = ref(storage, `novel-cover/${user.uid}/${file.name}`)
+      const storageRef = ref(storage, `novel-cover/${user.uid}/${currentNovel?.name}`)
       await uploadBytes(storageRef, file)
       const downloadURL = await getDownloadURL(storageRef)
       setCurrentNovel(prev => ({ ...prev!, coverUrl: downloadURL }))

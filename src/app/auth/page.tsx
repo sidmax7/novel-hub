@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { EyeIcon, EyeOffIcon } from 'lucide-react'
 import { auth, db } from '@/lib/firebaseConfig'
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth'
-import { collection, doc, getDocs, query, setDoc, Timestamp, where } from 'firebase/firestore'
+import { doc, setDoc, Timestamp, collection, query, where, getDocs } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../authcontext'
 
@@ -93,14 +93,17 @@ export default function AuthPage() {
             {!isLogin && (
               <div>
                 <Label htmlFor="username" className="text-gray-700 dark:text-gray-300">Username</Label>
+                <div>
+                <Label htmlFor="username" className="text-gray-700 dark:text-gray-300">Username</Label>
                 <Input
                   id="username"
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => setUsername(e.target.value.replace(/\s+/g, ''))}
                   required
                   className="mt-1"
                 />
+              </div>
               </div>
             )}
             <div>

@@ -43,17 +43,17 @@ const mockProfile: UserProfile = {
 }
 
 const mockFollowedNovels: Novel[] = [
-  { id: '1', name: 'The Enchanted Sword', author: 'Aria Blackwood', coverUrl: 'https://picsum.photos/seed/novel1/300/450', rating: 4.5 },
-  { id: '2', name: 'Starship Odyssey', author: 'Zack Stellar', coverUrl: 'https://picsum.photos/seed/novel2/300/450', rating: 4.2 },
-  { id: '3', name: 'Love in the Digital Age', author: 'Emma Hearts', coverUrl: 'https://picsum.photos/seed/novel3/300/450', rating: 4.7 },
-  { id: '4', name: 'The Last Mage', author: 'Merlin Wise', coverUrl: 'https://picsum.photos/seed/novel4/300/450', rating: 4.8 },
+  { id: '1', name: 'The Enchanted Sword', author: 'Aria Blackwood', coverUrl: '/assets/cover.jpg', rating: 4.5 },
+  { id: '2', name: 'Starship Odyssey', author: 'Zack Stellar', coverUrl: '/assets/cover.jpg', rating: 4.2 },
+  { id: '3', name: 'Love in the Digital Age', author: 'Emma Hearts', coverUrl: '/assets/cover.jpg', rating: 4.7 },
+  { id: '4', name: 'The Last Mage', author: 'Merlin Wise', coverUrl: '/assets/cover.jpg', rating: 4.8 },
 ]
 
 const mockRecommendations: Novel[] = [
-  { id: '5', name: 'Cyber Detective', author: 'Neo Pixel', coverUrl: 'https://picsum.photos/seed/novel5/300/450', rating: 4.6 },
-  { id: '6', name: 'Dragon Rider Academy', author: 'Scales McFire', coverUrl: 'https://picsum.photos/seed/novel6/300/450', rating: 4.9 },
-  { id: '7', name: 'Time Travelers Diary', author: 'Chrono Ink', coverUrl: 'https://picsum.photos/seed/novel7/300/450', rating: 4.4 },
-  { id: '8', name: 'Whispers in the Wind', author: 'Breeze Willows', coverUrl: 'https://picsum.photos/seed/novel8/300/450', rating: 4.3 },
+  { id: '5', name: 'Cyber Detective', author: 'Neo Pixel', coverUrl: '/assets/cover.jpg', rating: 4.6 },
+  { id: '6', name: 'Dragon Rider Academy', author: 'Scales McFire', coverUrl: '/assets/cover.jpg', rating: 4.9 },
+  { id: '7', name: 'Time Travelers Diary', author: 'Chrono Ink', coverUrl: '/assets/cover.jpg', rating: 4.4 },
+  { id: '8', name: 'Whispers in the Wind', author: 'Breeze Willows', coverUrl: '/assets/cover.jpg', rating: 4.3 },
 ]
 
 export default function UserProfilePage() {

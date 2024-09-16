@@ -218,14 +218,6 @@ export default function ChapterManagement() {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="title">Title</Label>
-              <Input id="title" name="title" value={currentChapter?.title || ''} onChange={handleInputChange} required />
-            </div>
-            <div>
-              <Label htmlFor="link">Chapter Link</Label>
-              <Textarea id="link" name="link" value={currentChapter?.link || ''} onChange={handleInputChange} required rows={10} />
-            </div>
-            <div>
               <Label htmlFor="chapter">Chapter Number</Label>
               <Input 
                 id="chapter" 
@@ -236,6 +228,15 @@ export default function ChapterManagement() {
                 onChange={handleInputChange} 
                 required 
               />
+            </div>
+            <div>
+              <Label htmlFor="title">Title</Label>
+              <Input id="title" name="title" value={currentChapter?.title || ''} onChange={handleInputChange} required />
+            </div>
+            
+            <div>
+              <Label htmlFor="link">Chapter Link</Label>
+              <Textarea id="link" name="link" value={currentChapter?.link || ''} onChange={handleInputChange} required rows={4} />
             </div>
             <Button type="submit">Save Chapter</Button>
           </form>

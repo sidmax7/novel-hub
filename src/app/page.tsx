@@ -14,6 +14,7 @@ import { auth, db } from '@/lib/firebaseConfig'
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import { StarRating } from '@/components/ui/starrating'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 export const genreColors = {
   Fantasy: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900 text-purple-100' },
@@ -84,6 +85,14 @@ export default function ModernLightNovelsHomepage() {
     }
   }
 
+  const handleProfileClick = () => {
+    if (user) {
+      router.push('/user_profile')
+    } else {
+      router.push('/auth')
+    }
+  }
+
   return (
     <motion.div 
       className={`flex flex-col min-h-screen ${darkMode ? 'dark' : ''} bg-gray-50 dark:bg-gray-900`}
@@ -94,8 +103,11 @@ export default function ModernLightNovelsHomepage() {
       <header className="border-b dark:border-gray-700 bg-white dark:bg-gray-800 sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon">
-              <Menu className="h-6 w-6" />
+          <Button variant="ghost" size="icon" onClick={handleProfileClick}>
+              <Avatar>
+                <AvatarImage src={user?.photoURL || ''} alt="User avatar" />
+                <AvatarFallback>{user?.displayName?.[0] || '?'}</AvatarFallback>
+              </Avatar>
             </Button>
             <h1 className="text-2xl font-bold text-purple-600 dark:text-purple-400">LightNovelHub</h1>
           </div>
