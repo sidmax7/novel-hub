@@ -172,6 +172,9 @@ export default function ModernLightNovelsHomepage() {
                         alt={novel.name}
                         layout="fill"
                         objectFit="cover"
+                        placeholder="blur"
+                        blurDataURL="/assets/placeholder.jpg"
+                        loading="eager"
                         className="transition-transform duration-300 group-hover:scale-110"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>

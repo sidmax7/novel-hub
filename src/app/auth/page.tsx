@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { EyeIcon, EyeOffIcon } from 'lucide-react'
 import { auth, db } from '@/lib/firebaseConfig'
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth'
-import { doc, setDoc, Timestamp } from 'firebase/firestore'
+import { collection, doc, getDocs, query, setDoc, Timestamp, where } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../authcontext'
 
@@ -36,29 +36,46 @@ export default function AuthPage() {
     setError('')
     setLoading(true)
 
+    const trimmedUsername = username.replace(/\s+/g, '')
+    if (trimmedUsername !== username) {
+      setError('Username cannot contain spaces. Spaces have been removed.')
+      setUsername(trimmedUsername)
+      setLoading(false)
+      return
+    }
+
     try {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password)
       } else {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-        await updateProfile(userCredential.user, { displayName: username })
-        
-        // Create user record in Firestore
-        await setDoc(doc(db, 'users', userCredential.user.uid), {
-          uid: userCredential.user.uid,
-          username: username,
-          email: email,
-          timeCreated: Timestamp.now()
-        })
-      }
-      router.push('/')
-    } catch (error) {
-      setError('Failed to authenticate. Please check your credentials.')
-      console.error(error)
-    }
+        const usernameQuery = query(collection(db, 'users'), where('username', '==', trimmedUsername))
+      const usernameQuerySnapshot = await getDocs(usernameQuery)
 
-    setLoading(false)
+      if (!usernameQuerySnapshot.empty) {
+        setError('Username is already taken. Please choose a different one.')
+        setLoading(false)
+        return
+      }
+
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      await updateProfile(userCredential.user, { displayName: trimmedUsername })
+      
+      // Create user record in Firestore
+      await setDoc(doc(db, 'users', userCredential.user.uid), {
+        uid: userCredential.user.uid,
+        username: trimmedUsername,
+        email: email,
+        timeCreated: Timestamp.now()
+      })
+    }
+    router.push('/')
+  } catch (error) {
+    setError('Failed to authenticate. Please check your credentials.')
+    console.error(error)
   }
+
+  setLoading(false)
+}
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
