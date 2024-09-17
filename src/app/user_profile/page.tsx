@@ -30,6 +30,7 @@ interface UserProfile {
   favoriteGenres: string[]
   readingGoal: number
   timeCreated: Timestamp
+  followedNovels: string[]
 }
 
 interface Novel {
@@ -84,15 +85,26 @@ export default function UserProfilePage() {
   const fetchFollowedNovels = async () => {
     if (!user) return
     try {
-      const followedNovelsQuery = query(collection(db, 'novels'), where('followers', 'array-contains', user.uid))
-      const querySnapshot = await getDocs(followedNovelsQuery)
-      const novels = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Novel))
-      setFollowedNovels(novels)
+      // Fetch the user document to get the followedNovels array
+      const userDoc = await getDoc(doc(db, 'users', user.uid))
+      if (userDoc.exists()) {
+        const userData = userDoc.data()
+        const followedNovelIds = userData.followedNovels || []
+  
+        // Fetch the novel documents using the followedNovelIds
+        const novelPromises = followedNovelIds.map((novelId: string) => getDoc(doc(db, 'novels', novelId)))
+        const novelDocs = await Promise.all(novelPromises)
+  
+        const novels = novelDocs
+          .filter(doc => doc.exists())
+          .map(doc => ({ id: doc.id, ...doc.data() } as Novel))
+  
+        setFollowedNovels(novels)
+      }
     } catch (error) {
       console.error('Error fetching followed novels:', error)
     }
   }
-
   const fetchRecommendations = async () => {
     try {
       const recommendationsQuery = query(collection(db, 'novels'), orderBy('rating', 'desc'), limit(4))
