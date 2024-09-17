@@ -177,7 +177,7 @@ export default function ChapterManagement() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle className="text-2xl font-bold">Chapter Management</CardTitle>
-            <Link href="/admin/dashboard">
+            <Link href="/admin">
               <Button variant="outline">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Novels
