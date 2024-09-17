@@ -12,15 +12,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { StarRating } from '@/components/ui/starrating'
 import { toast, Toaster } from 'react-hot-toast'
 import { Edit, BookOpen, BookMarked, ThumbsUp, Upload } from 'lucide-react'
+import { Timestamp } from 'firebase/firestore'
 
 interface UserProfile {
-  id: string
+  uid: string
   username: string
+  userType: string
   email: string
   bio: string
-  avatarUrl: string
+  profilePicture: string
   favoriteGenres: string[]
   readingGoal: number
+  timeCreated: Timestamp
 }
 
 interface Novel {
@@ -33,27 +36,29 @@ interface Novel {
 
 // Mock data
 const mockProfile: UserProfile = {
-  id: '1',
+  uid: '1',
   username: 'BookLover123',
   email: 'booklover123@example.com',
   bio: 'Avid reader and light novel enthusiast. Always looking for the next great story!',
-  avatarUrl: 'https://i.pravatar.cc/300',
+  profilePicture: 'https://i.pravatar.cc/300',
   favoriteGenres: ['Fantasy', 'Sci-Fi', 'Romance'],
-  readingGoal: 50
+  readingGoal: 50,
+  userType: '',
+  timeCreated: Timestamp.now(),
 }
 
 const mockFollowedNovels: Novel[] = [
-  { id: '1', name: 'The Enchanted Sword', author: 'Aria Blackwood', coverUrl: '/assets/cover.jpg', rating: 4.5 },
-  { id: '2', name: 'Starship Odyssey', author: 'Zack Stellar', coverUrl: '/assets/cover.jpg', rating: 4.2 },
-  { id: '3', name: 'Love in the Digital Age', author: 'Emma Hearts', coverUrl: '/assets/cover.jpg', rating: 4.7 },
-  { id: '4', name: 'The Last Mage', author: 'Merlin Wise', coverUrl: '/assets/cover.jpg', rating: 4.8 },
+  { id: '1', name: 'The Enchanted Sword', author: 'Aria Blackwood', coverUrl: 'https://picsum.photos/seed/novel1/300/450', rating: 4.5 },
+  { id: '2', name: 'Starship Odyssey', author: 'Zack Stellar', coverUrl: 'https://picsum.photos/seed/novel2/300/450', rating: 4.2 },
+  { id: '3', name: 'Love in the Digital Age', author: 'Emma Hearts', coverUrl: 'https://picsum.photos/seed/novel3/300/450', rating: 4.7 },
+  { id: '4', name: 'The Last Mage', author: 'Merlin Wise', coverUrl: 'https://picsum.photos/seed/novel4/300/450', rating: 4.8 },
 ]
 
 const mockRecommendations: Novel[] = [
-  { id: '5', name: 'Cyber Detective', author: 'Neo Pixel', coverUrl: '/assets/cover.jpg', rating: 4.6 },
-  { id: '6', name: 'Dragon Rider Academy', author: 'Scales McFire', coverUrl: '/assets/cover.jpg', rating: 4.9 },
-  { id: '7', name: 'Time Travelers Diary', author: 'Chrono Ink', coverUrl: '/assets/cover.jpg', rating: 4.4 },
-  { id: '8', name: 'Whispers in the Wind', author: 'Breeze Willows', coverUrl: '/assets/cover.jpg', rating: 4.3 },
+  { id: '5', name: 'Cyber Detective', author: 'Neo Pixel', coverUrl: 'https://picsum.photos/seed/novel5/300/450', rating: 4.6 },
+  { id: '6', name: 'Dragon Rider Academy', author: 'Scales McFire', coverUrl: 'https://picsum.photos/seed/novel6/300/450', rating: 4.9 },
+  { id: '7', name: 'Time Travelers Diary', author: 'Chrono Ink', coverUrl: 'https://picsum.photos/seed/novel7/300/450', rating: 4.4 },
+  { id: '8', name: 'Whispers in the Wind', author: 'Breeze Willows', coverUrl: 'https://picsum.photos/seed/novel8/300/450', rating: 4.3 },
 ]
 
 export default function UserProfilePage() {
@@ -101,7 +106,7 @@ export default function UserProfilePage() {
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
             <div className="flex flex-col items-center">
               <Avatar className="w-32 h-32">
-                <AvatarImage src={profile.avatarUrl} alt={profile.username} />
+                <AvatarImage src={profile.profilePicture} alt={profile.username} />
                 <AvatarFallback>{profile.username.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
               <Label htmlFor="avatar-upload" className="cursor-pointer mt-4">
