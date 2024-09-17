@@ -38,33 +38,6 @@ interface Novel {
   rating: number
 }
 
-// Mock data
-const mockProfile: UserProfile = {
-  uid: '1',
-  username: 'BookLover123',
-  email: 'booklover123@example.com',
-  bio: 'Avid reader and light novel enthusiast. Always looking for the next great story!',
-  profilePicture: 'https://i.pravatar.cc/300',
-  favoriteGenres: ['Fantasy', 'Sci-Fi', 'Romance'],
-  readingGoal: 50,
-  userType: '',
-  timeCreated: Timestamp.now(),
-}
-
-const mockFollowedNovels: Novel[] = [
-  { id: '1', name: 'The Enchanted Sword', author: 'Aria Blackwood', coverUrl: 'https://picsum.photos/seed/novel1/300/450', rating: 4.5 },
-  { id: '2', name: 'Starship Odyssey', author: 'Zack Stellar', coverUrl: 'https://picsum.photos/seed/novel2/300/450', rating: 4.2 },
-  { id: '3', name: 'Love in the Digital Age', author: 'Emma Hearts', coverUrl: 'https://picsum.photos/seed/novel3/300/450', rating: 4.7 },
-  { id: '4', name: 'The Last Mage', author: 'Merlin Wise', coverUrl: 'https://picsum.photos/seed/novel4/300/450', rating: 4.8 },
-]
-
-const mockRecommendations: Novel[] = [
-  { id: '5', name: 'Cyber Detective', author: 'Neo Pixel', coverUrl: 'https://picsum.photos/seed/novel5/300/450', rating: 4.6 },
-  { id: '6', name: 'Dragon Rider Academy', author: 'Scales McFire', coverUrl: 'https://picsum.photos/seed/novel6/300/450', rating: 4.9 },
-  { id: '7', name: 'Time Travelers Diary', author: 'Chrono Ink', coverUrl: 'https://picsum.photos/seed/novel7/300/450', rating: 4.4 },
-  { id: '8', name: 'Whispers in the Wind', author: 'Breeze Willows', coverUrl: 'https://picsum.photos/seed/novel8/300/450', rating: 4.3 },
-]
-
 export default function UserProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isEditing, setIsEditing] = useState(false)
