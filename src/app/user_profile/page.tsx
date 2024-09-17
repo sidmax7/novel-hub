@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,7 +14,7 @@ import { toast, Toaster } from 'react-hot-toast'
 import { useAuth } from '../authcontext'
 import { Edit, BookOpen, BookMarked, ThumbsUp, Upload, Moon, Sun, Home } from 'lucide-react'
 import { db } from '@/lib/firebaseConfig'
-import { Timestamp, doc, getDoc, collection, query, where, getDocs, updateDoc, limit, orderBy } from 'firebase/firestore'
+import { Timestamp, doc, getDoc, collection, query, where, getDocs, updateDoc, limit, orderBy, arrayUnion, arrayRemove } from 'firebase/firestore'
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useTheme } from 'next-themes'
 import { Switch } from '@radix-ui/react-switch'
@@ -50,6 +50,7 @@ export default function UserProfilePage() {
   const { user } = useAuth()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [followedNovelIds, setFollowedNovelIds] = useState<string[]>([])
 
   useEffect(() => {
     setMounted(true)
@@ -74,6 +75,7 @@ export default function UserProfilePage() {
           favoriteGenres: userData.favoriteGenres || [],
           readingGoal: userData.readingGoal || 0,
         })
+        setFollowedNovelIds(userData.followedNovels || [])
       }
       setLoading(false)
     } catch (error) {
@@ -105,6 +107,7 @@ export default function UserProfilePage() {
       console.error('Error fetching followed novels:', error)
     }
   }
+  
   const fetchRecommendations = async () => {
     try {
       const recommendationsQuery = query(collection(db, 'novels'), orderBy('rating', 'desc'), limit(4))
@@ -162,49 +165,89 @@ export default function UserProfilePage() {
     }
   }
 
-  const NovelCard = ({ novel, showActions = false }: { novel: Novel, showActions?: boolean }) => (
-    <Card className="overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300">
-      <div className="relative aspect-[2/3] w-full">
-        <Image
-          src={novel.coverUrl}
-          alt={novel.name}
-          layout="fill"
-          objectFit="cover"
-        />
-      </div>
-      <CardContent className="p-4">
-        <h3 className="font-semibold mb-1 truncate">{novel.name}</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 truncate">{novel.author}</p>
-        <StarRating rating={novel.rating} />
-        {showActions ? (
-          <div className="flex mt-2 space-x-2">
+  const handleFollowNovel = useCallback(async (novel: Novel) => {
+    if (!user) return
+
+    const userRef = doc(db, 'users', user.uid)
+    const isFollowing = followedNovelIds.includes(novel.id)
+
+    try {
+      if (isFollowing) {
+        await updateDoc(userRef, {
+          followedNovels: arrayRemove(novel.id)
+        })
+        setFollowedNovelIds(prev => prev.filter(id => id !== novel.id))
+        setFollowedNovels(prev => prev.filter(n => n.id !== novel.id))
+      } else {
+        await updateDoc(userRef, {
+          followedNovels: arrayUnion(novel.id)
+        })
+        setFollowedNovelIds(prev => [...prev, novel.id])
+        setFollowedNovels(prev => [...prev, novel])
+      }
+      toast.success(isFollowing ? 'Novel unfollowed' : 'Novel followed')
+    } catch (error) {
+      console.error('Error updating followed novels:', error)
+      toast.error('Failed to update followed novels')
+    }
+  }, [user, followedNovelIds])
+
+  const NovelCard = ({ novel, showActions = false }: { novel: Novel, showActions?: boolean }) => {
+    const isFollowing = followedNovelIds.includes(novel.id)
+
+    return (
+      <Card className="overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300">
+        <div className="relative aspect-[2/3] w-full">
+          <Image
+            src={novel.coverUrl}
+            alt={novel.name}
+            layout="fill"
+            objectFit="cover"
+          />
+        </div>
+        <CardContent className="p-4">
+          <h3 className="font-semibold mb-1 truncate">{novel.name}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 truncate">{novel.author}</p>
+          <StarRating rating={novel.rating} />
+          {showActions ? (
+            <div className="flex mt-2 space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-grow comic-button"
+                onClick={() => handleFollowNovel(novel)}
+              >
+                {isFollowing ? (
+                  <>
+                    <BookMarked className="mr-2 h-4 w-4" /> Followed
+                  </>
+                ) : (
+                  <>
+                    <BookMarked className="mr-2 h-4 w-4" /> Follow
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-grow comic-button"
+              >
+                <ThumbsUp className="mr-2 h-4 w-4" /> Like
+              </Button>
+            </div>
+          ) : (
             <Button
               variant="outline"
               size="sm"
-              className="flex-grow comic-button"
+              className="w-full mt-2 comic-button"
             >
-              <BookMarked className="mr-2 h-4 w-4" /> Follow
+              <BookOpen className="mr-2 h-4 w-4" /> Read
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-grow comic-button"
-            >
-              <ThumbsUp className="mr-2 h-4 w-4" /> Like
-            </Button>
-          </div>
-        ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full mt-2 comic-button"
-          >
-            <BookOpen className="mr-2 h-4 w-4" /> Read
-          </Button>
-        )}
-      </CardContent>
-    </Card>
-  )
+          )}
+        </CardContent>
+      </Card>
+    )
+  }
 
   if (!mounted) return null
 
