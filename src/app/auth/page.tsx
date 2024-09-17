@@ -64,7 +64,12 @@ export default function AuthPage() {
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         uid: userCredential.user.uid,
         username: trimmedUsername,
+        profilePicture: '',
+        bio: '',
+        favoriteGenres: [],
+        readingGoal: 0,
         email: email,
+        userType: 'reader',
         timeCreated: Timestamp.now()
       })
     }

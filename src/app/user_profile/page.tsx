@@ -11,8 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { StarRating } from '@/components/ui/starrating'
 import { toast, Toaster } from 'react-hot-toast'
+import { useEffect } from 'react'
+import { useAuth } from '../authcontext'
 import { Edit, BookOpen, BookMarked, ThumbsUp, Upload } from 'lucide-react'
-import { Timestamp } from 'firebase/firestore'
+import { db } from '@/lib/firebaseConfig'
+import { Timestamp, doc, getDoc, collection, query, where, getDocs, updateDoc, limit, orderBy } from 'firebase/firestore'
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 
 interface UserProfile {
   uid: string
@@ -62,37 +66,107 @@ const mockRecommendations: Novel[] = [
 ]
 
 export default function UserProfilePage() {
-  const [profile, setProfile] = useState<UserProfile>(mockProfile)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isEditing, setIsEditing] = useState(false)
-  const [followedNovels] = useState<Novel[]>(mockFollowedNovels)
-  const [recommendations] = useState<Novel[]>(mockRecommendations)
+  const [followedNovels, setFollowedNovels] = useState<Novel[]>([])
+  const [recommendations, setRecommendations] = useState<Novel[]>([])
+  const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (user) {
+      fetchUserProfile()
+      fetchFollowedNovels()
+      fetchRecommendations()
+    }
+  }, [user])
+
+  const fetchUserProfile = async () => {
+    if (!user) return
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid))
+      if (userDoc.exists()) {
+        const userData = userDoc.data() as UserProfile
+        setProfile({
+          ...userData,
+          favoriteGenres: userData.favoriteGenres || [], // Provide default empty array
+          readingGoal: userData.readingGoal || 0, // Provide default value
+        })
+      }
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching user profile:', error)
+      setLoading(false)
+    }
+  }
+
+  const fetchFollowedNovels = async () => {
+    if (!user) return
+    try {
+      const followedNovelsQuery = query(collection(db, 'novels'), where('followers', 'array-contains', user.uid))
+      const querySnapshot = await getDocs(followedNovelsQuery)
+      const novels = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Novel))
+      setFollowedNovels(novels)
+    } catch (error) {
+      console.error('Error fetching followed novels:', error)
+    }
+  }
+
+  const fetchRecommendations = async () => {
+    try {
+      const recommendationsQuery = query(collection(db, 'novels'), orderBy('rating', 'desc'), limit(4))
+      const querySnapshot = await getDocs(recommendationsQuery)
+      const novels = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Novel))
+      setRecommendations(novels)
+    } catch (error) {
+      console.error('Error fetching recommendations:', error)
+    }
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setProfile(prev => ({ ...prev, [name]: value }))
+    setProfile(prev => prev ? { ...prev, [name]: value } : null)
   }
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file || !user) return
   
-    // Simulating avatar upload
-    const reader = new FileReader()
-    reader.onload = (event: ProgressEvent<FileReader>) => {
-      const result = event.target?.result;
-      if (result && typeof result === 'string') {
-        setProfile(prev => ({ ...prev, avatarUrl: result as string }))
-        toast.success('Avatar updated successfully')
-      }
+    try {
+      const storage = getStorage()
+      const storageRef = ref(storage, `avatars/${user.uid}`)
+      await uploadBytes(storageRef, file)
+      const downloadURL = await getDownloadURL(storageRef)
+      
+      await updateDoc(doc(db, 'users', user.uid), {
+        profilePicture: downloadURL
+      })
+      
+      setProfile(prev => ({ ...prev!, profilePicture: downloadURL }))
+      toast.success('Avatar updated successfully')
+    } catch (error) {
+      console.error('Error uploading avatar:', error)
+      toast.error('Failed to update avatar')
     }
-    reader.readAsDataURL(file)
   }
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    // Simulating profile update
-    setIsEditing(false)
-    toast.success('Profile updated successfully')
+    if (!user || !profile) return
+  
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        username: profile.username,
+        bio: profile.bio,
+        favoriteGenres: profile.favoriteGenres,
+        readingGoal: profile.readingGoal
+      })
+      setIsEditing(false)
+      toast.success('Profile updated successfully')
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      toast.error('Failed to update profile')
+    }
   }
 
   return (
@@ -105,9 +179,9 @@ export default function UserProfilePage() {
         <CardContent>
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
             <div className="flex flex-col items-center">
-              <Avatar className="w-32 h-32">
-                <AvatarImage src={profile.profilePicture} alt={profile.username} />
-                <AvatarFallback>{profile.username.charAt(0).toUpperCase()}</AvatarFallback>
+            <Avatar className="w-32 h-32">
+                <AvatarImage src={profile?.profilePicture} alt={profile?.username} />
+                <AvatarFallback>{profile?.username.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
               <Label htmlFor="avatar-upload" className="cursor-pointer mt-4">
                 <Input
@@ -130,7 +204,7 @@ export default function UserProfilePage() {
                     <Input
                       id="username"
                       name="username"
-                      value={profile.username}
+                      value={profile?.username || ''}
                       onChange={handleInputChange}
                       required
                     />
@@ -140,7 +214,7 @@ export default function UserProfilePage() {
                     <Textarea
                       id="bio"
                       name="bio"
-                      value={profile.bio}
+                      value={profile?.bio || ''}
                       onChange={handleInputChange}
                       rows={3}
                     />
@@ -150,8 +224,8 @@ export default function UserProfilePage() {
                     <Input
                       id="favoriteGenres"
                       name="favoriteGenres"
-                      value={profile.favoriteGenres.join(', ')}
-                      onChange={(e) => setProfile(prev => ({ ...prev, favoriteGenres: e.target.value.split(',').map(g => g.trim()) }))}
+                      value={profile?.favoriteGenres.join(', ')}
+                      onChange={(e) => setProfile(prev => prev ? { ...prev, favoriteGenres: e.target.value.split(',').map(g => g.trim()) } : null)}
                     />
                   </div>
                   <div>
@@ -160,7 +234,7 @@ export default function UserProfilePage() {
                       id="readingGoal"
                       name="readingGoal"
                       type="number"
-                      value={profile.readingGoal}
+                      value={profile?.readingGoal || ''}
                       onChange={handleInputChange}
                       min={1}
                     />
@@ -170,14 +244,14 @@ export default function UserProfilePage() {
                 </form>
               ) : (
                 <div className="space-y-4">
-                  <h2 className="text-xl font-semibold">{profile.username}</h2>
-                  <p className="text-gray-600">{profile.email}</p>
-                  <p>{profile.bio}</p>
+                  <h2 className="text-xl font-semibold">{profile?.username}</h2>
+                  <p className="text-gray-600">{profile?.email}</p>
+                  <p>{profile?.bio}</p>
                   <div>
-                    <strong>Favorite Genres:</strong> {profile.favoriteGenres.join(', ')}
+                    <strong>Favorite Genres:</strong> {profile?.favoriteGenres.join(', ')}
                   </div>
                   <div>
-                    <strong>Daily Reading Goal:</strong> {profile.readingGoal} pages
+                    <strong>Daily Reading Goal:</strong> {profile?.readingGoal} pages
                   </div>
                   <Button onClick={() => setIsEditing(true)}>
                     <Edit className="mr-2 h-4 w-4" /> Edit Profile
