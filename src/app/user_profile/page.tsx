@@ -202,6 +202,9 @@ export default function UserProfilePage() {
             src={novel.coverUrl}
             alt={novel.name}
             layout="fill"
+            placeholder="blur"
+            blurDataURL="/assets/placeholder.jpg"
+            loading="eager"
             objectFit="cover"
           />
         </div>

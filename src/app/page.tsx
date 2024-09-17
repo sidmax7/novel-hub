@@ -46,11 +46,13 @@ export default function ModernLightNovelsHomepage() {
   const { user } = useAuth()
   const router = useRouter()
   const [followedNovels, setFollowedNovels] = useState<string[]>([])
+  const [userType, setUserType] = useState<string | null>(null)
 
   useEffect(() => {
     fetchPopularNovels()
     if (user) {
       fetchFollowedNovels()
+      fetchUserType()
     }
   }, [user])
 
@@ -77,6 +79,19 @@ export default function ModernLightNovelsHomepage() {
       }
     } catch (error) {
       console.error('Error fetching followed novels:', error)
+    }
+  }
+
+  const fetchUserType = async () => {
+    if (!user) return
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid))
+      if (userDoc.exists()) {
+        const userData = userDoc.data()
+        setUserType(userData.userType || null)
+      }
+    } catch (error) {
+      console.error('Error fetching user type:', error)
     }
   }
 
@@ -150,6 +165,9 @@ export default function ModernLightNovelsHomepage() {
             src={novel.coverUrl || '/assets/cover.jpg'}
             alt={novel.name}
             layout="fill"
+            placeholder="blur"
+            blurDataURL="/assets/placeholder.jpg"
+            loading="eager"
             objectFit="cover"
           />
         </div>
@@ -222,7 +240,7 @@ export default function ModernLightNovelsHomepage() {
               <Sun className="h-4 w-4 text-yellow-500" />
               <Moon className="h-4 w-4 text-blue-500" />
             </Switch>
-            {user && (
+            {user && userType === 'author' && (
               <Button variant="ghost" onClick={() => router.push('/admin')}>
                 <ChevronsLeftRightIcon className="h-5 w-5 mr-2" />
                 Admin Console

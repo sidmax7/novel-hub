@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/app/authcontext'
 import { db, storage } from '@/lib/firebaseConfig'
-import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, orderBy } from 'firebase/firestore'
+import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, orderBy, getDoc } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast, Toaster } from 'react-hot-toast'
-import { PlusIcon, Pencil, Trash, Upload, AlertTriangle, BookOpen } from 'lucide-react'
+import { PlusIcon, Pencil, Trash, Upload, AlertTriangle, BookOpen, Home } from 'lucide-react'
 import Image from 'next/image'
 import { StarRating } from '@/components/ui/starrating'
 import Link from 'next/link'
@@ -55,15 +55,34 @@ export default function AdminDashboard() {
   const [uploadingImage, setUploadingImage] = useState(false)
   const { user } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isAuthor, setIsAuthor] = useState(false)
 
   useEffect(() => {
     if (user) {
+      checkUserType()
       fetchNovels()
     } else {
       setError("User not authenticated. Please log in.")
       setLoading(false)
     }
   }, [user])
+
+  const checkUserType = async () => {
+    if (!user) return
+    try {
+      const userDocRef = doc(db, 'users', user.uid)
+      const userDocSnap = await getDoc(userDocRef)
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data()
+        setIsAuthor(userData.userType === 'author')
+      } else {
+        setIsAuthor(false)
+      }
+    } catch (error) {
+      console.error('Error checking user type:', error)
+      setIsAuthor(false)
+    }
+  }
 
   const fetchNovels = async () => {
     if (!user) return
@@ -177,7 +196,14 @@ export default function AdminDashboard() {
   return (
     <div className="container mx-auto p-4">
       <Toaster />
-      <h1 className="text-2xl font-bold mb-4">Novel Admin Dashboard</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Novel Admin Dashboard</h1>
+        <Link href="./" passHref>
+          <Button variant="outline">
+            <Home className="mr-2 h-4 w-4" /> Back to Home
+          </Button>
+        </Link>
+      </div>
       {error && (
         <Alert variant="destructive" className="mb-4">
           <AlertTriangle className="h-4 w-4" />
@@ -185,122 +211,134 @@ export default function AdminDashboard() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogTrigger asChild>
-          <Button onClick={() => setCurrentNovel({ author: user.displayName || 'Anonymous', authorId: user.uid } as Novel)} className="mb-4">
-            <PlusIcon className="mr-2 h-4 w-4" /> Add New Novel
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{currentNovel?.id ? 'Edit Novel' : 'Add New Novel'}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" name="name" value={currentNovel?.name || ''} onChange={handleInputChange} required />
-            </div>
-            <div>
-              <Label htmlFor="author">Author</Label>
-              <Input id="author" name="author" value={currentNovel?.author || user.displayName || 'Anonymous'} disabled />
-            </div>
-            <div>
-              <Label htmlFor="synopsis">Synopsis</Label>
-              <Textarea id="synopsis" name="synopsis" value={currentNovel?.synopsis || ''} onChange={handleInputChange} required />
-            </div>
-            <div>
-              <Label htmlFor="genre">Genre</Label>
-              <Select name="genre" value={currentNovel?.genre || ''} onValueChange={(value) => handleSelectChange('genre', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a genre" />
-                </SelectTrigger>
-                <SelectContent>
-                  {genres.map((genre) => (
-                    <SelectItem key={genre} value={genre.toLowerCase()}>{genre}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="tags">Tags (comma-separated)</Label>
-              <Input id="tags" name="tags" value={currentNovel?.tags?.join(', ') || ''} onChange={handleTagsChange} />
-            </div>
-            <div>
-              <Label htmlFor="type">Type</Label>
-              <Select name="type" value={currentNovel?.type || ''} onValueChange={(value) => handleSelectChange('type', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {types.map((type) => (
-                    <SelectItem key={type} value={type.toLowerCase()}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="releaseDate">Release Date</Label>
-              <Input id="releaseDate" name="releaseDate" type="date" value={currentNovel?.releaseDate || ''} onChange={handleInputChange} required />
-            </div>
-            <div>
-              <Label htmlFor="language">Language</Label>
-              <Input id="language" name="language" value={currentNovel?.language || ''} onChange={handleInputChange} required />
-            </div>
-            <div>
-              <Label htmlFor="rating">Rating</Label>
-              <Input 
-                id="rating" 
-                name="rating" 
-                type="number" 
-                min="0" 
-                max="5" 
-                step="0.1" 
-                value={currentNovel?.rating || ''} 
-                onChange={handleInputChange} 
-                required 
-              />
-            </div>
-            <div>
-              <Label htmlFor="chapters">Chapters</Label>
-              <Input id="chapters" name="chapters" type="number" min="0" value={currentNovel?.chapters || ''} onChange={handleInputChange} required />
-            </div>
-            <div>
-              <Label htmlFor="views">Views</Label>
-              <Input id="views" name="views" type="number" min="0" value={currentNovel?.views || ''} onChange={handleInputChange} required />
-            </div>
-            <div>
-              <Label htmlFor="rank">Rank</Label>
-              <Input id="rank" name="rank" type="number" min="1" value={currentNovel?.rank || ''} onChange={handleInputChange} required />
-            </div>
-            <div>
-              <Label htmlFor="coverImage">Cover Image</Label>
-              <div className="flex items-center space-x-4">
-                <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploadingImage}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  {uploadingImage ? 'Uploading...' : 'Upload Image'}
-                </Button>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleImageUpload}
-                  accept="image/*"
-                  className="hidden"
-                />
-                {currentNovel?.coverUrl && (
-                  <Image
-                    src={currentNovel.coverUrl}
-                    alt="Novel cover"
-                    width={100}
-                    height={150}
-                    className="object-cover rounded"
-                  />
-                )}
+      <div className="flex space-x-4 mb-4">
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button 
+              onClick={() => setCurrentNovel({ author: user.displayName || 'Anonymous', authorId: user.uid } as Novel)}
+              disabled={!isAuthor}
+            >
+              <PlusIcon className="mr-2 h-4 w-4" /> Add New Novel
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{currentNovel?.id ? 'Edit Novel' : 'Add New Novel'}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Name</Label>
+                <Input id="name" name="name" value={currentNovel?.name || ''} onChange={handleInputChange} required />
               </div>
-            </div>
-            <Button type="submit">Save Novel</Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+              <div>
+                <Label htmlFor="author">Author</Label>
+                <Input id="author" name="author" value={currentNovel?.author || user.displayName || 'Anonymous'} disabled />
+              </div>
+              <div>
+                <Label htmlFor="synopsis">Synopsis</Label>
+                <Textarea id="synopsis" name="synopsis" value={currentNovel?.synopsis || ''} onChange={handleInputChange} required />
+              </div>
+              <div>
+                <Label htmlFor="genre">Genre</Label>
+                <Select name="genre" value={currentNovel?.genre || ''} onValueChange={(value) => handleSelectChange('genre', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a genre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {genres.map((genre) => (
+                      <SelectItem key={genre} value={genre.toLowerCase()}>{genre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="tags">Tags (comma-separated)</Label>
+                <Input id="tags" name="tags" value={currentNovel?.tags?.join(', ') || ''} onChange={handleTagsChange} />
+              </div>
+              <div>
+                <Label htmlFor="type">Type</Label>
+                <Select name="type" value={currentNovel?.type || ''} onValueChange={(value) => handleSelectChange('type', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {types.map((type) => (
+                      <SelectItem key={type} value={type.toLowerCase()}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="releaseDate">Release Date</Label>
+                <Input id="releaseDate" name="releaseDate" type="date" value={currentNovel?.releaseDate || ''} onChange={handleInputChange} required />
+              </div>
+              <div>
+                <Label htmlFor="language">Language</Label>
+                <Input id="language" name="language" value={currentNovel?.language || ''} onChange={handleInputChange} required />
+              </div>
+              <div>
+                <Label htmlFor="rating">Rating</Label>
+                <Input 
+                  id="rating" 
+                  name="rating" 
+                  type="number" 
+                  min="0" 
+                  max="5" 
+                  step="0.1" 
+                  value={currentNovel?.rating || ''} 
+                  onChange={handleInputChange} 
+                  required 
+                />
+              </div>
+              <div>
+                <Label htmlFor="chapters">Chapters</Label>
+                <Input id="chapters" name="chapters" type="number" min="0" value={currentNovel?.chapters || ''} onChange={handleInputChange} required />
+              </div>
+              <div>
+                <Label htmlFor="views">Views</Label>
+                <Input id="views" name="views" type="number" min="0" value={currentNovel?.views || ''} onChange={handleInputChange} required />
+              </div>
+              <div>
+                <Label htmlFor="rank">Rank</Label>
+                <Input id="rank" name="rank" type="number" min="1" value={currentNovel?.rank || ''} onChange={handleInputChange} required />
+              </div>
+              <div>
+                <Label htmlFor="coverImage">Cover Image</Label>
+                <div className="flex items-center space-x-4">
+                  <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploadingImage}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                  </Button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  {currentNovel?.coverUrl && (
+                    <Image
+                      src={currentNovel.coverUrl}
+                      alt="Novel cover"
+                      width={100}
+                      height={150}
+                      className="object-cover rounded"
+                    />
+                  )}
+                </div>
+              </div>
+              <Button type="submit">Save Novel</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+      {!isAuthor && (
+        <Alert variant="default" className="mb-4 border-yellow-500 bg-yellow-50 text-yellow-800">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Access Restricted</AlertTitle>
+          <AlertDescription>Only authors can add new novels. If you believe this is an error, please contact support.</AlertDescription>
+        </Alert>
+      )}
       {loading ? (
         <div>Loading...</div>
       ) : (
