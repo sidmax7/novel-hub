@@ -1,20 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { Search, Menu, BookOpen, Moon, Sun, LogOut, Pencil, ChevronsLeftRightIcon } from "lucide-react"
+import { Search, Menu, BookOpen, Moon, Sun, LogOut, Pencil, ChevronsLeftRightIcon, BookMarked, ThumbsUp } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from './authcontext'
 import { signOut } from 'firebase/auth'
 import { auth, db } from '@/lib/firebaseConfig'
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore'
+import { collection, query, orderBy, limit, getDocs, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import { StarRating } from '@/components/ui/starrating'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Card, CardContent } from "@/components/ui/card"
+import { toast } from 'react-hot-toast'
 
 export const genreColors = {
   Fantasy: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900 text-purple-100' },
@@ -43,10 +45,14 @@ export default function ModernLightNovelsHomepage() {
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
   const router = useRouter()
+  const [followedNovels, setFollowedNovels] = useState<string[]>([])
 
   useEffect(() => {
     fetchPopularNovels()
-  }, [])
+    if (user) {
+      fetchFollowedNovels()
+    }
+  }, [user])
 
   const fetchPopularNovels = async () => {
     setLoading(true)
@@ -60,6 +66,47 @@ export default function ModernLightNovelsHomepage() {
     }
     setLoading(false)
   }
+
+  const fetchFollowedNovels = async () => {
+    if (!user) return
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid))
+      if (userDoc.exists()) {
+        const userData = userDoc.data()
+        setFollowedNovels(userData.followedNovels || [])
+      }
+    } catch (error) {
+      console.error('Error fetching followed novels:', error)
+    }
+  }
+
+  const handleFollowNovel = useCallback(async (novel: Novel) => {
+    if (!user) {
+      toast.error('Please log in to follow novels')
+      return
+    }
+
+    const userRef = doc(db, 'users', user.uid)
+    const isFollowing = followedNovels.includes(novel.id)
+
+    try {
+      if (isFollowing) {
+        await updateDoc(userRef, {
+          followedNovels: arrayRemove(novel.id)
+        })
+        setFollowedNovels(prev => prev.filter(id => id !== novel.id))
+      } else {
+        await updateDoc(userRef, {
+          followedNovels: arrayUnion(novel.id)
+        })
+        setFollowedNovels(prev => [...prev, novel.id])
+      }
+      toast.success(isFollowing ? 'Novel unfollowed' : 'Novel followed')
+    } catch (error) {
+      console.error('Error updating followed novels:', error)
+      toast.error('Failed to update followed novels')
+    }
+  }, [user, followedNovels])
 
   const handleLogout = async () => {
     try {
@@ -92,6 +139,53 @@ export default function ModernLightNovelsHomepage() {
       router.push('/auth')
     }
   }
+
+  const NovelCard = ({ novel }: { novel: Novel }) => {
+    const isFollowing = followedNovels.includes(novel.id);
+  
+    return (
+      <Card className="overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300">
+        <div className="relative aspect-[2/3] w-full">
+          <Image
+            src={novel.coverUrl || '/assets/cover.jpg'}
+            alt={novel.name}
+            layout="fill"
+            objectFit="cover"
+          />
+        </div>
+        <CardContent className="p-4">
+          <h3 className="font-semibold mb-1 truncate">{novel.name}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 truncate">{novel.author}</p>
+          <StarRating rating={novel.rating} />
+          <div className="flex mt-2 space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-grow comic-button"
+              onClick={() => handleFollowNovel(novel)}
+            >
+              {isFollowing ? (
+                <>
+                  <BookMarked className="mr-2 h-4 w-4" /> Followed
+                </>
+              ) : (
+                <>
+                  <BookMarked className="mr-2 h-4 w-4" /> Follow
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-grow comic-button"
+            >
+              <ThumbsUp className="mr-2 h-4 w-4" /> Like
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <motion.div 
@@ -155,83 +249,43 @@ export default function ModernLightNovelsHomepage() {
           </div>
         </section>
         <section className="py-12 bg-white dark:bg-gray-800">
-          <div className="container mx-auto px-4">
-            <motion.h2 
-              className="text-3xl font-bold mb-8 text-gray-900 dark:text-gray-100"
-              variants={fadeIn}
-            >
-              Popular Novels
-            </motion.h2>
-            {loading ? (
-              <div className="text-center">Loading popular novels...</div>
-            ) : (
-              <motion.div 
-                className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8"
-                variants={staggerChildren}
+      <div className="container mx-auto px-4">
+        <motion.h2 
+          className="text-3xl font-bold mb-8 text-gray-900 dark:text-gray-100"
+          variants={fadeIn}
+        >
+          Popular Novels
+        </motion.h2>
+        {loading ? (
+          <div className="text-center">Loading popular novels...</div>
+        ) : (
+          <motion.div 
+            className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8"
+            variants={staggerChildren}
+          >
+            {popularNovels.map((novel) => (
+              <motion.div
+                key={novel.id}
+                variants={fadeIn}
+                whileHover={{ scale: 1.05 }}
               >
-                {popularNovels.map((novel) => (
-                  <motion.article 
-                    key={novel.id}
-                    className="group relative"
-                    variants={fadeIn}
-                    whileHover={{ scale: 1.05 }}
-                    onHoverStart={() => setHoveredNovel(novel.id)}
-                    onHoverEnd={() => setHoveredNovel(null)}
-                  >
-                    <div className="relative overflow-hidden rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 aspect-[3/4]">
-                      <Image
-                        src={novel.coverUrl || '/assets/cover.jpg'}
-                        alt={novel.name}
-                        layout="fill"
-                        objectFit="cover"
-                        placeholder="blur"
-                        blurDataURL="/assets/placeholder.jpg"
-                        loading="eager"
-                        className="transition-transform duration-300 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    </div>
-                    <motion.div 
-                      className="mt-4 space-y-2"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{novel.name}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">{novel.author}</p>
-                      <StarRating rating={novel.rating} />
-                      <AnimatePresence>
-                        {hoveredNovel === novel.id && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            transition={{ duration: 0.2 }}
-                            className="absolute bottom-0 left-0 right-0 p-4 bg-white dark:bg-gray-800 bg-opacity-90 dark:bg-opacity-90"
-                          >
-                            <Link href={`/novel/${novel.id}`} className="text-sm text-purple-600 dark:text-purple-400 hover:underline inline-flex items-center">
-                              <BookOpen className="h-4 w-4 mr-1" /> Read Now
-                            </Link>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.div>
-                  </motion.article>
-                ))}
+                <NovelCard novel={novel} />
               </motion.div>
-            )}
-            <motion.div 
-              className="mt-12 text-center"
-              variants={fadeIn}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Button variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-900/30">
-                Browse All Novels
-              </Button>
-            </motion.div>
-          </div>
-        </section>
+            ))}
+          </motion.div>
+        )}
+        <motion.div 
+          className="mt-12 text-center"
+          variants={fadeIn}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Button variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-900/30">
+            Browse All Novels
+          </Button>
+        </motion.div>
+      </div>
+    </section>
         <section className="py-12 bg-white dark:bg-gray-800">
           <div className="container mx-auto px-4">
             <motion.h2 
