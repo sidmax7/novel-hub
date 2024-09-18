@@ -36,6 +36,7 @@ interface Novel {
   genre: string
   rating: number
   coverUrl: string
+  authorId: string
 }
 
 export default function ModernLightNovelsHomepage() {
@@ -61,7 +62,11 @@ export default function ModernLightNovelsHomepage() {
     try {
       const q = query(collection(db, 'novels'), orderBy('rating', 'desc'), limit(8))
       const querySnapshot = await getDocs(q)
-      const novels = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Novel))
+      const novels = querySnapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data(),
+        authorId: doc.data().authorId || doc.id // Fallback to doc.id if authorId is not set
+      } as Novel))
       setPopularNovels(novels)
     } catch (error) {
       console.error('Error fetching popular novels:', error)
@@ -159,8 +164,8 @@ export default function ModernLightNovelsHomepage() {
     const isFollowing = followedNovels.includes(novel.id);
   
     return (
-      <Link href={`/novel/${novel.id}`} passHref>
-        <Card className="overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300">
+      <Card className="overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300">
+        <Link href={`/novel/${novel.id}`} passHref>
           <div className="relative aspect-[2/3] w-full">
             <Image
               src={novel.coverUrl || '/assets/cover.jpg'}
@@ -171,7 +176,11 @@ export default function ModernLightNovelsHomepage() {
           </div>
           <CardContent className="p-4">
             <h3 className="font-semibold mb-1 truncate">{novel.name}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 truncate">{novel.author}</p>
+            <Link href={`/author/${novel.authorId}`} passHref>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 truncate hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer">
+                {novel.author}
+              </p>
+            </Link>
             <StarRating rating={novel.rating} />
             <div className="flex mt-2 space-x-2">
               <Button
@@ -203,8 +212,8 @@ export default function ModernLightNovelsHomepage() {
               </Button>
             </div>
           </CardContent>
-        </Card>
-      </Link>
+        </Link>
+      </Card>
     );
   };
 
@@ -224,7 +233,7 @@ export default function ModernLightNovelsHomepage() {
                 <AvatarFallback>{user?.displayName?.[0] || '?'}</AvatarFallback>
               </Avatar>
             </Button>
-            <h1 className="text-2xl font-bold text-purple-600 dark:text-purple-400">LightNovelHub</h1>
+            <h1 className="text-2xl font-bold text-purple-600 dark:text-purple-400">NovelHub</h1>
           </div>
           <div className="flex items-center space-x-4">
             <div className="relative">
