@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,6 +19,9 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useTheme } from 'next-themes'
 import { Switch } from '@radix-ui/react-switch'
 import Link from 'next/link'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import ReactCrop, { Crop } from 'react-image-crop'
+import 'react-image-crop/dist/ReactCrop.css'
 
 interface UserProfile {
   uid: string
@@ -52,6 +55,11 @@ export default function UserProfilePage() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [followedNovelIds, setFollowedNovelIds] = useState<string[]>([])
+  const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false)
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null)
+  const [crop, setCrop] = useState<Crop>()
+  const [completedCrop, setCompletedCrop] = useState<Crop | null>(null)
+  const imageRef = useRef<HTMLImageElement | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -125,27 +133,76 @@ export default function UserProfilePage() {
     setProfile(prev => prev ? { ...prev, [name]: value } : null)
   }
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !user) return
-  
-    try {
-      const storage = getStorage()
-      const storageRef = ref(storage, `avatars/${user.uid}`)
-      await uploadBytes(storageRef, file)
-      const downloadURL = await getDownloadURL(storageRef)
-      
-      await updateDoc(doc(db, 'users', user.uid), {
-        profilePicture: downloadURL
-      })
-      
-      setProfile(prev => ({ ...prev!, profilePicture: downloadURL }))
-      toast.success('Avatar updated successfully')
-    } catch (error) {
-      console.error('Error uploading avatar:', error)
-      toast.error('Failed to update avatar')
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      setUploadedImage(reader.result as string)
     }
+    reader.readAsDataURL(file)
   }
+
+  const handleImageCrop = useCallback(async () => {
+    if (!completedCrop || !imageRef.current) return
+
+    const canvas = document.createElement('canvas')
+    const scaleX = imageRef.current.naturalWidth / imageRef.current.width
+    const scaleY = imageRef.current.naturalHeight / imageRef.current.height
+    canvas.width = completedCrop.width
+    canvas.height = completedCrop.height
+    const ctx = canvas.getContext('2d')
+
+    if (!ctx) {
+      toast.error('Failed to create canvas context')
+      return
+    }
+
+    ctx.drawImage(
+      imageRef.current,
+      completedCrop.x * scaleX,
+      completedCrop.y * scaleY,
+      completedCrop.width * scaleX,
+      completedCrop.height * scaleY,
+      0,
+      0,
+      completedCrop.width,
+      completedCrop.height
+    )
+
+    canvas.toBlob(async (blob) => {
+      if (!blob || !user) {
+        toast.error('Failed to create image blob')
+        return
+      }
+
+      const loadingToast = toast.loading('Uploading avatar...')
+
+      try {
+        const storage = getStorage()
+        const storageRef = ref(storage, `avatars/${user.uid}`)
+        
+        await uploadBytes(storageRef, blob)
+        const downloadURL = await getDownloadURL(storageRef)
+        
+        await updateDoc(doc(db, 'users', user.uid), {
+          profilePicture: downloadURL
+        })
+        
+        setProfile(prev => prev ? { ...prev, profilePicture: downloadURL } : null)
+        
+        toast.dismiss(loadingToast)
+        toast.success('Avatar updated successfully')
+        setIsAvatarDialogOpen(false)
+        setUploadedImage(null)
+      } catch (error) {
+        console.error('Error uploading avatar:', error)
+        toast.dismiss(loadingToast)
+        toast.error('Failed to update avatar. Please try again.')
+      }
+    }, 'image/jpeg')
+  }, [completedCrop, user])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -291,18 +348,49 @@ export default function UserProfilePage() {
                   <AvatarImage src={profile?.profilePicture} alt={profile?.username} />
                   <AvatarFallback>{profile?.username.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                <Label htmlFor="avatar-upload" className="cursor-pointer mt-4">
-                  <Input
-                    id="avatar-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAvatarUpload}
-                  />
-                  <Button variant="outline" size="sm" className="comic-button">
-                    <Upload className="mr-2 h-4 w-4" /> Change Avatar
-                  </Button>
-                </Label>
+                <Dialog open={isAvatarDialogOpen} onOpenChange={setIsAvatarDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="mt-4 comic-button">
+                      <Upload className="mr-2 h-4 w-4" /> Change Avatar
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Change Avatar</DialogTitle>
+                      <DialogDescription>
+                        Upload and crop a new avatar image. Max file size: 5MB. Supported formats: JPEG, PNG, GIF
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      {!uploadedImage ? (
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="avatar-upload" className="text-right">
+                            Choose File
+                          </Label>
+                          <Input
+                            id="avatar-upload"
+                            type="file"
+                            accept="image/jpeg,image/png,image/gif"
+                            className="col-span-3"
+                            onChange={handleFileUpload}
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <ReactCrop
+                            crop={crop}
+                            onChange={(c) => setCrop(c)}
+                            onComplete={(c) => setCompletedCrop(c)}
+                            aspect={1}
+                          >
+                            <img ref={imageRef} src={uploadedImage} alt="Upload" />
+                          </ReactCrop>
+                          <Button onClick={handleImageCrop}>Upload Cropped Image</Button>
+                        </>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
               <div className="flex-grow">
                 {isEditing ? (
