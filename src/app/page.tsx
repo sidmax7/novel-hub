@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent } from "@/components/ui/card"
 import { toast } from 'react-hot-toast'
 
+
 export const genreColors = {
   Fantasy: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900 text-purple-100' },
   "Sci-Fi": { light: 'bg-blue-100 text-blue-800', dark: 'bg-blue-900 text-blue-100' },
@@ -28,6 +29,8 @@ export const genreColors = {
   Isekai: { light: 'bg-indigo-100 text-indigo-800', dark: 'bg-indigo-900 text-indigo-100' },
   Horror: { light: 'bg-gray-100 text-gray-800', dark: 'bg-gray-900 text-gray-100' },
 }
+
+
 
 interface Novel {
   id: string
@@ -48,12 +51,14 @@ export default function ModernLightNovelsHomepage() {
   const router = useRouter()
   const [followedNovels, setFollowedNovels] = useState<string[]>([])
   const [userType, setUserType] = useState<string | null>(null)
+  const [userProfile, setUserProfile] = useState<{ profilePicture: string, username: string } | null>(null)
 
   useEffect(() => {
     fetchPopularNovels()
     if (user) {
       fetchFollowedNovels()
       fetchUserType()
+      fetchUserProfile()
     }
   }, [user])
 
@@ -72,6 +77,23 @@ export default function ModernLightNovelsHomepage() {
       console.error('Error fetching popular novels:', error)
     }
     setLoading(false)
+  }
+
+  const fetchUserProfile = async () => {
+    if (!user) return
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid))
+      if (userDoc.exists()) {
+        const userData = userDoc.data()
+        
+        setUserProfile({
+          profilePicture: userData.profilePicture || '',
+          username: userData.username || ''
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error)
+    }
   }
 
   const fetchFollowedNovels = async () => {
@@ -138,7 +160,7 @@ export default function ModernLightNovelsHomepage() {
   const handleLogout = async () => {
     try {
       await signOut(auth)
-      router.push('/')
+      window.location.href = '/'
     } catch (error) {
       console.error('Error signing out:', error)
     }
@@ -240,11 +262,24 @@ export default function ModernLightNovelsHomepage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
           <Button variant="ghost" size="icon" onClick={handleProfileClick}>
-              <Avatar>
-                <AvatarImage src={user?.photoURL || ''} alt="User avatar" />
-                <AvatarFallback>{user?.displayName?.[0] || '?'}</AvatarFallback>
-              </Avatar>
-            </Button>
+            <Avatar>
+              {user && userProfile?.profilePicture ? (
+                <AvatarImage
+                  src={userProfile.profilePicture}
+                  alt="User avatar"
+                  className="object-cover"
+                />
+              ) : (
+                <AvatarImage
+                  src="/assets/default-avatar.png"
+                  alt="Default avatar"
+                  className="object-cover"
+                />
+              )}
+              <AvatarFallback>{user ? (userProfile?.username?.[0] || '?') : '?'}</AvatarFallback>
+            </Avatar>
+          </Button>
+
             <h1 className="text-2xl font-bold text-purple-600 dark:text-purple-400">NovelHub</h1>
           </div>
           <div className="flex items-center space-x-4">
