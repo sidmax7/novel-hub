@@ -34,6 +34,7 @@ interface UserProfile {
 }
 
 interface Novel {
+  authorId: string
   id: string
   name: string
   author: string
@@ -191,34 +192,37 @@ export default function UserProfilePage() {
       toast.error('Failed to update followed novels')
     }
   }, [user, followedNovelIds])
-
-  const NovelCard = ({ novel, showActions = false }: { novel: Novel, showActions?: boolean }) => {
-    const isFollowing = followedNovelIds.includes(novel.id)
-
+  const NovelCard = ({ novel }: { novel: Novel }) => {
+    const isFollowing = followedNovelIds.includes(novel.id);
+  
     return (
-      <Card className="overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300">
-        <div className="relative aspect-[2/3] w-full">
-          <Image
-            src={novel.coverUrl}
-            alt={novel.name}
-            layout="fill"
-            placeholder="blur"
-            blurDataURL="/assets/placeholder.jpg"
-            loading="eager"
-            objectFit="cover"
-          />
-        </div>
-        <CardContent className="p-4">
-          <h3 className="font-semibold mb-1 truncate">{novel.name}</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 truncate">{novel.author}</p>
-          <StarRating rating={novel.rating} />
-          {showActions ? (
+      <Link href={`/novel/${novel.id}`} passHref>
+        <Card className="overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300">
+          <div className="relative aspect-[2/3] w-full">
+            <Image
+              src={novel.coverUrl || '/assets/cover.jpg'}
+              alt={novel.name}
+              layout="fill"
+              objectFit="cover"
+            />
+          </div>
+          <CardContent className="p-4">
+            <h3 className="font-semibold mb-1 truncate">{novel.name}</h3>
+            <Link href={`/author/${novel.authorId}`} passHref>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 truncate hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer">
+                {novel.author}
+              </p>
+            </Link>
+            <StarRating rating={novel.rating} />
             <div className="flex mt-2 space-x-2">
               <Button
                 variant="outline"
                 size="sm"
                 className="flex-grow comic-button"
-                onClick={() => handleFollowNovel(novel)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleFollowNovel(novel);
+                }}
               >
                 {isFollowing ? (
                   <>
@@ -234,23 +238,16 @@ export default function UserProfilePage() {
                 variant="outline"
                 size="sm"
                 className="flex-grow comic-button"
+                onClick={(e) => e.preventDefault()}
               >
                 <ThumbsUp className="mr-2 h-4 w-4" /> Like
               </Button>
             </div>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full mt-2 comic-button"
-            >
-              <BookOpen className="mr-2 h-4 w-4" /> Read
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-    )
-  }
+          </CardContent>
+        </Card>
+      </Link>
+    );
+  };
 
   if (!mounted) return null
 
@@ -389,7 +386,7 @@ export default function UserProfilePage() {
           <TabsContent value="recommendations">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {recommendations.map((novel) => (
-                <NovelCard key={novel.id} novel={novel} showActions />
+                <NovelCard key={novel.id} novel={novel} />
               ))}
             </div>
           </TabsContent>

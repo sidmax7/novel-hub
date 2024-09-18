@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch"
 import { toast, Toaster } from 'react-hot-toast'
 
 interface Novel {
+  authorId: string
   id: string
   name: string
   author: string
@@ -185,8 +186,12 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                 </div>
               </div>
               <div className="w-full md:w-3/4">
-                <h2 className="text-3xl font-bold mb-2">{novel.name}</h2>
-                <p className="text-xl text-gray-600 dark:text-gray-400 mb-4">by {novel.author}</p>
+                <h2 className="text-3xl font-bold mb-2">{novel.name} </h2>
+                <Link href={`/author/${novel.authorId}`} passHref>
+              <p className="text-md text-gray-600 dark:text-gray-400 mb-2 truncate hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer">
+                by {novel.author}
+              </p>
+            </Link>
                 <p className="mb-4">Release Date: {novel.releaseDate}</p>
                 <div className="flex items-center mb-4">
                   <StarRating rating={novel.rating} />

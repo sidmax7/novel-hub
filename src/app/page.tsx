@@ -109,20 +109,27 @@ export default function ModernLightNovelsHomepage() {
     const userRef = doc(db, 'users', user.uid)
     const isFollowing = followedNovels.includes(novel.id)
 
+    // Optimistic UI update
+    setFollowedNovels(prev => 
+      isFollowing ? prev.filter(id => id !== novel.id) : [...prev, novel.id]
+    )
+
     try {
       if (isFollowing) {
         await updateDoc(userRef, {
           followedNovels: arrayRemove(novel.id)
         })
-        setFollowedNovels(prev => prev.filter(id => id !== novel.id))
       } else {
         await updateDoc(userRef, {
           followedNovels: arrayUnion(novel.id)
         })
-        setFollowedNovels(prev => [...prev, novel.id])
       }
       toast.success(isFollowing ? 'Novel unfollowed' : 'Novel followed')
     } catch (error) {
+      // Revert optimistic update on error
+      setFollowedNovels(prev => 
+        isFollowing ? [...prev, novel.id] : prev.filter(id => id !== novel.id)
+      )
       console.error('Error updating followed novels:', error)
       toast.error('Failed to update followed novels')
     }
@@ -189,6 +196,7 @@ export default function ModernLightNovelsHomepage() {
                 className="flex-grow comic-button"
                 onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   handleFollowNovel(novel);
                 }}
               >
@@ -206,7 +214,11 @@ export default function ModernLightNovelsHomepage() {
                 variant="outline"
                 size="sm"
                 className="flex-grow comic-button"
-                onClick={(e) => e.preventDefault()}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  // Implement like functionality here
+                }}
               >
                 <ThumbsUp className="mr-2 h-4 w-4" /> Like
               </Button>
