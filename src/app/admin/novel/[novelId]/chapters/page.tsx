@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/app/authcontext'
 import { db } from '@/lib/firebaseConfig'
-import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, orderBy, getDoc } from 'firebase/firestore'
+import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, orderBy, getDoc, Timestamp } from 'firebase/firestore'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -22,6 +22,7 @@ interface Chapter {
   title: string
   link: string
   chapter: number
+  releaseDate?: Timestamp
 }
 
 interface Novel {
@@ -112,7 +113,8 @@ export default function ChapterManagement() {
     try {
       const chapterData = {
         ...currentChapter,
-        chapter: Number(currentChapter.chapter)
+        chapter: Number(currentChapter.chapter),
+        releaseDate: Timestamp.now() // Add this line to include the current timestamp
       }
 
       if (currentChapter.id) {
