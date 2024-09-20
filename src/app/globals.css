@@ -29,6 +29,7 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+    
   }
 
   .dark {
@@ -156,5 +157,21 @@ body.dark .text-gray-600 {
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .sticky {
+    position: fixed;
+    width: 100%;
+  }
+}
+:root {
+  --header-height: 60px; /* Reduced height for mobile */
+}
+
+@media (min-width: 640px) {
+  :root {
+    --header-height: 70px; /* Original height for larger screens */
   }
 }
