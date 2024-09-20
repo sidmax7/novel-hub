@@ -10,6 +10,7 @@ import { db } from '@/lib/firebaseConfig'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { StarRating } from '@/components/ui/starrating'
 import { BookMarked, ThumbsUp, Home, Moon, Sun, BookOpen, MessageSquare } from 'lucide-react'
 import { Switch } from "@/components/ui/switch"
@@ -272,7 +273,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
             <TabsTrigger value="chapters">Chapters</TabsTrigger>
             <TabsTrigger value="comments">Comments</TabsTrigger>
           </TabsList>
-          <div className="relative overflow-hidden" style={{ minHeight: '400px' }}>
+          <div className="relative overflow-hidden" style={{ height: '500px' }}>
             <AnimatePresence initial={false} custom={direction}>
               <motion.div
                 key={activeTab}
@@ -285,73 +286,75 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                   x: { type: "spring", stiffness: 300, damping: 30 },
                   opacity: { duration: 0.2 }
                 }}
-                className="absolute w-full"
+                className="absolute w-full h-full"
               >
-                {activeTab === 'chapters' ? (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-2xl font-bold flex items-center">
-                        <BookOpen className="mr-2 h-6 w-6" />
-                        Chapters
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {chaptersLoading ? (
-                        <div className="text-center py-4">
-                          <p className="text-gray-500 dark:text-gray-400">Loading chapters...</p>
-                        </div>
-                      ) : chapters.length === 0 ? (
-                        <div className="text-center py-4">
-                          <p className="text-gray-500 dark:text-gray-400">No chapters available for this novel yet.</p>
-                          <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Check back later for updates!</p>
-                        </div>
-                      ) : (
-                        <div className="overflow-x-auto">
-                          <table className="w-full">
-                            <thead>
-                              <tr className="bg-gray-100 dark:bg-gray-800">
-                                <th className="px-4 py-2 text-left">Chapter</th>
-                                <th className="px-4 py-2 text-left">Title</th>
-                                <th className="px-4 py-2 text-left">Release Date</th>
-                                <th className="px-4 py-2 text-center">Action</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {chapters.map((chapter) => (
-                                <tr key={chapter.id} className="border-t border-gray-200 dark:border-gray-700">
-                                  <td className="px-4 py-2">{chapter.number}</td>
-                                  <td className="px-4 py-2">{chapter.title}</td>
-                                  <td className="px-4 py-2">{formatDate(chapter.releaseDate)}</td>
-                                  <td className="px-4 py-2 text-center">
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      onClick={() => window.open(chapter.link, '_blank', 'noopener,noreferrer')}
-                                    >
-                                      Read
-                                    </Button>
-                                  </td>
+                <ScrollArea className="h-full w-full">
+                  {activeTab === 'chapters' ? (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-2xl font-bold flex items-center">
+                          <BookOpen className="mr-2 h-6 w-6" />
+                          Chapters
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {chaptersLoading ? (
+                          <div className="text-center py-4">
+                            <p className="text-gray-500 dark:text-gray-400">Loading chapters...</p>
+                          </div>
+                        ) : chapters.length === 0 ? (
+                          <div className="text-center py-4">
+                            <p className="text-gray-500 dark:text-gray-400">No chapters available for this novel yet.</p>
+                            <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Check back later for updates!</p>
+                          </div>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="bg-gray-100 dark:bg-gray-800">
+                                  <th className="px-4 py-2 text-left">Chapter</th>
+                                  <th className="px-4 py-2 text-left">Title</th>
+                                  <th className="px-4 py-2 text-left">Release Date</th>
+                                  <th className="px-4 py-2 text-center">Action</th>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-2xl font-bold flex items-center">
-                        <MessageSquare className="mr-2 h-6 w-6" />
-                        Comments
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <CommentSystem novelId={novel.id} />
-                    </CardContent>
-                  </Card>
-                )}
+                              </thead>
+                              <tbody>
+                                {chapters.map((chapter) => (
+                                  <tr key={chapter.id} className="border-t border-gray-200 dark:border-gray-700">
+                                    <td className="px-4 py-2">{chapter.number}</td>
+                                    <td className="px-4 py-2">{chapter.title}</td>
+                                    <td className="px-4 py-2">{formatDate(chapter.releaseDate)}</td>
+                                    <td className="px-4 py-2 text-center">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        onClick={() => window.open(chapter.link, '_blank', 'noopener,noreferrer')}
+                                      >
+                                        Read
+                                      </Button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-2xl font-bold flex items-center">
+                          <MessageSquare className="mr-2 h-6 w-6" />
+                          Comments
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <CommentSystem novelId={novel.id} />
+                      </CardContent>
+                    </Card>
+                  )}
+                </ScrollArea>
               </motion.div>
             </AnimatePresence>
           </div>
