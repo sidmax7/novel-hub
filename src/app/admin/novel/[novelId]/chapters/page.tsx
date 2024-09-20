@@ -38,20 +38,41 @@ export default function ChapterManagement() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isAuthor, setIsAuthor] = useState(false)
   const { user } = useAuth()
   const router = useRouter()
   const params = useParams()
   const novelId = params.novelId as string
 
   useEffect(() => {
-    if (user && novelId) {
-      fetchNovelDetails()
-      fetchChapters()
-    } else {
-      setError("User not authenticated or novel ID not provided.")
-      setLoading(false)
+    const checkUserType = async () => {
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid))
+          if (userDoc.exists() && userDoc.data().userType === 'author') {
+            setIsAuthor(true)
+            if (novelId) {
+              fetchNovelDetails()
+              fetchChapters()
+            } else {
+              setError("Novel ID not provided.")
+              setLoading(false)
+            }
+          } else {
+            router.push('/')
+          }
+        } catch (error) {
+          console.error('Error checking user type:', error)
+          setError('Failed to verify user permissions')
+          setLoading(false)
+        }
+      } else {
+        router.push('/')
+      }
     }
-  }, [user, novelId])
+
+    checkUserType()
+  }, [user, novelId, router])
 
   const fetchNovelDetails = async () => {
     try {
@@ -158,16 +179,8 @@ export default function ChapterManagement() {
     }
   }
 
-  if (!user) {
-    return (
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Authentication Error</AlertTitle>
-        <AlertDescription>
-          You must be logged in to access this page. Please log in and try again.
-        </AlertDescription>
-      </Alert>
-    )
+  if (!isAuthor) {
+    return null // Return null while checking user type or redirecting
   }
 
   return (

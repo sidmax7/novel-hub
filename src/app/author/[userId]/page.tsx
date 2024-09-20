@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { doc, getDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore'
+import { doc, getDoc, collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebaseConfig'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -32,7 +32,7 @@ interface User {
   userType: 'reader' | 'author'
   totalWorks?: number
   totalLikes?: number
-  createdAt: string
+  timeCreated: Timestamp
   verified: boolean
 }
 
@@ -67,6 +67,10 @@ export default function AuthorPage({ params }: { params: { userId: string } }) {
     console.log("Current novels state:", novels);
   }, [novels]);
 
+  const formatDate = (timestamp: Timestamp) => {
+    return timestamp.toDate().toLocaleDateString();
+  };
+  
   const fetchUserData = async () => {
     if (!params.userId) return
     setLoading(true)
@@ -205,9 +209,20 @@ export default function AuthorPage({ params }: { params: { userId: string } }) {
                 </Avatar>
               </div>
               <div className="w-full md:w-2/3 space-y-4">
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-3">
                   <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{user.username}</h2>
-                  <GiQuillInk className="h-6 w-6 text-blue-500" />
+                  <Badge variant="secondary" className="px-2 py-1 text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+                    <GiQuillInk className="h-4 w-4 mr-1 inline-block" />
+                    Author
+                  </Badge>
+                  {user.verified && (
+                    <Badge variant="secondary" className="px-2 py-1 text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                      <svg className="w-4 h-4 mr-1 inline-block" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Verified
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 text-lg">{user.bio}</p>
                 <div className="flex flex-wrap gap-4">
@@ -223,7 +238,7 @@ export default function AuthorPage({ params }: { params: { userId: string } }) {
                     <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+                    <span>Joined {formatDate(user.timeCreated)}</span>
                   </div>
                 </div>
                 <Separator className="my-4" />

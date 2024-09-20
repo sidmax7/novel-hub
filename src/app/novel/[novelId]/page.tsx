@@ -9,10 +9,13 @@ import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, inc
 import { db } from '@/lib/firebaseConfig'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StarRating } from '@/components/ui/starrating'
-import { BookMarked, ThumbsUp, Home, Moon, Sun, BookOpen } from 'lucide-react'
+import { BookMarked, ThumbsUp, Home, Moon, Sun, BookOpen, MessageSquare } from 'lucide-react'
 import { Switch } from "@/components/ui/switch"
 import { toast, Toaster } from 'react-hot-toast'
+import CommentSystem from '@/components/ui/commentsystem'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface Novel {
   authorId: string
@@ -22,7 +25,7 @@ interface Novel {
   coverUrl: string
   rating: number
   releaseDate: string
-  synopsis: string  // Changed from description to synopsis
+  synopsis: string
   genre: string
   chapters: number
   views: number
@@ -54,6 +57,40 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [chaptersLoading, setChaptersLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('chapters')
+
+  const variants = {
+    enter: (direction: number) => {
+      return {
+        x: direction > 0 ? '100%' : '-100%',
+        opacity: 0
+      };
+    },
+    center: {
+      x: 0,
+      opacity: 1
+    },
+    exit: (direction: number) => {
+      return {
+        x: direction < 0 ? '100%' : '-100%',
+        opacity: 0
+      };
+    }
+  };
+
+  const [[page, direction], setPage] = useState([0, 0]);
+
+  const paginate = (newDirection: number) => {
+    setPage([page + newDirection, newDirection]);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'chapters') {
+      paginate(-1);
+    } else {
+      paginate(1);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     setMounted(true)
@@ -70,7 +107,6 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
       const novelDoc = await getDoc(doc(db, 'novels', params.novelId))
       if (novelDoc.exists()) {
         setNovel({ id: novelDoc.id, ...novelDoc.data() } as Novel)
-        // Increment view count
         await updateDoc(doc(db, 'novels', params.novelId), {
           views: increment(0.5)
         })
@@ -86,31 +122,19 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
 
   const fetchChapters = async () => {
     setChaptersLoading(true)
-    console.log('Fetching chapters for novel ID:', params.novelId)
     try {
       const chaptersQuery = query(
         collection(db, 'novels', params.novelId, 'chapters'),
         orderBy('chapter', 'asc')
       )
       const querySnapshot = await getDocs(chaptersQuery)
-      console.log('Query snapshot:', querySnapshot)
-      if (querySnapshot.empty) {
-        console.log('No chapters found for this novel')
-        setChapters([])
-        return
-      }
-      const chaptersData = querySnapshot.docs.map(doc => {
-        const data = doc.data()
-        console.log('Chapter data:', data)
-        return {
-          id: doc.id,
-          number: data.chapter,
-          title: data.title,
-          link: data.link,
-          releaseDate: data.releaseDate
-        } as Chapter
-      })
-      console.log('Fetched chapters:', chaptersData)
+      const chaptersData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        number: doc.data().chapter,
+        title: doc.data().title,
+        link: doc.data().link,
+        releaseDate: doc.data().releaseDate
+      } as Chapter))
       setChapters(chaptersData)
     } catch (error) {
       console.error('Error fetching chapters:', error)
@@ -142,9 +166,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
 
   if (!mounted) return null
   if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>
-  if (!novel) return <div className="flex justify-center items-center h-screen">Chapter not found</div>
-
-  console.log('Chapters in state:', chapters) // Add this line before the return statement
+  if (!novel) return <div className="flex justify-center items-center h-screen">Novel not found</div>
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -156,6 +178,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
             <Link href="/">
               <Button variant="outline" size="icon" className="bg-white dark:bg-gray-800">
                 <Home className="h-[1.2rem] w-[1.2rem]" />
+                <span className="sr-only">Home</span>
               </Button>
             </Link>
             <Switch
@@ -165,6 +188,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
             >
               <Sun className="h-4 w-4 text-yellow-500" />
               <Moon className="h-4 w-4 text-blue-500" />
+              <span className="sr-only">Toggle theme</span>
             </Switch>
           </div>
         </div>
@@ -175,7 +199,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-8">
               <div className="w-full md:w-1/4">
-                <div className="relative aspect-[2/3] w-4/5 mx-auto">
+                <div className="relative aspect-[2/3] w-full md:w-4/5 mx-auto">
                   <Image
                     src={novel.coverUrl}
                     alt={novel.name}
@@ -186,12 +210,12 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                 </div>
               </div>
               <div className="w-full md:w-3/4">
-                <h2 className="text-3xl font-bold mb-2">{novel.name} </h2>
+                <h2 className="text-3xl font-bold mb-2">{novel.name}</h2>
                 <Link href={`/author/${novel.authorId}`} passHref>
-              <p className="text-md text-gray-600 dark:text-gray-400 mb-2 truncate hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer">
-                by {novel.author}
-              </p>
-            </Link>
+                  <p className="text-md text-gray-600 dark:text-gray-400 mb-2 truncate hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer">
+                    by {novel.author}
+                  </p>
+                </Link>
                 <p className="mb-4">Release Date: {novel.releaseDate}</p>
                 <div className="flex items-center mb-4">
                   <StarRating rating={novel.rating} />
@@ -203,7 +227,6 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                   </span>
                 </div>
                 
-                {/* Synopsis section */}
                 <div className="mt-4">
                   <h3 className="text-xl font-semibold mb-2">Synopsis</h3>
                   <p className="text-gray-700 dark:text-gray-300">{novel.synopsis || 'No synopsis available.'}</p>
@@ -211,7 +234,6 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
               </div>
             </div>
             
-            {/* Moved sections */}
             <div className="mt-8 border-t border-gray-200 dark:border-gray-700 pt-6">
               <div className="flex flex-wrap gap-4 mb-6">
                 <div className="flex items-center">
@@ -245,54 +267,95 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold">Chapters</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {chaptersLoading ? (
-              <div className="text-center py-4">
-                <p className="text-gray-500 dark:text-gray-400">Loading chapters...</p>
-              </div>
-            ) : chapters.length === 0 ? (
-              <div className="text-center py-4">
-                <p className="text-gray-500 dark:text-gray-400">No chapters available for this novel yet.</p>
-                <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Check back later for updates!</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gray-100 dark:bg-gray-800">
-                      <th className="px-4 py-2 text-center">Chapter</th>
-                      <th className="px-4 py-2 text-center">Title</th>
-                      <th className="px-4 py-2 text-center">Release Date</th>
-                      <th className="px-4 py-2 text-center">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {chapters.map((chapter) => (
-                      <tr key={chapter.id} className="border-t border-gray-200 dark:border-gray-700">
-                        <td className="px-4 py-2 text-center">{chapter.number}</td>
-                        <td className="px-4 py-2 text-center">{chapter.title}</td>
-                        <td className="px-4 py-2 text-center">{formatDate(chapter.releaseDate)}</td>
-                        <td className="px-4 py-2 text-center">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => window.open(chapter.link, '_blank', 'noopener,noreferrer')}
-                          >
-                            Read
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="chapters" className="w-full" onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="chapters">Chapters</TabsTrigger>
+            <TabsTrigger value="comments">Comments</TabsTrigger>
+          </TabsList>
+          <div className="relative overflow-hidden" style={{ minHeight: '400px' }}>
+            <AnimatePresence initial={false} custom={direction}>
+              <motion.div
+                key={activeTab}
+                custom={direction}
+                variants={variants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: "spring", stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2 }
+                }}
+                className="absolute w-full"
+              >
+                {activeTab === 'chapters' ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-2xl font-bold flex items-center">
+                        <BookOpen className="mr-2 h-6 w-6" />
+                        Chapters
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {chaptersLoading ? (
+                        <div className="text-center py-4">
+                          <p className="text-gray-500 dark:text-gray-400">Loading chapters...</p>
+                        </div>
+                      ) : chapters.length === 0 ? (
+                        <div className="text-center py-4">
+                          <p className="text-gray-500 dark:text-gray-400">No chapters available for this novel yet.</p>
+                          <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Check back later for updates!</p>
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="bg-gray-100 dark:bg-gray-800">
+                                <th className="px-4 py-2 text-left">Chapter</th>
+                                <th className="px-4 py-2 text-left">Title</th>
+                                <th className="px-4 py-2 text-left">Release Date</th>
+                                <th className="px-4 py-2 text-center">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {chapters.map((chapter) => (
+                                <tr key={chapter.id} className="border-t border-gray-200 dark:border-gray-700">
+                                  <td className="px-4 py-2">{chapter.number}</td>
+                                  <td className="px-4 py-2">{chapter.title}</td>
+                                  <td className="px-4 py-2">{formatDate(chapter.releaseDate)}</td>
+                                  <td className="px-4 py-2 text-center">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={() => window.open(chapter.link, '_blank', 'noopener,noreferrer')}
+                                    >
+                                      Read
+                                    </Button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-2xl font-bold flex items-center">
+                        <MessageSquare className="mr-2 h-6 w-6" />
+                        Comments
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CommentSystem novelId={novel.id} />
+                    </CardContent>
+                  </Card>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </Tabs>
       </main>
     </div>
   )
