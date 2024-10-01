@@ -17,6 +17,7 @@ import { StarRating } from '@/components/ui/starrating'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent } from "@/components/ui/card"
 import { toast } from 'react-hot-toast'
+import { NovelCard } from '@/components/NovelCard'
 
 
 export const genreColors = {
@@ -122,40 +123,12 @@ export default function ModernLightNovelsHomepage() {
     }
   }
 
-  const handleFollowNovel = useCallback(async (novel: Novel) => {
-    if (!user) {
-      toast.error('Please log in to follow novels')
-      return
-    }
-
-    const userRef = doc(db, 'users', user.uid)
-    const isFollowing = followedNovels.includes(novel.id)
-
-    // Optimistic UI update
+  const handleFollowChange = (novelId: string, isFollowing: boolean) => {
+    // Update local state if needed
     setFollowedNovels(prev => 
-      isFollowing ? prev.filter(id => id !== novel.id) : [...prev, novel.id]
+      isFollowing ? [...prev, novelId] : prev.filter(id => id !== novelId)
     )
-
-    try {
-      if (isFollowing) {
-        await updateDoc(userRef, {
-          followedNovels: arrayRemove(novel.id)
-        })
-      } else {
-        await updateDoc(userRef, {
-          followedNovels: arrayUnion(novel.id)
-        })
-      }
-      toast.success(isFollowing ? 'Novel unfollowed' : 'Novel followed')
-    } catch (error) {
-      // Revert optimistic update on error
-      setFollowedNovels(prev => 
-        isFollowing ? [...prev, novel.id] : prev.filter(id => id !== novel.id)
-      )
-      console.error('Error updating followed novels:', error)
-      toast.error('Failed to update followed novels')
-    }
-  }, [user, followedNovels])
+  }
 
   const handleLogout = async () => {
     try {
@@ -188,68 +161,6 @@ export default function ModernLightNovelsHomepage() {
       router.push('/auth')
     }
   }
-
-  const NovelCard = ({ novel }: { novel: Novel }) => {
-    const isFollowing = followedNovels.includes(novel.id);
-  
-    return (
-      <Card className="overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300">
-        <Link href={`/novel/${novel.id}`} passHref>
-          <div className="relative aspect-[2/3] w-full">
-            <Image
-              src={novel.coverUrl || '/assets/cover.jpg'}
-              alt={novel.name}
-              layout="fill"
-              objectFit="cover"
-            />
-          </div>
-          <CardContent className="p-4">
-            <h3 className="font-semibold mb-1 truncate">{novel.name}</h3>
-            <Link href={`/author/${novel.authorId}`} passHref>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 truncate hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer">
-                {novel.author}
-              </p>
-            </Link>
-            <StarRating rating={novel.rating} />
-            <div className="flex mt-2 space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-grow comic-button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleFollowNovel(novel);
-                }}
-              >
-                {isFollowing ? (
-                  <>
-                    <BookMarked className="mr-2 h-4 w-4" /> Followed
-                  </>
-                ) : (
-                  <>
-                    <BookMarked className="mr-2 h-4 w-4" /> Follow
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-grow comic-button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  // Implement like functionality here
-                }}
-              >
-                <ThumbsUp className="mr-2 h-4 w-4" /> Like
-              </Button>
-            </div>
-          </CardContent>
-        </Link>
-      </Card>
-    );
-  };
 
   return (
     <motion.div 
@@ -346,7 +257,7 @@ export default function ModernLightNovelsHomepage() {
                 variants={fadeIn}
                 whileHover={{ scale: 1.05 }}
               >
-                <NovelCard novel={novel} />
+                <NovelCard novel={novel} onFollowChange={handleFollowChange} />
               </motion.div>
             ))}
           </motion.div>

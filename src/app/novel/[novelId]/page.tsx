@@ -17,6 +17,8 @@ import { Switch } from "@/components/ui/switch"
 import { toast, Toaster } from 'react-hot-toast'
 import CommentSystem from '@/components/ui/commentsystem'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '@/app/authcontext'
+import { setDoc, deleteDoc } from 'firebase/firestore'
 
 interface Novel {
   authorId: string
@@ -145,10 +147,50 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
     }
   }
 
-  const handleFollowNovel = () => {
-    toast('Follow feature available after login', {
-      icon: '👤',
-    })
+  const { user } = useAuth()
+  const [isFollowing, setIsFollowing] = useState(false)
+
+  useEffect(() => {
+    if (user && novel) {
+      checkIfFollowing()
+    }
+  }, [user, novel])
+
+  const checkIfFollowing = async () => {
+    if (!user || !novel) return
+    try {
+      const followingRef = doc(db, 'users', user.uid, 'following', novel.id)
+      const followingDoc = await getDoc(followingRef)
+      setIsFollowing(followingDoc.exists())
+    } catch (error) {
+      console.error('Error checking follow status:', error)
+    }
+  }
+
+  const handleFollowNovel = async () => {
+    if (!user) {
+      toast.error('Please log in to follow novels')
+      return
+    }
+
+    if (!novel) return
+
+    const followingRef = doc(db, 'users', user.uid, 'following', novel.id)
+
+    try {
+      if (isFollowing) {
+        await deleteDoc(followingRef)
+        setIsFollowing(false)
+        toast.success('Novel unfollowed')
+      } else {
+        await setDoc(followingRef, { following: true })
+        setIsFollowing(true)
+        toast.success('Novel followed')
+      }
+    } catch (error) {
+      console.error('Error updating followed novels:', error)
+      toast.error('Failed to update followed novels')
+    }
   }
 
   const handleLikeNovel = async () => {
@@ -255,7 +297,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
               </div>
               <div className="flex space-x-4">
                 <Button className="flex-1 comic-button" onClick={handleFollowNovel}>
-                  <BookMarked className="mr-2 h-4 w-4" /> Follow
+                  <BookMarked className="mr-2 h-4 w-4" /> {isFollowing ? 'Unfollow' : 'Follow'}
                 </Button>
                 <Button variant="outline" className="flex-1 comic-button" onClick={handleLikeNovel}>
                   <ThumbsUp className="mr-2 h-4 w-4" /> Like

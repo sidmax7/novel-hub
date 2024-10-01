@@ -22,6 +22,7 @@ import Link from 'next/link'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import ReactCrop, { Crop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
+import { NovelCard } from '@/components/NovelCard'
 
 interface UserProfile {
   uid: string
@@ -43,6 +44,7 @@ interface Novel {
   author: string
   coverUrl: string
   rating: number
+  genre: string
 }
 
 export default function UserProfilePage() {
@@ -68,7 +70,7 @@ export default function UserProfilePage() {
   useEffect(() => {
     if (user) {
       fetchUserProfile()
-      fetchFollowedNovels()
+      fetchFollowedNovels(user.uid)
       fetchRecommendations()
     }
   }, [user])
@@ -93,30 +95,36 @@ export default function UserProfilePage() {
     }
   }
 
-  const fetchFollowedNovels = async () => {
-    if (!user) return
+  const fetchFollowedNovels = async (userId: string) => {
     try {
-      // Fetch the user document to get the followedNovels array
-      const userDoc = await getDoc(doc(db, 'users', user.uid))
-      if (userDoc.exists()) {
-        const userData = userDoc.data()
-        const followedNovelIds = userData.followedNovels || []
-  
-        // Fetch the novel documents using the followedNovelIds
-        const novelPromises = followedNovelIds.map((novelId: string) => getDoc(doc(db, 'novels', novelId)))
-        const novelDocs = await Promise.all(novelPromises)
-  
-        const novels = novelDocs
-          .filter(doc => doc.exists())
-          .map(doc => ({ id: doc.id, ...doc.data() } as Novel))
-  
-        setFollowedNovels(novels)
-      }
+      console.log('Fetching followed novels for user:', userId)
+      const followingRef = collection(db, 'users', userId, 'following')
+      const followingQuery = query(followingRef, where('following', '==', true))
+      const followingSnapshot = await getDocs(followingQuery)
+      
+      console.log('Number of followed novels:', followingSnapshot.size)
+      
+      const novelPromises = followingSnapshot.docs.map(async (followingDoc) => {
+        const novelId = followingDoc.id
+        console.log('Fetching novel details for:', novelId)
+        const novelDoc = await getDoc(doc(db, 'novels', novelId))
+        if (novelDoc.exists()) {
+          return { id: novelId, ...novelDoc.data() } as Novel
+        }
+        return null
+      })
+      
+      const novels = await Promise.all(novelPromises)
+      const validNovels = novels.filter((novel): novel is Novel => novel !== null)
+      console.log('Valid followed novels:', validNovels)
+      setFollowedNovels(validNovels)
+      return validNovels
     } catch (error) {
       console.error('Error fetching followed novels:', error)
+      return []
     }
   }
-  
+
   const fetchRecommendations = async () => {
     try {
       const recommendationsQuery = query(collection(db, 'novels'), orderBy('rating', 'desc'), limit(4))
@@ -223,88 +231,29 @@ export default function UserProfilePage() {
     }
   }
 
-  const handleFollowNovel = useCallback(async (novel: Novel) => {
+  const handleFollowChange = useCallback(async (novelId: string, isFollowing: boolean) => {
     if (!user) return
 
     const userRef = doc(db, 'users', user.uid)
-    const isFollowing = followedNovelIds.includes(novel.id)
 
     try {
       if (isFollowing) {
         await updateDoc(userRef, {
-          followedNovels: arrayRemove(novel.id)
+          followedNovels: arrayUnion(novelId)
         })
-        setFollowedNovelIds(prev => prev.filter(id => id !== novel.id))
-        setFollowedNovels(prev => prev.filter(n => n.id !== novel.id))
+        setFollowedNovelIds(prev => [...prev, novelId])
       } else {
         await updateDoc(userRef, {
-          followedNovels: arrayUnion(novel.id)
+          followedNovels: arrayRemove(novelId)
         })
-        setFollowedNovelIds(prev => [...prev, novel.id])
-        setFollowedNovels(prev => [...prev, novel])
+        setFollowedNovelIds(prev => prev.filter(id => id !== novelId))
       }
-      toast.success(isFollowing ? 'Novel unfollowed' : 'Novel followed')
+      await fetchFollowedNovels(user.uid)
     } catch (error) {
       console.error('Error updating followed novels:', error)
       toast.error('Failed to update followed novels')
     }
-  }, [user, followedNovelIds])
-  const NovelCard = ({ novel }: { novel: Novel }) => {
-    const isFollowing = followedNovelIds.includes(novel.id);
-  
-    return (
-      <Link href={`/novel/${novel.id}`} passHref>
-        <Card className="overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300">
-          <div className="relative aspect-[2/3] w-full">
-            <Image
-              src={novel.coverUrl || '/assets/cover.jpg'}
-              alt={novel.name}
-              layout="fill"
-              objectFit="cover"
-            />
-          </div>
-          <CardContent className="p-4">
-            <h3 className="font-semibold mb-1 truncate">{novel.name}</h3>
-            <Link href={`/author/${novel.authorId}`} passHref>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 truncate hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer">
-                {novel.author}
-              </p>
-            </Link>
-            <StarRating rating={novel.rating} />
-            <div className="flex mt-2 space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-grow comic-button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleFollowNovel(novel);
-                }}
-              >
-                {isFollowing ? (
-                  <>
-                    <BookMarked className="mr-2 h-4 w-4" /> Followed
-                  </>
-                ) : (
-                  <>
-                    <BookMarked className="mr-2 h-4 w-4" /> Follow
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-grow comic-button"
-                onClick={(e) => e.preventDefault()}
-              >
-                <ThumbsUp className="mr-2 h-4 w-4" /> Like
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </Link>
-    );
-  };
+  }, [user, fetchFollowedNovels])
 
   if (!mounted) return null
 
@@ -466,9 +415,13 @@ export default function UserProfilePage() {
           </TabsList>
           <TabsContent value="followed">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {followedNovels.map((novel) => (
-                <NovelCard key={novel.id} novel={novel} />
-              ))}
+              {followedNovels.length > 0 ? (
+                followedNovels.map((novel) => (
+                  <NovelCard key={novel.id} novel={novel} onFollowChange={handleFollowChange} />
+                ))
+              ) : (
+                <p className="col-span-full text-center text-gray-500">You haven't followed any novels yet.</p>
+              )}
             </div>
           </TabsContent>
           <TabsContent value="recommendations">
