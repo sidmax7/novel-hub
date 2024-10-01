@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { Search, Menu, BookOpen, Moon, Sun, LogOut, Pencil, ChevronsLeftRightIcon, BookMarked, ThumbsUp } from "lucide-react"
+import { Search, Menu, BookOpen, Moon, Sun, LogOut, User, ChevronsLeftRightIcon, BookMarked, ThumbsUp } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion, AnimatePresence } from 'framer-motion'
@@ -18,6 +18,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent } from "@/components/ui/card"
 import { toast } from 'react-hot-toast'
 import { NovelCard } from '@/components/NovelCard'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 
 export const genreColors = {
@@ -62,6 +70,10 @@ export default function ModernLightNovelsHomepage() {
       fetchUserProfile()
     }
   }, [user])
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode)
+  }
 
   const fetchPopularNovels = async () => {
     setLoading(true)
@@ -164,116 +176,140 @@ export default function ModernLightNovelsHomepage() {
 
   return (
     <motion.div 
-      className={`flex flex-col min-h-screen ${darkMode ? 'dark' : ''} bg-gray-50 dark:bg-gray-900`}
+      className={`flex flex-col min-h-screen ${darkMode ? 'dark' : ''} bg-[#E7E7E8] dark:bg-[#232120]`}
       initial="hidden"
       animate="visible"
       variants={fadeIn}
     >
-      <header className="border-b dark:border-gray-700 bg-white dark:bg-gray-800 sticky top-0 z-10 shadow-sm">
+      <header className="border-b dark:border-[#3E3F3E] bg-[#E7E7E8] dark:bg-[#232120] sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" onClick={handleProfileClick}>
-            <Avatar>
-              {user && userProfile?.profilePicture ? (
-                <AvatarImage
-                  src={userProfile.profilePicture}
-                  alt="User avatar"
-                  className="object-cover"
-                />
-              ) : (
-                <AvatarImage
-                  src="/assets/default-avatar.png"
-                  alt="Default avatar"
-                  className="object-cover"
-                />
-              )}
-              <AvatarFallback>{user ? (userProfile?.username?.[0] || '?') : '?'}</AvatarFallback>
-            </Avatar>
-          </Button>
-
-            <h1 className="text-2xl font-bold text-purple-600 dark:text-purple-400">NovelHub</h1>
+            <h1 className="text-2xl font-bold text-[#F1592A]">NovelHub</h1>
           </div>
           <div className="flex items-center space-x-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8E8F8E]" />
               <Input
                 type="search"
                 placeholder="Search novels..."
-                className="pl-10 pr-4 py-2 w-64 rounded-full bg-gray-100 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="pl-10 pr-4 py-2 w-64 rounded-full bg-[#C3C3C3] dark:bg-[#3E3F3E] focus:outline-none focus:ring-2 focus:ring-[#F1592A] text-[#232120] dark:text-[#E7E7E8] placeholder-[#8E8F8E] dark:placeholder-[#C3C3C3]"
               />
             </div>
-            <Switch
-              checked={darkMode}
-              onCheckedChange={setDarkMode}
-              className="bg-gray-200 dark:bg-gray-700"
-            >
-              <Sun className="h-4 w-4 text-yellow-500" />
-              <Moon className="h-4 w-4 text-blue-500" />
-            </Switch>
-            {user && userType === 'author' && (
-              <Button variant="ghost" onClick={() => router.push('/admin')}>
-                <ChevronsLeftRightIcon className="h-5 w-5 mr-2" />
-                Admin Console
+            <Button
+                variant="outline"
+                size="icon"
+                onClick={toggleDarkMode}
+                className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
+              >
+                {darkMode ? (
+                  <Sun className="h-4 w-4 text-[#E7E7E8]" />
+                ) : (
+                  <Moon className="h-4 w-4 text-[#232120]" />
+                )}
               </Button>
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar>
+                      {userProfile?.profilePicture ? (
+                        <AvatarImage
+                          src={userProfile.profilePicture}
+                          alt="User avatar"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <AvatarImage
+                          src="/assets/default-avatar.png"
+                          alt="Default avatar"
+                          className="object-cover"
+                        />
+                      )}
+                      <AvatarFallback>{userProfile?.username?.[0] || '?'}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{userProfile?.username}</p>
+                      <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push('/user_profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>My Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {userType === 'author' && (
+                    <DropdownMenuItem onClick={() => router.push('/admin')}>
+                      <ChevronsLeftRightIcon className="mr-2 h-4 w-4" />
+                      <span>Admin Console</span>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
-            {user ? (
-              <Button variant="ghost" onClick={handleLogout}>
-                <LogOut className="h-5 w-5 mr-2" />
-                Logout
-              </Button>
-            ) : (
-              <Button variant="ghost" onClick={() => router.push('/auth')}>Login</Button>
+            {!user && (
+              <Button variant="ghost" onClick={() => router.push('/auth')} className="text-[#F1592A]">Login</Button>
             )}
           </div>
         </div>
       </header>
 
       <main className="flex-grow">
-        <section className="py-12 md:py-24 bg-gradient-to-br from-purple-500 to-pink-500 dark:from-purple-900 dark:to-pink-900">
+        <section className="py-12 md:py-24 bg-gradient-to-br from-[#F1592A] to-[#3E3F3E] dark:from-[#3E3F3E] dark:to-[#F1592A]">
           <div className="container mx-auto px-4 text-center">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Discover Your Next Adventure</h2>
-            <p className="text-xl text-purple-100 mb-8">Explore thousands of light novels across various genres</p>
-            <Button className="bg-white text-purple-600 hover:bg-purple-50">Start Reading Now</Button>
+            <h2 className="text-4xl md:text-5xl font-bold text-[#E7E7E8] mb-4">Discover Your Next Adventure</h2>
+            <p className="text-xl text-[#E7E7E8] mb-8">Explore thousands of light novels across various genres</p>
+            <Button className="bg-[#E7E7E8] text-[#F1592A] hover:bg-[#C3C3C3]">Start Reading Now</Button>
           </div>
         </section>
-        <section className="py-12 bg-white dark:bg-gray-800">
-      <div className="container mx-auto px-4">
-        <motion.h2 
-          className="text-3xl font-bold mb-8 text-gray-900 dark:text-gray-100"
-          variants={fadeIn}
-        >
-          Popular Novels
-        </motion.h2>
-        {loading ? (
-          <div className="text-center">Loading popular novels...</div>
-        ) : (
-          <motion.div 
-            className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8"
-            variants={staggerChildren}
-          >
-            {popularNovels.map((novel) => (
-              <motion.div
-                key={novel.id}
-                variants={fadeIn}
-                whileHover={{ scale: 1.05 }}
+
+        <section className="py-12 bg-[#E7E7E8] dark:bg-[#232120]">
+          <div className="container mx-auto px-4">
+            <motion.h2 
+              className="text-3xl font-bold mb-8 text-[#232120] dark:text-[#E7E7E8]"
+              variants={fadeIn}
+            >
+              Popular Novels
+            </motion.h2>
+            {loading ? (
+              <div className="text-center text-[#232120] dark:text-[#E7E7E8]">Loading popular novels...</div>
+            ) : (
+              <motion.div 
+                className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8"
+                variants={staggerChildren}
               >
-                <NovelCard novel={novel} onFollowChange={handleFollowChange} />
+                {popularNovels.map((novel) => (
+                  <motion.div
+                    key={novel.id}
+                    variants={fadeIn}
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <NovelCard novel={novel} onFollowChange={handleFollowChange} />
+                  </motion.div>
+                ))}
               </motion.div>
-            ))}
-          </motion.div>
-        )}
-        <motion.div 
-          className="mt-12 text-center"
-          variants={fadeIn}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Button variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-900/30">
-            Browse All Novels
-          </Button>
-        </motion.div>
-      </div>
-    </section>
+            )}
+            <motion.div 
+              className="mt-12 text-center"
+              variants={fadeIn}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Button variant="outline" className="border-[#F1592A] text-[#F1592A] hover:bg-[#F1592A] hover:text-[#E7E7E8] dark:border-[#F1592A] dark:text-[#F1592A] dark:hover:bg-[#F1592A] dark:hover:text-[#E7E7E8]">
+                Browse All Novels
+              </Button>
+            </motion.div>
+          </div>
+        </section>
+
         <section className="py-12 bg-white dark:bg-gray-800">
           <div className="container mx-auto px-4">
             <motion.h2 
@@ -332,13 +368,13 @@ export default function ModernLightNovelsHomepage() {
           </div>
         </section>
       </main>
-      <footer className="border-t py-8 bg-white dark:bg-gray-800 dark:border-gray-700">
+      <footer className="border-t py-8 bg-[#E7E7E8] dark:bg-[#232120] dark:border-[#3E3F3E]">
         <div className="container mx-auto px-4 md:flex md:items-center md:justify-between">
           <motion.div 
             className="text-center md:text-left mb-4 md:mb-0"
             variants={fadeIn}
           >
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <p className="text-sm text-[#464646] dark:text-[#C3C3C3]">
               © 2023 NovelHub. All rights reserved.
             </p>
           </motion.div>
@@ -348,7 +384,7 @@ export default function ModernLightNovelsHomepage() {
           >
             {["About Us", "Terms", "Privacy", "Contact"].map((item) => (
               <motion.div key={item} variants={fadeIn}>
-                <Link href={`/${item.toLowerCase().replace(' ', '-')}`} className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors duration-200">
+                <Link href={`/${item.toLowerCase().replace(' ', '-')}`} className="text-sm text-[#464646] hover:text-[#232120] dark:text-[#C3C3C3] dark:hover:text-[#E7E7E8] transition-colors duration-200">
                   {item}
                 </Link>
               </motion.div>

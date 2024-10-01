@@ -224,15 +224,18 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                 <span className="sr-only">Home</span>
               </Button>
             </Link>
-            <Switch
-              checked={theme === 'dark'}
-              onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-              className="bg-gray-200 dark:bg-gray-700"
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+              className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
             >
-              <Sun className="h-4 w-4 text-yellow-500" />
-              <Moon className="h-4 w-4 text-blue-500" />
-              <span className="sr-only">Toggle theme</span>
-            </Switch>
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4 text-[#E7E7E8]" />
+              ) : (
+                <Moon className="h-4 w-4 text-[#232120]" />
+              )}
+            </Button>
           </div>
         </div>
       </header>

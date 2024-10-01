@@ -48,6 +48,7 @@ interface Novel {
 }
 
 export default function UserProfilePage() {
+  const [darkMode, setDarkMode] = useState(false)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [followedNovels, setFollowedNovels] = useState<Novel[]>([])
@@ -74,6 +75,10 @@ export default function UserProfilePage() {
       fetchRecommendations()
     }
   }, [user])
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark")
+  }
 
   const fetchUserProfile = async () => {
     if (!user) return
@@ -262,33 +267,36 @@ export default function UserProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="min-h-screen bg-[#E7E7E8] dark:bg-[#232120]">
       <Toaster />
-      <header className="bg-white dark:bg-gray-800 shadow">
+      <header className="bg-[#E7E7E8] dark:bg-[#232120] shadow border-b dark:border-[#3E3F3E]">
         <div className="container mx-auto px-4 py-6 flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">NovelHub</h1>
+          <h1 className="text-3xl font-bold text-[#F1592A]">NovelHub</h1>
           <div className="flex items-center space-x-4">
             <Link href="./">
-              <Button variant="outline" size="icon" className="bg-white dark:bg-gray-800">
-                <Home className="h-[1.2rem] w-[1.2rem]" />
+              <Button variant="outline" size="icon" className="bg-[#E7E7E8] dark:bg-[#232120]">
+                <Home className="h-[1.2rem] w-[1.2rem] text-[#232120] dark:text-[#E7E7E8]" />
               </Button>
             </Link>
-            <div className="flex items-center space-x-2">
-              <Sun className="h-[1.2rem] w-[1.2rem] dark:text-gray-400" />
-              <Switch
-                checked={theme === 'dark'}
-                onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                aria-label="Toggle dark mode"
-              />
-              <Moon className="h-[1.2rem] w-[1.2rem] text-gray-400 dark:text-white" />
-            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleTheme}
+              className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4 text-[#E7E7E8]" />
+              ) : (
+                <Moon className="h-4 w-4 text-[#232120]" />
+              )}
+            </Button>
           </div>
         </div>
       </header>
       <main className="container mx-auto p-4">
-        <Card className="mb-8">
+        <Card className="mb-8 bg-white dark:bg-[#3E3F3E]">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold">User Profile</CardTitle>
+            <CardTitle className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]">User Profile</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
@@ -409,9 +417,9 @@ export default function UserProfilePage() {
         </Card>
 
         <Tabs defaultValue="followed" className="mb-8">
-          <TabsList>
-            <TabsTrigger value="followed">Followed Novels</TabsTrigger>
-            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+          <TabsList className="bg-[#C3C3C3] dark:bg-[#3E3F3E]">
+            <TabsTrigger value="followed" className="text-[#232120] dark:text-[#E7E7E8]">Followed Novels</TabsTrigger>
+            <TabsTrigger value="recommendations" className="text-[#232120] dark:text-[#E7E7E8]">Recommendations</TabsTrigger>
           </TabsList>
           <TabsContent value="followed">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -420,7 +428,7 @@ export default function UserProfilePage() {
                   <NovelCard key={novel.id} novel={novel} onFollowChange={handleFollowChange} />
                 ))
               ) : (
-                <p className="col-span-full text-center text-gray-500">You haven't followed any novels yet.</p>
+                <p className="col-span-full text-center text-[#8E8F8E] dark:text-[#C3C3C3]">You haven't followed any novels yet.</p>
               )}
             </div>
           </TabsContent>
@@ -433,23 +441,23 @@ export default function UserProfilePage() {
           </TabsContent>
         </Tabs>
 
-        <Card>
+        <Card className="bg-white dark:bg-[#3E3F3E]">
           <CardHeader>
-            <CardTitle>Reading Statistics</CardTitle>
+            <CardTitle className="text-[#232120] dark:text-[#E7E7E8]">Reading Statistics</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div className="text-center">
-                <h3 className="text-lg font-semibold">Total Books Read</h3>
-                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">27</p>
+                <h3 className="text-lg font-semibold text-[#232120] dark:text-[#E7E7E8]">Total Books Read</h3>
+                <p className="text-3xl font-bold text-[#F1592A]">27</p>
               </div>
               <div className="text-center">
-                <h3 className="text-lg font-semibold">Pages Read This Week</h3>
-                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">342</p>
+                <h3 className="text-lg font-semibold text-[#232120] dark:text-[#E7E7E8]">Pages Read This Week</h3>
+                <p className="text-3xl font-bold text-[#F1592A]">342</p>
               </div>
               <div className="text-center">
-                <h3 className="text-lg font-semibold">Reading Streak</h3>
-                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">5 days</p>
+                <h3 className="text-lg font-semibold text-[#232120] dark:text-[#E7E7E8]">Reading Streak</h3>
+                <p className="text-3xl font-bold text-[#F1592A]">5 days</p>
               </div>
             </div>
           </CardContent>
