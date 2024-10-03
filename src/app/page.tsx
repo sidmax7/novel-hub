@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { Search, Menu, BookOpen, Moon, Sun, LogOut, User, ChevronsLeftRightIcon, BookMarked, ThumbsUp } from "lucide-react"
+import { Search, Menu, BookOpen, Moon, Sun, LogOut, User, ChevronsLeftRightIcon, BookMarked, ThumbsUp, MessageSquare } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion, AnimatePresence } from 'framer-motion'
@@ -195,6 +195,16 @@ export default function ModernLightNovelsHomepage() {
                 className="pl-10 pr-4 py-2 w-64 rounded-full bg-[#C3C3C3] dark:bg-[#3E3F3E] focus:outline-none focus:ring-2 focus:ring-[#F1592A] text-[#232120] dark:text-[#E7E7E8] placeholder-[#8E8F8E] dark:placeholder-[#C3C3C3]"
               />
             </div>
+            <Link href="/forum" passHref>
+              <Button
+                variant="outline"
+                size="icon"
+                className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
+              >
+                <MessageSquare className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8]" />
+                <span className="sr-only">Forum</span>
+              </Button>
+            </Link>
             <Button
                 variant="outline"
                 size="icon"
