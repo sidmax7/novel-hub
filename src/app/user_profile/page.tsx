@@ -76,8 +76,8 @@ export default function UserProfilePage() {
     }
   }, [user])
 
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark")
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode)
   }
 
   const fetchUserProfile = async () => {
@@ -281,7 +281,7 @@ export default function UserProfilePage() {
             <Button
               variant="outline"
               size="icon"
-              onClick={toggleTheme}
+              onClick={toggleDarkMode}
               className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
             >
               {theme === 'dark' ? (
