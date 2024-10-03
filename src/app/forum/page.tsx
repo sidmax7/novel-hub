@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Moon, Sun, LogOut, User, Plus, Home } from "lucide-react"
 import Link from "next/link"
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../authcontext'
 import { signOut } from 'firebase/auth'
 import { auth, db } from '@/lib/firebaseConfig'
@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from 'react-hot-toast'
+import { useTheme } from 'next-themes'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,8 +50,28 @@ interface ForumPost {
   section: string
 }
 
+const ThemeToggle = () => {
+  const { theme, setTheme } = useTheme()
+
+  return (
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
+    >
+      {theme === 'dark' ? (
+        <Sun className="h-4 w-4 text-[#E7E7E8]" />
+      ) : (
+        <Moon className="h-4 w-4 text-[#232120] group-hover:text-white" />
+      )}
+    </Button>
+  )
+}
+
 export default function ForumsPage() {
-  const [darkMode, setDarkMode] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const { theme, setTheme } = useTheme()
   const [posts, setPosts] = useState<ForumPost[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
@@ -60,17 +81,16 @@ export default function ForumsPage() {
   const [newPostContent, setNewPostContent] = useState('')
   const [newPostSection, setNewPostSection] = useState('general')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [direction, setDirection] = useState(0)
+  const [activeTab, setActiveTab] = useState("announcements")
 
   useEffect(() => {
+    setMounted(true)
     fetchPosts()
     if (user) {
       fetchUserProfile()
     }
   }, [user])
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode)
-  }
 
   const fetchPosts = async () => {
     setLoading(true)
@@ -152,20 +172,49 @@ export default function ForumsPage() {
     visible: { opacity: 1, transition: { duration: 0.5 } }
   }
 
+  const variants = {
+    enter: (direction: number) => {
+      return {
+        x: direction > 0 ? 1000 : -1000,
+        opacity: 0
+      };
+    },
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1
+    },
+    exit: (direction: number) => {
+      return {
+        zIndex: 0,
+        x: direction < 0 ? 1000 : -1000,
+        opacity: 0
+      };
+    }
+  };
+
+  const handleTabChange = (newTab: string) => {
+    const tabOrder = ["announcements", "general", "updates", "community"];
+    const currentIndex = tabOrder.indexOf(activeTab);
+    const newIndex = tabOrder.indexOf(newTab);
+    setDirection(newIndex > currentIndex ? 1 : -1);
+    setActiveTab(newTab);
+  }
+
   const renderPosts = (section: string) => {
     const sectionPosts = posts.filter(post => post.section === section)
     return (
       <div className="space-y-4">
         {sectionPosts.map((post) => (
-          <Card key={post.id} className="bg-white dark:bg-gray-800">
+          <Card key={post.id} className="bg-[#C3C3C3]/50 dark:bg-[#3E3F3E]/50">
             <CardHeader>
-              <CardTitle className="text-lg font-semibold text-[#F1592A]">{post.title}</CardTitle>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
+              <CardTitle className="text-lg font-semibold text-[#F1592A]"><strong>{post.title}</strong></CardTitle>
+              <div className="text-sm text-[#3E3F3E] dark:text-[#C3C3C3]">
                 Posted by {post.author} • {post.createdAt.toLocaleString()}
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700 dark:text-gray-300">{post.content}</p>
+              <p className="text-[#232120] dark:text-[#E7E7E8]">{post.content}</p>
             </CardContent>
           </Card>
         ))}
@@ -173,52 +222,43 @@ export default function ForumsPage() {
     )
   }
 
+  if (!mounted) return null
+
   return (
-    <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
+    <div className={`min-h-screen bg-[#E7E7E8] dark:bg-[#232120]`}>
       <motion.div 
-        className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+        className="flex flex-col min-h-screen"
         initial="hidden"
         animate="visible"
         variants={fadeIn}
       >
-        <header className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky top-0 z-10 shadow-sm">
+        <header className="border-b border-[#C3C3C3] dark:border-[#3E3F3E] bg-[#E7E7E8] dark:bg-[#232120] sticky top-0 z-10 shadow-sm">
           <div className="container mx-auto px-4 py-6 flex items-center justify-between">
             <div className="flex items-center space-x-4">
-            <Link href="/" className="text-3xl font-bold text-[#232120] hover:text-[#F1592A] transition-colors">
-            NovelHub Forums
-          </Link>
+              <Link href="/" className="text-3xl font-bold text-[#232120] hover:text-[#F1592A] transition-colors dark:text-[#E7E7E8]">
+                NovelHub Forums
+              </Link>
             </div>
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#232120]/60 dark:text-[#E7E7E8]/60" />
                 <Input
                   type="search"
                   placeholder="Search forums..."
-                  className="pl-10 pr-4 py-2 w-64 rounded-full bg-gray-100 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-[#F1592A] text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                  className="pl-10 pr-4 py-2 w-64 rounded-full bg-[#C3C3C3] dark:bg-[#3E3F3E] focus:outline-none focus:ring-2 focus:ring-[#F1592A] text-[#232120] dark:text-[#E7E7E8] placeholder-[#8E8F8E] dark:placeholder-[#C3C3C3]"
                 />
               </div>
               <Link href="/" passHref>
                 <Button
                   variant="outline"
                   size="icon"
-                  className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-gray-800 hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
+                  className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
                 >
-                  <Home className="h-4 w-4 text-gray-900 dark:text-gray-100" />
+                  <Home className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" />
                   <span className="sr-only">Home</span>
                 </Button>
               </Link>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={toggleDarkMode}
-                className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-gray-800 hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
-              >
-                {darkMode ? (
-                  <Sun className="h-4 w-4 text-gray-100" />
-                ) : (
-                  <Moon className="h-4 w-4 text-gray-900" />
-                )}
-              </Button>
+              {mounted && <ThemeToggle />}
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -233,7 +273,7 @@ export default function ForumsPage() {
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{userProfile?.username}</p>
-                        <p className="text-xs leading-none text-gray-500 dark:text-gray-400">{user.email}</p>
+                        <p className="text-xs leading-none text-[#8E8F8E] dark:text-[#C3C3C3]">{user.email}</p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
@@ -257,32 +297,32 @@ export default function ForumsPage() {
 
         <main className="flex-grow container mx-auto px-4 py-8">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">Forum Discussions</h2>
+            <h2 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]">Forum Discussions</h2>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-[#F1592A] text-white hover:bg-[#D14820]">
                   <Plus className="mr-2 h-4 w-4" /> New Post
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
+              <DialogContent className="sm:max-w-[425px] bg-[#E7E7E8] dark:bg-[#232120]">
                 <DialogHeader>
-                  <DialogTitle>Create a New Post</DialogTitle>
+                  <DialogTitle className="text-[#232120] dark:text-[#E7E7E8]">Create a New Post</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleCreatePost} className="space-y-4">
                   <Input
                     placeholder="Post Title"
                     value={newPostTitle}
                     onChange={(e) => setNewPostTitle(e.target.value)}
-                    className="w-full"
+                    className="w-full bg-[#C3C3C3] dark:bg-[#3E3F3E] text-[#232120] dark:text-[#E7E7E8]"
                   />
                   <Textarea
                     placeholder="Post Content"
                     value={newPostContent}
                     onChange={(e) => setNewPostContent(e.target.value)}
-                    className="w-full h-32"
+                    className="w-full h-32 bg-[#C3C3C3] dark:bg-[#3E3F3E] text-[#232120] dark:text-[#E7E7E8]"
                   />
                   <Select value={newPostSection} onValueChange={setNewPostSection}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-[#C3C3C3] dark:bg-[#3E3F3E] text-[#232120] dark:text-[#E7E7E8]">
                       <SelectValue placeholder="Select a section" />
                     </SelectTrigger>
                     <SelectContent>
@@ -301,37 +341,72 @@ export default function ForumsPage() {
           </div>
 
           {loading ? (
-            <div className="text-center">Loading forum posts...</div>
+            <div className="text-center text-[#232120] dark:text-[#E7E7E8]">Loading forum posts...</div>
           ) : (
-            <Tabs defaultValue="announcements" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="announcements">Announcements</TabsTrigger>
-                <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="updates">Updates</TabsTrigger>
-                <TabsTrigger value="community">Community</TabsTrigger>
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+              <TabsList className="grid w-full grid-cols-4 bg-[#C3C3C3] dark:bg-[#3E3F3E] space-x-1">
+                <TabsTrigger 
+                  value="announcements" 
+                  className="text-[#232120] data-[state=active]:bg-[#E7E7E8] data-[state=active]:text-[#232120]
+                  dark:text-[#E7E7E8] dark:data-[state=active]:bg-[#232120] dark:data-[state=active]:text-[#E7E7E8]"
+                >
+                  Announcements
+                </TabsTrigger>
+                <TabsTrigger value="general" className="text-[#232120] data-[state=active]:bg-[#E7E7E8] data-[state=active]:text-[#232120]
+                  dark:text-[#E7E7E8] dark:data-[state=active]:bg-[#232120] dark:data-[state=active]:text-[#E7E7E8]"
+                >
+                  General Discussions
+                </TabsTrigger>
+                <TabsTrigger value="updates" className="text-[#232120] data-[state=active]:bg-[#E7E7E8] data-[state=active]:text-[#232120]
+                  dark:text-[#E7E7E8] dark:data-[state=active]:bg-[#232120] dark:data-[state=active]:text-[#E7E7E8]"
+                >
+                  Updates
+                </TabsTrigger>
+                <TabsTrigger value="community" className="text-[#232120] data-[state=active]:bg-[#E7E7E8] data-[state=active]:text-[#232120]
+                  dark:text-[#E7E7E8] dark:data-[state=active]:bg-[#232120] dark:data-[state=active]:text-[#E7E7E8]"
+                >
+                  Community
+                </TabsTrigger>
               </TabsList>
-              <TabsContent value="announcements">
-                <h3 className="text-xl font-semibold mb-4">Announcements</h3>
-                {renderPosts('announcements')}
-              </TabsContent>
-              <TabsContent value="general">
-                <h3 className="text-xl font-semibold mb-4">General Discussions</h3>
-                {renderPosts('general')}
-              </TabsContent>
-              <TabsContent value="updates">
-                <h3 className="text-xl font-semibold mb-4">Updates</h3>
-                {renderPosts('updates')}
-              </TabsContent>
-              <TabsContent value="community">
-                <h3 className="text-xl font-semibold mb-4">Community Discussions</h3>
-                {renderPosts('community')}
-              </TabsContent>
+              <div className="relative overflow-hidden" style={{ minHeight: '400px' }}>
+                <AnimatePresence initial={false} custom={direction}>
+                  <motion.div
+                    key={activeTab}
+                    custom={direction}
+                    variants={variants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{
+                      x: { type: "tween", duration: 0.5, ease: "easeInOut" },
+                    }}
+                    className="absolute w-full"
+                  >
+                    <TabsContent value="announcements" forceMount={activeTab === "announcements" || undefined}>
+                      {/* <h3 className="text-xl font-semibold mb-4 text-[#232120] dark:text-[#E7E7E8]">Announcements</h3> */}
+                      {renderPosts('announcements')}
+                    </TabsContent>
+                    <TabsContent value="general" forceMount={activeTab === "general" || undefined}>
+                      {/* <h3 className="text-xl font-semibold mb-4 text-[#232120] dark:text-[#E7E7E8]">General Discussions</h3> */}
+                      {renderPosts('general')}
+                    </TabsContent>
+                    <TabsContent value="updates" forceMount={activeTab === "updates" || undefined}>
+                      {/* <h3 className="text-xl font-semibold mb-4 text-[#232120] dark:text-[#E7E7E8]">Updates</h3> */}
+                      {renderPosts('updates')}
+                    </TabsContent>
+                    <TabsContent value="community" forceMount={activeTab === "community" || undefined}>
+                      {/* <h3 className="text-xl font-semibold mb-4 text-[#232120] dark:text-[#E7E7E8]">Community Discussions</h3> */}
+                      {renderPosts('community')}
+                    </TabsContent>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
             </Tabs>
           )}
         </main>
 
-        <footer className="border-t border-gray-200 dark:border-gray-700 py-8 bg-white dark:bg-gray-800">
-          <div className="container mx-auto px-4 text-center text-gray-600 dark:text-gray-400">
+        <footer className="border-t border-[#C3C3C3] dark:border-[#3E3F3E] py-8 bg-[#E7E7E8] dark:bg-[#232120]">
+          <div className="container mx-auto px-4 text-center text-[#8E8F8E] dark:text-[#C3C3C3]">
             <p className="text-sm">© 2023 NovelHub Forums. All rights reserved.</p>
           </div>
         </footer>

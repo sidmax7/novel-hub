@@ -26,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useTheme } from 'next-themes'
 
 
 export const genreColors = {
@@ -52,7 +53,7 @@ interface Novel {
 }
 
 export default function ModernLightNovelsHomepage() {
-  const [darkMode, setDarkMode] = useState(false)
+  const { theme, setTheme } = useTheme()
   const [hoveredNovel, setHoveredNovel] = useState<string | null>(null)
   const [popularNovels, setPopularNovels] = useState<Novel[]>([])
   const [loading, setLoading] = useState(true)
@@ -72,7 +73,7 @@ export default function ModernLightNovelsHomepage() {
   }, [user])
 
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode)
+    setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
   const fetchPopularNovels = async () => {
@@ -176,7 +177,7 @@ export default function ModernLightNovelsHomepage() {
 
   return (
     <motion.div 
-      className={`flex flex-col min-h-screen ${darkMode ? 'dark' : ''} bg-[#E7E7E8] dark:bg-[#232120]`}
+      className={`flex flex-col min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-[#E7E7E8] dark:bg-[#232120]`}
       initial="hidden"
       animate="visible"
       variants={fadeIn}
@@ -188,7 +189,7 @@ export default function ModernLightNovelsHomepage() {
           </div>
           <div className="flex items-center space-x-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8E8F8E]" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#232120]/60 dark:text-[#E7E7E8]/60" />
               <Input
                 type="search"
                 placeholder="Search novels..."
@@ -199,9 +200,9 @@ export default function ModernLightNovelsHomepage() {
               <Button
                 variant="outline"
                 size="icon"
-                className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
+                className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
               >
-                <MessageSquare className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8]" />
+                <MessageSquare className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" />
                 <span className="sr-only">Forum</span>
               </Button>
             </Link>
@@ -209,12 +210,12 @@ export default function ModernLightNovelsHomepage() {
                 variant="outline"
                 size="icon"
                 onClick={toggleDarkMode}
-                className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
+                className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
               >
-                {darkMode ? (
+                {theme === 'dark' ? (
                   <Sun className="h-4 w-4 text-[#E7E7E8]" />
                 ) : (
-                  <Moon className="h-4 w-4 text-[#232120]" />
+                  <Moon className="h-4 w-4 text-[#232120] group-hover:text-white" />
                 )}
               </Button>
             {user && (
@@ -313,7 +314,7 @@ export default function ModernLightNovelsHomepage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Button variant="outline" className="border-[#F1592A] text-[#F1592A] hover:bg-[#F1592A] hover:text-[#E7E7E8] dark:border-[#F1592A] dark:text-[#F1592A] dark:hover:bg-[#F1592A] dark:hover:text-[#E7E7E8]">
+              <Button variant="outline" className="border-[#F1592A] text-[#F1592A] hover:bg-[#F1592A] hover:text-white dark:border-[#F1592A] dark:text-[#F1592A] dark:hover:bg-[#F1592A] dark:hover:text-[#E7E7E8]">
                 Browse All Novels
               </Button>
             </motion.div>
@@ -322,7 +323,7 @@ export default function ModernLightNovelsHomepage() {
 
         <section className="py-12 bg-[#E7E7E8] dark:bg-[#232120]">
           <div className={`container rounded-lg mx-auto px-12 py-12 ${
-                darkMode
+                theme === 'dark'
                   ? 'bg-black dark:bg-[#3E3F3E]'
                   : 'bg-white dark:bg-[#3E3F3E] border border-[#F1592A] border-opacity-30'
               } backdrop-blur-md`}>
@@ -346,7 +347,7 @@ export default function ModernLightNovelsHomepage() {
                   <Link 
                     href={`/genre/${genre.toLowerCase()}`} 
                     className={`p-6 rounded-lg shadow-md text-center block transition-colors h-full
-                    ${darkMode ? colors.dark : colors.light}`}
+                    ${theme === 'dark' ? colors.dark : colors.light}`}
                   >
                     <span className="font-medium text-lg">{genre}</span>
                   </Link>

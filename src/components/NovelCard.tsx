@@ -9,7 +9,7 @@ import { useAuth } from '@/app/authcontext'
 import { db } from '@/lib/firebaseConfig'
 import { doc, getDoc, setDoc, deleteDoc, collection } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
-
+import { useTheme } from 'next-themes'
 interface Novel {
   id: string
   name: string
@@ -29,6 +29,7 @@ interface NovelCardProps {
 export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) => {
   const [isFollowing, setIsFollowing] = useState(false)
   const { user } = useAuth()
+  const { theme } = useTheme()
 
   useEffect(() => {
     if (user) {
@@ -88,7 +89,7 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
         <CardContent className="p-4">
           <h3 className="font-semibold mb-1 truncate">{novel.name}</h3>
           <Link href={`/author/${novel.authorId}`} passHref>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 truncate hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 truncate hover:text-[#F1592A] dark:hover:text-[#F1592A] cursor-pointer">
               {novel.author}
             </p>
           </Link>

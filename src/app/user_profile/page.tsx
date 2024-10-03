@@ -272,7 +272,7 @@ export default function UserProfilePage() {
       <header className="border-b border-white/30 bg-[#E7E7E8] dark:bg-[#232120] dark:border-[#3E3F3E] sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4 py-6 flex justify-between items-center">
         <h1 className="text-3xl font-bold text-[#F1592A]">
-              <Link href="/" className="text-3xl font-bold text-[#232120] hover:text-[#F1592A] transition-colors">
+              <Link href="/" className="text-3xl font-bold text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] dark:hover:text-[#F1592A] transition-colors">
             NovelHub
           </Link>
           </h1>
@@ -281,9 +281,9 @@ export default function UserProfilePage() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-[#E7E7E8] dark:bg-gray-800 hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
+                  className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
                 >
-                  <Home className="h-4 w-4 text-gray-900 dark:text-gray-100" />
+                  <Home className="h-4 w-4 text-gray-900 dark:text-gray-100 group-hover:text-white" />
                   <span className="sr-only">Home</span>
                 </Button>
               </Link>
@@ -291,12 +291,12 @@ export default function UserProfilePage() {
               variant="outline"
               size="icon"
               onClick={toggleDarkMode}
-              className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
+              className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
             >
               {theme === 'dark' ? (
                 <Sun className="h-4 w-4 text-[#E7E7E8]" />
               ) : (
-                <Moon className="h-4 w-4 text-[#232120]" />
+                <Moon className="h-4 w-4 text-[#232120] group-hover:text-white" />
               )}
             </Button>
           </div>
@@ -407,7 +407,7 @@ export default function UserProfilePage() {
                 ) : (
                   <div className="space-y-4">
                     <h2 className="text-xl font-semibold">{profile?.username}</h2>
-                    <p className="text-gray-600 dark:text-gray-400">{profile?.email}</p>
+                    <p className="text-gray-600 dark:text-[#E7E7E8]"><strong>Email : </strong> {profile?.email}</p>
                     <p className="text-justify">{profile?.bio}</p>
                     <div>
                       <strong>Favorite Genres:</strong> {profile?.favoriteGenres.join(', ')}

@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { StarRating } from '@/components/ui/starrating'
 import { Home, Moon, Sun, BookOpen, Heart, Eye, Twitter, Facebook, Globe } from 'lucide-react'
-import { Switch } from "@/components/ui/switch"
 import { toast, Toaster } from 'react-hot-toast'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -48,7 +47,6 @@ interface Novel {
 }
 
 export default function AuthorPage({ params }: { params: { userId: string } }) {
-  const [darkMode, setDarkMode] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [novels, setNovels] = useState<Novel[]>([])
   const [loading, setLoading] = useState(true)
@@ -65,7 +63,7 @@ export default function AuthorPage({ params }: { params: { userId: string } }) {
   }, [params.userId])
 
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode)
+    setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
   useEffect(() => {
@@ -178,11 +176,11 @@ export default function AuthorPage({ params }: { params: { userId: string } }) {
   if (!user) return <div className="flex justify-center items-center h-screen">Author not found</div>
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-[#E7E7E8] dark:bg-[#232120] flex flex-col">
       <Toaster />
-      <header className="bg-white dark:bg-gray-800 shadow-md">
+      <header className="bg-white dark:bg-[#232120] shadow-md">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-        <Link href="/" className="text-3xl font-bold text-[#232120] hover:text-[#F1592A] transition-colors">
+        <Link href="/" className="text-3xl font-bold text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] dark:hover:text-[#F1592A] transition-colors">
             NovelHub
           </Link>
           <div className="flex items-center space-x-4">
@@ -190,30 +188,30 @@ export default function AuthorPage({ params }: { params: { userId: string } }) {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-gray-800 hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
+                  className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
                 >
-                  <Home className="h-4 w-4 text-gray-900 dark:text-gray-100" />
+                  <Home className="h-4 w-4 text-gray-900 dark:text-gray-100 group-hover:text-white" />
                   <span className="sr-only">Home</span>
                 </Button>
               </Link>
               <Button
-              variant="outline"
-              size="icon"
-              onClick={toggleDarkMode}
-              className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-white dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
-            >
-              {theme === 'dark' ? (
-                <Sun className="h-4 w-4 text-[#E7E7E8]" />
-              ) : (
-                <Moon className="h-4 w-4 text-[#232120]" />
-              )}
-            </Button>
+                variant="outline"
+                size="icon"
+                onClick={toggleDarkMode}
+                className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-white dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="h-4 w-4 text-[#E7E7E8]" />
+                ) : (
+                  <Moon className="h-4 w-4 text-[#232120] group-hover:text-white" />
+                )}
+              </Button>
           </div>
         </div>
       </header>
 
       <main className="flex-grow container mx-auto p-4 flex flex-col">
-        <Card className="mb-6 overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <Card className="mb-6 overflow-hidden border-1 dark:border-gray-700 shadow-lg hover:shadow-xl transition-shadow duration-300">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
               <div className="w-full md:w-1/3 flex justify-center">
@@ -278,7 +276,7 @@ export default function AuthorPage({ params }: { params: { userId: string } }) {
           </CardContent>
         </Card>
 
-        <Card className="flex-grow overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-lg">
+        <Card className="flex-grow overflow-hidden shadow-lg">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">Novels by {user.username}</CardTitle>
             <CardDescription>Explore the captivating worlds created by this author</CardDescription>

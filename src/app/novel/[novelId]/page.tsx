@@ -212,13 +212,13 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
   if (!novel) return <div className="flex justify-center items-center h-screen">Novel not found</div>
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="min-h-screen bg-[#E7E7E8] dark:bg-[#232120]">
       <Toaster />
-      <header className="bg-white dark:bg-gray-800 shadow">
+      <header className="bg-white dark:bg-[#232120] shadow">
         <div className="container mx-auto px-4 py-6 flex justify-between items-center">
         <div className="flex items-center space-x-4">
             <h1 className="text-3xl font-bold text-[#F1592A]">
-              <Link href="/" className="text-3xl font-bold text-[#232120] hover:text-[#F1592A] transition-colors">
+              <Link href="/" className="text-3xl font-bold text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] dark:hover:text-[#F1592A] transition-colors">
             NovelHub
           </Link>
           </h1>
@@ -228,9 +228,9 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-gray-800 hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
+                  className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
                 >
-                  <Home className="h-4 w-4 text-gray-900 dark:text-gray-100" />
+                  <Home className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" />
                   <span className="sr-only">Home</span>
                 </Button>
               </Link>
@@ -238,12 +238,12 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
               variant="outline"
               size="icon"
               onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-              className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-white dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
+              className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
             >
               {theme === 'dark' ? (
                 <Sun className="h-4 w-4 text-[#E7E7E8]" />
               ) : (
-                <Moon className="h-4 w-4 text-[#232120]" />
+                <Moon className="h-4 w-4 text-[#232120] group-hover:text-white" />
               )}
             </Button>
           </div>
@@ -251,7 +251,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
       </header>
 
       <main className="container mx-auto p-4">
-        <Card className="mb-8 overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300">
+        <Card className="mb-8 overflow-hidden border-2 border-[#C3C3C3] dark:border-[#3E3F3E] shadow-md hover:shadow-lg transition-shadow duration-300 bg-white dark:bg-[#232120]">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-8">
               <div className="w-full md:w-1/4">
@@ -268,7 +268,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
               <div className="w-full md:w-3/4">
                 <h2 className="text-3xl font-bold mb-2">{novel.name}</h2>
                 <Link href={`/author/${novel.authorId}`} passHref>
-                  <p className="text-md text-gray-600 dark:text-gray-400 mb-2 truncate hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer">
+                  <p className="text-md text-gray-600 dark:text-gray-400 mb-2 truncate hover:text-[#F1592A] dark:hover:text-[#F1592A] cursor-pointer">
                     by {novel.author}
                   </p>
                 </Link>
@@ -324,30 +324,43 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
         </Card>
 
         <Tabs defaultValue="chapters" className="w-full" onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="chapters">Chapters</TabsTrigger>
-            <TabsTrigger value="comments">Comments</TabsTrigger>
-          </TabsList>
-          <div className="relative overflow-hidden" style={{ height: '500px' }}>
+  <TabsList className="grid w-full grid-cols-2 bg-white dark:bg-[#3E3F3E] mb-4 space-x-1">
+    <TabsTrigger 
+      value="chapters" 
+      className="text-[#232120] data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:rounded-sm
+      dark:text-[#E7E7E8] dark:data-[state=active]:bg-[#232120] dark:data-[state=active]:text-[#E7E7E8]
+      rounded-b-none"
+    >
+      Chapters
+    </TabsTrigger>
+    <TabsTrigger 
+      value="comments"
+      className="text-[#232120]  data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:rounded-sm
+      dark:text-[#E7E7E8] dark:data-[state=active]:bg-[#232120] dark:data-[state=active]:text-[#E7E7E8]
+      rounded-b-none"
+    >
+      Comments
+    </TabsTrigger>
+  </TabsList>
+  <div className="relative overflow-hidden" style={{ height: '500px' }}>
             <AnimatePresence initial={false} custom={direction}>
-              <motion.div
-                key={activeTab}
-                custom={direction}
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{
-                  x: { type: "spring", stiffness: 300, damping: 30 },
-                  opacity: { duration: 0.2 }
-                }}
-                className="absolute w-full h-full"
-              >
+            <motion.div
+                    key={activeTab}
+                    custom={direction}
+                    variants={variants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{
+                      x: { type: "tween", duration: 0.5, ease: "easeInOut" },
+                    }}
+                    className="absolute w-full"
+                  >
                 <ScrollArea className="h-full w-full">
                   {activeTab === 'chapters' ? (
-                    <Card>
+                    <Card className="bg-white dark:bg-[#232120]">
                       <CardHeader>
-                        <CardTitle className="text-2xl font-bold flex items-center">
+                        <CardTitle className="text-2xl font-bold flex items-center text-[#232120] dark:text-[#E7E7E8]">
                           <BookOpen className="mr-2 h-6 w-6" />
                           Chapters
                         </CardTitle>
@@ -397,9 +410,9 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                       </CardContent>
                     </Card>
                   ) : (
-                    <Card>
+                    <Card className="bg-white dark:bg-[#232120] rounded-t-none">
                       <CardHeader>
-                        <CardTitle className="text-2xl font-bold flex items-center">
+                        <CardTitle className="text-2xl font-bold flex items-center text-[#232120] dark:text-[#E7E7E8]">
                           <MessageSquare className="mr-2 h-6 w-6" />
                           Comments
                         </CardTitle>
