@@ -54,6 +54,7 @@ interface Novel {
 
 export default function ModernLightNovelsHomepage() {
   const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const [hoveredNovel, setHoveredNovel] = useState<string | null>(null)
   const [popularNovels, setPopularNovels] = useState<Novel[]>([])
   const [loading, setLoading] = useState(true)
@@ -63,7 +64,9 @@ export default function ModernLightNovelsHomepage() {
   const [userType, setUserType] = useState<string | null>(null)
   const [userProfile, setUserProfile] = useState<{ profilePicture: string, username: string } | null>(null)
 
+
   useEffect(() => {
+    setMounted(true)
     fetchPopularNovels()
     if (user) {
       fetchFollowedNovels()
@@ -175,6 +178,25 @@ export default function ModernLightNovelsHomepage() {
     }
   }
 
+  const ThemeToggle = () => {
+    if (!mounted) return null
+
+    return (
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
+      >
+        {theme === 'dark' ? (
+          <Sun className="h-4 w-4 text-[#E7E7E8]" />
+        ) : (
+          <Moon className="h-4 w-4 text-[#232120] group-hover:text-white" />
+        )}
+      </Button>
+    )
+  }
+
   return (
     <motion.div 
       className={`flex flex-col min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-[#E7E7E8] dark:bg-[#232120]`}
@@ -206,18 +228,7 @@ export default function ModernLightNovelsHomepage() {
                 <span className="sr-only">Forum</span>
               </Button>
             </Link>
-            <Button
-                variant="outline"
-                size="icon"
-                onClick={toggleDarkMode}
-                className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
-              >
-                {theme === 'dark' ? (
-                  <Sun className="h-4 w-4 text-[#E7E7E8]" />
-                ) : (
-                  <Moon className="h-4 w-4 text-[#232120] group-hover:text-white" />
-                )}
-              </Button>
+            <ThemeToggle />
             {user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
