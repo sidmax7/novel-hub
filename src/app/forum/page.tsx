@@ -182,9 +182,11 @@ export default function ForumsPage() {
         variants={fadeIn}
       >
         <header className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky top-0 z-10 shadow-sm">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="container mx-auto px-4 py-6 flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-[#F1592A]">NovelHub Forums</h1>
+            <Link href="/" className="text-3xl font-bold text-[#232120] hover:text-[#F1592A] transition-colors">
+            NovelHub Forums
+          </Link>
             </div>
             <div className="flex items-center space-x-4">
               <div className="relative">

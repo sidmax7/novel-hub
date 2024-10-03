@@ -77,7 +77,7 @@ export default function UserProfilePage() {
   }, [user])
 
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode)
+    setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
   const fetchUserProfile = async () => {
@@ -269,15 +269,24 @@ export default function UserProfilePage() {
   return (
     <div className="min-h-screen bg-[#E7E7E8] dark:bg-[#232120]">
       <Toaster />
-      <header className="bg-[#E7E7E8] dark:bg-[#232120] shadow border-b dark:border-[#3E3F3E]">
+      <header className="border-b border-white/30 bg-[#E7E7E8] dark:bg-[#232120] dark:border-[#3E3F3E] sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4 py-6 flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-[#F1592A]">NovelHub</h1>
+        <h1 className="text-3xl font-bold text-[#F1592A]">
+              <Link href="/" className="text-3xl font-bold text-[#232120] hover:text-[#F1592A] transition-colors">
+            NovelHub
+          </Link>
+          </h1>
           <div className="flex items-center space-x-4">
-            <Link href="./">
-              <Button variant="outline" size="icon" className="bg-[#E7E7E8] dark:bg-[#232120]">
-                <Home className="h-[1.2rem] w-[1.2rem] text-[#232120] dark:text-[#E7E7E8]" />
-              </Button>
-            </Link>
+          <Link href="/" passHref>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-[#E7E7E8] dark:bg-gray-800 hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
+                >
+                  <Home className="h-4 w-4 text-gray-900 dark:text-gray-100" />
+                  <span className="sr-only">Home</span>
+                </Button>
+              </Link>
             <Button
               variant="outline"
               size="icon"

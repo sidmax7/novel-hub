@@ -48,6 +48,7 @@ interface Novel {
 }
 
 export default function AuthorPage({ params }: { params: { userId: string } }) {
+  const [darkMode, setDarkMode] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [novels, setNovels] = useState<Novel[]>([])
   const [loading, setLoading] = useState(true)
@@ -62,6 +63,10 @@ export default function AuthorPage({ params }: { params: { userId: string } }) {
       fetchUserNovels()
     }
   }, [params.userId])
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode)
+  }
 
   useEffect(() => {
     console.log("Current novels state:", novels);
@@ -177,23 +182,32 @@ export default function AuthorPage({ params }: { params: { userId: string } }) {
       <Toaster />
       <header className="bg-white dark:bg-gray-800 shadow-md">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 transition-colors">NovelHub</h1>
+        <Link href="/" className="text-3xl font-bold text-[#232120] hover:text-[#F1592A] transition-colors">
+            NovelHub
           </Link>
           <div className="flex items-center space-x-4">
-            <Link href="/">
-              <Button variant="ghost" size="icon" className="bg-white dark:bg-gray-800">
-                <Home className="h-[1.2rem] w-[1.2rem]" />
-              </Button>
-            </Link>
-            <Switch
-              checked={theme === 'dark'}
-              onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-              className="bg-gray-200 dark:bg-gray-700"
+          <Link href="/" passHref>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-gray-800 hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
+                >
+                  <Home className="h-4 w-4 text-gray-900 dark:text-gray-100" />
+                  <span className="sr-only">Home</span>
+                </Button>
+              </Link>
+              <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleDarkMode}
+              className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-white dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
             >
-              <Sun className="h-4 w-4 text-yellow-500" />
-              <Moon className="h-4 w-4 text-blue-500" />
-            </Switch>
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4 text-[#E7E7E8]" />
+              ) : (
+                <Moon className="h-4 w-4 text-[#232120]" />
+              )}
+            </Button>
           </div>
         </div>
       </header>
@@ -203,7 +217,7 @@ export default function AuthorPage({ params }: { params: { userId: string } }) {
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
               <div className="w-full md:w-1/3 flex justify-center">
-                <Avatar className="w-48 h-48 border-4 border-purple-500 dark:border-purple-400 shadow-lg">
+                <Avatar className="w-48 h-48 border-4 border-[#F1592A]/80 dark:border-[#F1592A]/80 shadow-lg">
                   <AvatarImage src={user.profilePicture} alt={user.username} />
                   <AvatarFallback className="text-4xl">{user.username[0]}</AvatarFallback>
                 </Avatar>

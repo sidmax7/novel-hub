@@ -216,19 +216,29 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
       <Toaster />
       <header className="bg-white dark:bg-gray-800 shadow">
         <div className="container mx-auto px-4 py-6 flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">NovelHub</h1>
+        <div className="flex items-center space-x-4">
+            <h1 className="text-3xl font-bold text-[#F1592A]">
+              <Link href="/" className="text-3xl font-bold text-[#232120] hover:text-[#F1592A] transition-colors">
+            NovelHub
+          </Link>
+          </h1>
+          </div>
           <div className="flex items-center space-x-4">
-            <Link href="/">
-              <Button variant="outline" size="icon" className="bg-white dark:bg-gray-800">
-                <Home className="h-[1.2rem] w-[1.2rem]" />
-                <span className="sr-only">Home</span>
-              </Button>
-            </Link>
+          <Link href="/" passHref>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-gray-800 hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
+                >
+                  <Home className="h-4 w-4 text-gray-900 dark:text-gray-100" />
+                  <span className="sr-only">Home</span>
+                </Button>
+              </Link>
             <Button
               variant="outline"
               size="icon"
               onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-              className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
+              className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-white dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A]"
             >
               {theme === 'dark' ? (
                 <Sun className="h-4 w-4 text-[#E7E7E8]" />

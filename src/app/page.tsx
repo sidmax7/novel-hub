@@ -182,9 +182,9 @@ export default function ModernLightNovelsHomepage() {
       variants={fadeIn}
     >
       <header className="border-b dark:border-[#3E3F3E] bg-[#E7E7E8] dark:bg-[#232120] sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-6 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-[#F1592A]">NovelHub</h1>
+            <h1 className="text-3xl font-bold text-[#F1592A]">NovelHub</h1>
           </div>
           <div className="flex items-center space-x-4">
             <div className="relative">
