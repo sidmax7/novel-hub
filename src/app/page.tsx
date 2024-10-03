@@ -310,8 +310,12 @@ export default function ModernLightNovelsHomepage() {
           </div>
         </section>
 
-        <section className="py-12 bg-white dark:bg-gray-800">
-          <div className="container mx-auto px-4">
+        <section className="py-12 bg-[#E7E7E8] dark:bg-[#232120]">
+          <div className={`container rounded-lg mx-auto px-12 py-12 ${
+                darkMode
+                  ? 'bg-black dark:bg-[#3E3F3E]'
+                  : 'bg-white dark:bg-[#3E3F3E] border border-[#F1592A] border-opacity-30'
+              } backdrop-blur-md`}>
             <motion.h2 
               className="text-3xl font-bold mb-8 text-gray-900 dark:text-gray-100"
               variants={fadeIn}
@@ -319,7 +323,7 @@ export default function ModernLightNovelsHomepage() {
               Explore Genres
             </motion.h2>
             <motion.div 
-              className="grid grid-cols-2 md:grid-cols-4 gap-4"
+              className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8"
               variants={staggerChildren}
             >
               {Object.entries(genreColors).map(([genre, colors]) => (
@@ -329,15 +333,19 @@ export default function ModernLightNovelsHomepage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Link href={`/genre/${genre.toLowerCase()}`} className={`p-4 rounded-lg shadow-md text-center block transition-colors ${darkMode ? colors.dark : colors.light}`}>
-                    <span className="font-medium">{genre}</span>
+                  <Link 
+                    href={`/genre/${genre.toLowerCase()}`} 
+                    className={`p-6 rounded-lg shadow-md text-center block transition-colors h-full
+                    ${darkMode ? colors.dark : colors.light}`}
+                  >
+                    <span className="font-medium text-lg">{genre}</span>
                   </Link>
                 </motion.div>
               ))}
             </motion.div>
           </div>
         </section>
-        <section className="py-12 bg-white dark:bg-gray-800">
+        <section className="py-12 bg-[#E7E7E8] dark:bg-[#232120]">
           <div className="container mx-auto px-4">
             <motion.h2 
               className="text-3xl font-bold mb-8 text-gray-900 dark:text-gray-100"
@@ -368,7 +376,7 @@ export default function ModernLightNovelsHomepage() {
           </div>
         </section>
       </main>
-      <footer className="border-t py-8 bg-[#E7E7E8] dark:bg-[#232120] dark:border-[#3E3F3E]">
+      <footer className="border-t py-8 bg-white dark:bg-[#232120] dark:border-[#3E3F3E]">
         <div className="container mx-auto px-4 md:flex md:items-center md:justify-between">
           <motion.div 
             className="text-center md:text-left mb-4 md:mb-0"
