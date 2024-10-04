@@ -211,7 +211,7 @@ const handleCreatePost = async (e: React.FormEvent) => {
     setNewPostSection('general')
     setNewPostImage(null)
     setIsDialogOpen(false)
-    router.push(`/forum/`)
+    window.location.reload()
   } catch (error) {
     console.error('Error creating post:', error)
     toast.error('Failed to create post')
@@ -388,7 +388,7 @@ return (
                   placeholder="Post Content"
                   value={newPostContent}
                   onChange={(e) => setNewPostContent(e.target.value)}
-                  className="w-full h-32 bg-[#C3C3C3] dark:bg-[#3E3F3E] text-[#232120] dark:text-[#E7E7E8]"
+                  className="w-full h-32 bg-[#C3C3C3] dark:bg-[#3E3F3E] text-[#232120] dark:text-[#E7E7E8] font-mono"
                 />
                 <Select value={newPostSection} onValueChange={setNewPostSection}>
                   <SelectTrigger className="bg-[#C3C3C3] dark:bg-[#3E3F3E] text-[#232120] dark:text-[#E7E7E8]">
