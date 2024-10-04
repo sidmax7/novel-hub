@@ -279,6 +279,21 @@ export default function PostPage({ params }: { params: { postId: string } }) {
       
       setAllReplies(prevReplies => [addedReply, ...prevReplies])
       
+      // Fetch the user's profile if it's not already in userProfiles
+      if (!userProfiles[user.uid]) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        if (userDoc.exists()) {
+          const userData = userDoc.data()
+          setUserProfiles(prevProfiles => ({
+            ...prevProfiles,
+            [user.uid]: {
+              profilePicture: userData.profilePicture || '/assets/default-avatar.png',
+              username: userData.username || 'Anonymous'
+            }
+          }))
+        }
+      }
+      
       toast.success('Reply added successfully')
       setReplyContent('')
     } catch (error) {
