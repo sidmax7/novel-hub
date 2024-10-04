@@ -101,14 +101,30 @@ const [isDialogOpen, setIsDialogOpen] = useState(false)
 const [direction, setDirection] = useState(0)
 const [activeTab, setActiveTab] = useState("announcements")
 const fileInputRef = useRef<HTMLInputElement>(null)
+const [scrollToPostId, setScrollToPostId] = useState<string | null>(null)
 
 useEffect(() => {
   setMounted(true)
+  const params = new URLSearchParams(window.location.search)
+  const tab = params.get('tab')
+  const scrollTo = params.get('scrollTo')
+  if (tab) setActiveTab(tab)
+  if (scrollTo) setScrollToPostId(scrollTo)
   fetchPosts()
   if (user) {
     fetchUserProfile()
   }
 }, [user])
+
+useEffect(() => {
+  if (scrollToPostId) {
+    const postElement = document.getElementById(`post-${scrollToPostId}`)
+    if (postElement) {
+      postElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setScrollToPostId(null)
+    }
+  }
+}, [posts, scrollToPostId])
 
 const fetchPosts = async () => {
   setLoading(true)
@@ -248,8 +264,8 @@ const renderPosts = (section: string) => {
   return (
     <div className="space-y-4">
       {sectionPosts.map((post) => (
-        <Link href={`/forum/post/${post.id}`} key={post.id}>
-          <Card className="bg-[#C3C3C3]/50 dark:bg-[#3E3F3E]/50 cursor-pointer hover:bg-[#C3C3C3]/70 dark:hover:bg-[#3E3F3E]/70 transition-colors">
+        <Link href={`/forum/post/${post.id}?tab=${section}&page=1`} key={post.id}>
+          <Card id={`post-${post.id}`} className="bg-[#C3C3C3]/50 dark:bg-[#3E3F3E]/50 cursor-pointer hover:bg-[#C3C3C3]/70 dark:hover:bg-[#3E3F3E]/70 transition-colors">
             <CardHeader>
               <CardTitle className="text-lg font-semibold text-[#F1592A]">
                 <strong>{post.title}</strong>
@@ -349,8 +365,7 @@ return (
         </div>
       </header>
 
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-6">
+      <main className="flex-grow container mx-auto px-4 py-8 h-[calc(100vh-var(--header-height)-var(--footer-height)-2rem)] flex flex-col">        <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]">Forum Discussions</h2>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -411,7 +426,7 @@ return (
         {loading ? (
           <div className="text-center text-[#232120] dark:text-[#E7E7E8]">Loading forum posts...</div>
         ) : (
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex-grow flex flex-col overflow-hidden">
             <TabsList className="grid w-full grid-cols-4 bg-[#C3C3C3] dark:bg-[#3E3F3E] space-x-1">
               <TabsTrigger 
                 value="announcements" 
@@ -436,7 +451,7 @@ return (
                 Community
               </TabsTrigger>
             </TabsList>
-            <div className="relative overflow-hidden" style={{ minHeight: '400px' }}>
+            <div className="flex-grow relative overflow-hidden mt-4">
               <AnimatePresence initial={false} custom={direction}>
                 <motion.div
                   key={activeTab}
@@ -448,19 +463,27 @@ return (
                   transition={{
                     x: { type: "tween", duration: 0.5, ease: "easeInOut" },
                   }}
-                  className="absolute w-full"
+                  className="absolute inset-0 overflow-hidden"
                 >
-                  <TabsContent value="announcements" forceMount={activeTab === "announcements" || undefined}>
-                    {renderPosts('announcements')}
+                  <TabsContent value="announcements" forceMount={activeTab === "announcements" || undefined} className="h-full">
+                    <ScrollArea className="h-full pr-4">
+                      {renderPosts('announcements')}
+                    </ScrollArea>
                   </TabsContent>
-                  <TabsContent value="general" forceMount={activeTab === "general" || undefined}>
-                    {renderPosts('general')}
+                  <TabsContent value="general" forceMount={activeTab === "general" || undefined} className="h-full">
+                    <ScrollArea className="h-full pr-4">
+                      {renderPosts('general')}
+                    </ScrollArea>
                   </TabsContent>
-                  <TabsContent value="updates" forceMount={activeTab === "updates" || undefined}>
-                    {renderPosts('updates')}
+                  <TabsContent value="updates" forceMount={activeTab === "updates" || undefined} className="h-full">
+                    <ScrollArea className="h-full pr-4">
+                      {renderPosts('updates')}
+                    </ScrollArea>
                   </TabsContent>
-                  <TabsContent value="community" forceMount={activeTab === "community" || undefined}>
-                    {renderPosts('community')}
+                  <TabsContent value="community" forceMount={activeTab === "community" || undefined} className="h-full">
+                    <ScrollArea className="h-full pr-4">
+                      {renderPosts('community')}
+                    </ScrollArea>
                   </TabsContent>
                 </motion.div>
               </AnimatePresence>
@@ -469,7 +492,7 @@ return (
         )}
       </main>
 
-      <footer className="border-t border-[#C3C3C3] dark:border-[#3E3F3E] py-8 bg-[#E7E7E8] dark:bg-[#232120]">
+      <footer className="border-t border-[#C3C3C3] dark:border-[#3E3F3E] py-4 bg-[#E7E7E8] dark:bg-[#232120] h-[var(--footer-height)] mt-auto">
         <div className="container mx-auto px-4 text-center text-[#8E8F8E] dark:text-[#C3C3C3]">
           <p className="text-sm">© 2023 NovelHub Forums. All rights reserved.</p>
         </div>

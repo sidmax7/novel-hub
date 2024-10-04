@@ -29,7 +29,8 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    
+    --header-height: 70px;
+    --footer-height: 52px; /* Adjusted to account for py-4 in the footer */
   }
 
   .dark {
@@ -167,7 +168,8 @@ body.dark .text-gray-600 {
   }
 }
 :root {
-  --header-height: 60px; /* Reduced height for mobile */
+  --header-height: 70px;
+  --footer-height: 52px; /* Adjusted to account for py-4 in the footer */
 }
 
 @media (min-width: 640px) {

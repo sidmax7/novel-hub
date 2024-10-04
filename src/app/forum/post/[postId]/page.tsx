@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -163,6 +163,7 @@ export default function PostPage({ params }: { params: { postId: string } }) {
   const [replyContent, setReplyContent] = useState('')
   const { user } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [userProfile, setUserProfile] = useState<{ profilePicture: string, username: string } | null>(null)
   const [sortBy, setSortBy] = useState('New')
   const [searchQuery, setSearchQuery] = useState('')
@@ -309,6 +310,12 @@ export default function PostPage({ params }: { params: { postId: string } }) {
     visible: { opacity: 1, transition: { duration: 0.5 } }
   }
 
+  const handleBackToForums = () => {
+    const tab = post?.section || 'announcements'
+    const page = searchParams.get('page') || '1'
+    router.push(`/forum?tab=${tab}&page=${page}&scrollTo=${params.postId}`)
+  }
+
   if (!mounted) return null
 
   return (
@@ -401,15 +408,14 @@ export default function PostPage({ params }: { params: { postId: string } }) {
                       </p>
                     </div>
                   </div>
-                  <Link href="/forum" passHref>
-                    <Button
-                      variant="outline"
-                      className="bg-[#F1592A] text-[#E7E7E8] hover:bg-[#D14820] border-none"
-                    >
-                      <ChevronLeft className="mr-2 h-4 w-4" />
-                      Back to Forums
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="outline"
+                    className="bg-[#F1592A] text-[#E7E7E8] hover:bg-[#D14820] border-none"
+                    onClick={handleBackToForums}
+                  >
+                    <ChevronLeft className="mr-2 h-4 w-4" />
+                    Back to Forums
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   <p className="text-[#232120] dark:text-[#E7E7E8] text-lg">{post.content}</p>
