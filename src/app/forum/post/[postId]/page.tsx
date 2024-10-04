@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search, Moon, Sun, LogOut, User, Home, MessageSquare, ChevronDown, ChevronUp, MoreHorizontal } from "lucide-react"
+import { Search, Moon, Sun, LogOut, User, Home, MessageSquare, ChevronDown, ChevronUp, MoreHorizontal, ChevronLeft } from "lucide-react"
 import Link from "next/link"
 import Image from 'next/image'
 import { motion } from 'framer-motion'
@@ -388,17 +388,28 @@ export default function PostPage({ params }: { params: { postId: string } }) {
           ) : post ? (
             <div className="space-y-6">
               <Card className="bg-white dark:bg-[#3E3F3E]">
-                <CardHeader className="flex flex-row items-center space-x-4">
-                  <Avatar>
-                    <AvatarImage src={userProfiles[post.authorId]?.profilePicture || '/assets/default-avatar.png'} alt={post.author} />
-                    <AvatarFallback>{post.author[0]}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <CardTitle className="text-2xl font-bold text-[#F1592A]">{post.title}</CardTitle>
-                    <p className="text-sm text-[#8E8F8E] dark:text-[#C3C3C3]">
-                      Posted by {post.author} • {post.createdAt.toLocaleString()}
-                    </p>
+                <CardHeader className="flex flex-row items-center justify-between space-x-4">
+                  <div className="flex items-center space-x-4">
+                    <Avatar>
+                      <AvatarImage src={userProfiles[post.authorId]?.profilePicture || '/assets/default-avatar.png'} alt={post.author} />
+                      <AvatarFallback>{post.author[0]}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <CardTitle className="text-2xl font-bold text-[#F1592A]">{post.title}</CardTitle>
+                      <p className="text-sm text-[#8E8F8E] dark:text-[#C3C3C3]">
+                        Posted by {post.author} • {post.createdAt.toLocaleString()}
+                      </p>
+                    </div>
                   </div>
+                  <Link href="/forum" passHref>
+                    <Button
+                      variant="outline"
+                      className="bg-[#F1592A] text-[#E7E7E8] hover:bg-[#D14820] border-none"
+                    >
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Back to Forums
+                    </Button>
+                  </Link>
                 </CardHeader>
                 <CardContent>
                   <p className="text-[#232120] dark:text-[#E7E7E8] text-lg">{post.content}</p>

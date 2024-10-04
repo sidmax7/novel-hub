@@ -63,6 +63,7 @@ createdAt: Date
 section: string
 replies: Reply[]
 image?: string
+repliesCount: number
 }
 
 const ThemeToggle = () => {
@@ -114,12 +115,18 @@ const fetchPosts = async () => {
   try {
     const q = query(collection(db, 'forumPosts'), orderBy('createdAt', 'desc'))
     const querySnapshot = await getDocs(q)
-    const fetchedPosts = querySnapshot.docs.map(doc => ({ 
-      id: doc.id, 
-      ...doc.data(),
-      createdAt: doc.data().createdAt.toDate(),
-      replies: doc.data().replies || []
-    } as ForumPost))
+    const fetchedPosts = await Promise.all(querySnapshot.docs.map(async (doc) => {
+      const postData = doc.data()
+      const repliesRef = collection(doc.ref, 'replies')
+      const repliesSnapshot = await getDocs(repliesRef)
+      const repliesCount = repliesSnapshot.size
+      return { 
+        id: doc.id, 
+        ...postData,
+        createdAt: postData.createdAt.toDate(),
+        repliesCount: repliesCount
+      } as ForumPost
+    }))
     setPosts(fetchedPosts)
   } catch (error) {
     console.error('Error fetching forum posts:', error)
@@ -236,13 +243,6 @@ const handleTabChange = (newTab: string) => {
   setActiveTab(newTab);
 }
 
-// Add this function to count total replies recursively
-const countTotalReplies = (replies: Reply[]): number => {
-  return replies.reduce((total, reply) => {
-    return total + 1 + countTotalReplies(reply.replies);
-  }, 0);
-};
-
 const renderPosts = (section: string) => {
   const sectionPosts = posts.filter(post => post.section === section)
   return (
@@ -266,7 +266,7 @@ const renderPosts = (section: string) => {
                 </div>
               )}
               <div className="mt-2 text-sm text-[#3E3F3E] dark:text-[#C3C3C3]">
-                {countTotalReplies(post.replies)} {countTotalReplies(post.replies) === 1 ? 'reply' : 'replies'}
+                {post.repliesCount} {post.repliesCount === 1 ? 'reply' : 'replies'}
               </div>
             </CardContent>
           </Card>
