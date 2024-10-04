@@ -236,6 +236,13 @@ const handleTabChange = (newTab: string) => {
   setActiveTab(newTab);
 }
 
+// Add this function to count total replies recursively
+const countTotalReplies = (replies: Reply[]): number => {
+  return replies.reduce((total, reply) => {
+    return total + 1 + countTotalReplies(reply.replies);
+  }, 0);
+};
+
 const renderPosts = (section: string) => {
   const sectionPosts = posts.filter(post => post.section === section)
   return (
@@ -259,7 +266,7 @@ const renderPosts = (section: string) => {
                 </div>
               )}
               <div className="mt-2 text-sm text-[#3E3F3E] dark:text-[#C3C3C3]">
-                {post.replies.length} {post.replies.length === 1 ? 'reply' : 'replies'}
+                {countTotalReplies(post.replies)} {countTotalReplies(post.replies) === 1 ? 'reply' : 'replies'}
               </div>
             </CardContent>
           </Card>

@@ -68,7 +68,7 @@ const ThemeToggle = () => {
   )
 }
 
-const ReplyComponent = ({ reply, allReplies, onReply }: { reply: Reply, allReplies: Reply[], onReply: (parentReplyId: string, content: string) => void }) => {
+const ReplyComponent = ({ reply, allReplies, onReply, userProfiles }: { reply: Reply, allReplies: Reply[], onReply: (parentReplyId: string, content: string) => void, userProfiles: {[key: string]: {profilePicture: string, username: string}} }) => {
   const [isReplying, setIsReplying] = useState(false)
   const [replyContent, setReplyContent] = useState('')
   const [showReplies, setShowReplies] = useState(false)
@@ -84,16 +84,18 @@ const ReplyComponent = ({ reply, allReplies, onReply }: { reply: Reply, allRepli
     }
   }
 
+  const userProfile = userProfiles[reply.authorId] || { profilePicture: '/assets/default-avatar.png', username: reply.author }
+
   return (
     <div className="mt-4">
       <div className="flex items-start space-x-4">
         <Avatar className="w-10 h-10">
-          <AvatarImage src="/assets/default-avatar.png" alt={reply.author} />
-          <AvatarFallback>{reply.author[0].toUpperCase()}</AvatarFallback>
+          <AvatarImage src={userProfile.profilePicture} alt={userProfile.username} />
+          <AvatarFallback>{userProfile.username[0].toUpperCase()}</AvatarFallback>
         </Avatar>
         <div className="flex-grow">
           <div className="flex items-center space-x-2">
-            <span className="font-semibold text-[#232120] dark:text-[#E7E7E8]">{reply.author}</span>
+            <span className="font-semibold text-[#232120] dark:text-[#E7E7E8]">{userProfile.username}</span>
             <span className="text-xs text-[#3E3F3E] dark:text-[#C3C3C3]">{reply.createdAt.toLocaleString()}</span>
           </div>
           <p className="mt-1 text-[#232120] dark:text-[#E7E7E8]">{reply.content}</p>
@@ -142,6 +144,7 @@ const ReplyComponent = ({ reply, allReplies, onReply }: { reply: Reply, allRepli
                   reply={nestedReply}
                   allReplies={allReplies}
                   onReply={onReply}
+                  userProfiles={userProfiles}
                 />
               ))}
             </div>
@@ -164,6 +167,7 @@ export default function PostPage({ params }: { params: { postId: string } }) {
   const [sortBy, setSortBy] = useState('New')
   const [searchQuery, setSearchQuery] = useState('')
   const [allReplies, setAllReplies] = useState<Reply[]>([])
+  const [userProfiles, setUserProfiles] = useState<{[key: string]: {profilePicture: string, username: string}}>({})
 
   useEffect(() => {
     setMounted(true)
@@ -194,6 +198,22 @@ export default function PostPage({ params }: { params: { postId: string } }) {
           createdAt: postData.createdAt.toDate(),
         } as ForumPost)
         setAllReplies(fetchedReplies)
+
+        // Fetch user profiles for all reply authors
+        const authorIds = new Set([postData.authorId, ...fetchedReplies.map(reply => reply.authorId)])
+        const userProfilesPromises = Array.from(authorIds).map(async (authorId) => {
+          const userDoc = await getDoc(doc(db, 'users', authorId))
+          if (userDoc.exists()) {
+            const userData = userDoc.data()
+            return [authorId, {
+              profilePicture: userData.profilePicture || '/assets/default-avatar.png',
+              username: userData.username || 'Anonymous'
+            }]
+          }
+          return [authorId, { profilePicture: '/assets/default-avatar.png', username: 'Anonymous' }]
+        })
+        const userProfilesArray = await Promise.all(userProfilesPromises)
+        setUserProfiles(Object.fromEntries(userProfilesArray))
       } else {
         toast.error('Post not found')
         router.push('/forum')
@@ -302,13 +322,13 @@ export default function PostPage({ params }: { params: { postId: string } }) {
         <header className="border-b border-[#C3C3C3] dark:border-[#3E3F3E] bg-[#E7E7E8] dark:bg-[#232120] sticky top-0 z-10 shadow-sm">
           <div className="container mx-auto px-4 py-6 flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href="/forum" className="text-3xl font-bold text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] transition-colors">
+              <Link href="/forum" className="text-3xl font-bold text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] dark:hover:text-[#F1592A] transition-colors">
                 NovelHub Forums
               </Link>
             </div>
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#C3C3C3]" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#232120]/50 dark:text-[#E7E7E8]/50"/>
                 <Input
                   type="search"
                   placeholder="Search forums..."
@@ -364,24 +384,24 @@ export default function PostPage({ params }: { params: { postId: string } }) {
 
         <main className="flex-grow container mx-auto px-4 py-8">
           {loading ? (
-            <div className="text-center text-[#E7E7E8]">Loading post...</div>
+            <div className="text-center text-[#232120] dark:text-[#E7E7E8]">Loading post...</div>
           ) : post ? (
             <div className="space-y-6">
-              <Card className="bg-[#3E3F3E]">
+              <Card className="bg-white dark:bg-[#3E3F3E]">
                 <CardHeader className="flex flex-row items-center space-x-4">
                   <Avatar>
-                    <AvatarImage src="/placeholder.svg" alt={post.author} />
+                    <AvatarImage src={userProfiles[post.authorId]?.profilePicture || '/assets/default-avatar.png'} alt={post.author} />
                     <AvatarFallback>{post.author[0]}</AvatarFallback>
                   </Avatar>
                   <div>
                     <CardTitle className="text-2xl font-bold text-[#F1592A]">{post.title}</CardTitle>
-                    <p className="text-sm text-[#C3C3C3]">
+                    <p className="text-sm text-[#8E8F8E] dark:text-[#C3C3C3]">
                       Posted by {post.author} • {post.createdAt.toLocaleString()}
                     </p>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-[#E7E7E8] text-lg">{post.content}</p>
+                  <p className="text-[#232120] dark:text-[#E7E7E8] text-lg">{post.content}</p>
                   {post.image && (
                     <div className="mt-4">
                       <Image src={post.image} alt="Post image" width={400} height={300} className="rounded-md" />
@@ -390,11 +410,11 @@ export default function PostPage({ params }: { params: { postId: string } }) {
                 </CardContent>
               </Card>
 
-              <div className="bg-[#3E3F3E] p-4 rounded-lg">
+              <div className="bg-white dark:bg-[#3E3F3E] p-4 rounded-lg">
                 <div className="flex justify-between items-center mb-4">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="text-[#E7E7E8]">
+                      <Button variant="outline" className="text-[#8E8F8E]">
                         Sort by: {sortBy} <ChevronDown className="ml-2 h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -403,7 +423,7 @@ export default function PostPage({ params }: { params: { postId: string } }) {
                       <DropdownMenuItem onClick={() => setSortBy('Old')}>Old</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <div className="relative">
+                  {/* <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#C3C3C3]" />
                     <Input
                       type="search"
@@ -412,17 +432,17 @@ export default function PostPage({ params }: { params: { postId: string } }) {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
-                  </div>
+                  </div> */}
                 </div>
 
                 {user && (
-                  <Card className="bg-[#232120] mb-4">
+                  <Card className="bg-[#E7E7E8] dark:bg-[#232120] mb-4">
                     <CardContent className="p-4">
                       <Textarea
                         value={replyContent}
                         onChange={(e) => setReplyContent(e.target.value)}
                         placeholder="Write your reply..."
-                        className="w-full bg-[#3E3F3E] text-[#E7E7E8] border-[#3E3F3E]"
+                        className="w-full bg-[#C3C3C3] dark:bg-[#3E3F3E] text-[#232120] dark:text-[#E7E7E8] border-[#C3C3C3] dark:border-[#3E3F3E]"
                       />
                       <Button onClick={() => handleReply(null, replyContent)} className="mt-2 bg-[#F1592A] text-[#E7E7E8] hover:bg-[#D14820]">
                         Submit Reply
@@ -438,18 +458,19 @@ export default function PostPage({ params }: { params: { postId: string } }) {
                       reply={reply}
                       allReplies={allReplies}
                       onReply={handleReply}
+                      userProfiles={userProfiles}
                     />
                   ))}
                 </div>
               </div>
             </div>
           ) : (
-            <div className="text-center text-[#E7E7E8]">Post not found</div>
+            <div className="text-center text-[#232120] dark:text-[#E7E7E8]">Post not found</div>
           )}
         </main>
 
-        <footer className="border-t border-[#3E3F3E] py-8 bg-[#232120]">
-          <div className="container mx-auto px-4 text-center text-[#C3C3C3]">
+        <footer className="border-t border-[#C3C3C3] dark:border-[#3E3F3E] py-8 bg-[#E7E7E8] dark:bg-[#232120]">
+          <div className="container mx-auto px-4 text-center text-[#8E8F8E] dark:text-[#C3C3C3]">
             <p className="text-sm">© 2023 NovelHub Forums. All rights reserved.</p>
           </div>
         </footer>
