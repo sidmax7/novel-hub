@@ -7,7 +7,7 @@ import { StarRating } from '@/components/ui/starrating'
 import { BookMarked, ThumbsUp } from 'lucide-react'
 import { useAuth } from '@/app/authcontext'
 import { db } from '@/lib/firebaseConfig'
-import { doc, getDoc, setDoc, deleteDoc, collection } from 'firebase/firestore'
+import { doc, getDoc, setDoc, deleteDoc, collection, updateDoc, increment, arrayUnion, arrayRemove } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 import { useTheme } from 'next-themes'
 interface Novel {
@@ -18,6 +18,7 @@ interface Novel {
   rating: number
   coverUrl: string
   authorId: string
+  likes: number
 }
 
 interface NovelCardProps {
@@ -28,12 +29,15 @@ interface NovelCardProps {
 
 export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) => {
   const [isFollowing, setIsFollowing] = useState(false)
+  const [likes, setLikes] = useState(novel.likes || 0)
+  const [isLiked, setIsLiked] = useState(false)
   const { user } = useAuth()
   const { theme } = useTheme()
 
   useEffect(() => {
     if (user) {
       checkIfFollowing()
+      checkIfLiked()
     }
   }, [user, novel.id])
 
@@ -45,6 +49,17 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
       setIsFollowing(followingDoc.exists())
     } catch (error) {
       console.error('Error checking follow status:', error)
+    }
+  }
+
+  const checkIfLiked = async () => {
+    if (!user) return
+    try {
+      const userRef = doc(db, 'users', user.uid)
+      const userDoc = await getDoc(userRef)
+      setIsLiked(userDoc.data()?.likedNovels?.includes(novel.id) || false)
+    } catch (error) {
+      console.error('Error checking like status:', error)
     }
   }
 
@@ -75,6 +90,35 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
     }
   }
 
+  const handleLikeNovel = async () => {
+    if (!user) {
+      toast.error('Please log in to like novels')
+      return
+    }
+
+    try {
+      const novelRef = doc(db, 'novels', novel.id)
+      const userRef = doc(db, 'users', user.uid)
+
+      if (isLiked) {
+        await updateDoc(novelRef, { likes: increment(-1) })
+        await updateDoc(userRef, { likedNovels: arrayRemove(novel.id) })
+        setLikes(prevLikes => prevLikes - 1)
+        setIsLiked(false)
+        toast.success('Like removed')
+      } else {
+        await updateDoc(novelRef, { likes: increment(1) })
+        await updateDoc(userRef, { likedNovels: arrayUnion(novel.id) })
+        setLikes(prevLikes => prevLikes + 1)
+        setIsLiked(true)
+        toast.success('Novel liked')
+      }
+    } catch (error) {
+      console.error('Error updating like:', error)
+      toast.error('Failed to update like')
+    }
+  }
+
   return (
     <Card className="overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300">
       <Link href={`/novel/${novel.id}`} passHref>
@@ -98,7 +142,11 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
             <Button
               variant="outline"
               size="sm"
-              className="flex-grow comic-button"
+              className={`flex-grow comic-button group border-2 border-[#F1592A] ${
+                isFollowing 
+                  ? "dark:bg-[#F1592A] bg-[#F1592A] text-[#232120] dark:text-white hover:bg-[#232120] dark:hover:bg-[#232120] hover:text-white" 
+                  : "dark:bg-[#232120] bg-white text-[#232120] dark:text-white hover:bg-[#F1592A] dark:hover:bg-[#F1592A] hover:text-white"
+              }`}
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
@@ -106,19 +154,34 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
               }}
             >
               <BookMarked className="mr-2 h-4 w-4" />
-              {isFollowing ? 'Followed' : 'Follow'}
+              <span className="group-hover:hidden">
+                {isFollowing ? 'Followed' : 'Follow'}
+              </span>
+              <span className="hidden group-hover:inline">
+                {isFollowing ? 'Unfollow' : 'Follow'}
+              </span>
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="flex-grow comic-button"
+              className={`flex-grow comic-button group ${
+                theme === 'dark' 
+                  ? "bg-[#232120] text-white hover:bg-[#F1592A] dark:hover:bg-white dark:hover:text-[#232120]" 
+                  : "bg-white text-[#232120] hover:bg-[#232120] hover:text-white"
+              } ${isLiked ? 'bg-white dark:bg-[#232120] text-[#F1592A] dark:text-[#F1592A]' : ''}`}
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                // Implement like functionality here
+                handleLikeNovel()
               }}
             >
-              <ThumbsUp className="mr-2 h-4 w-4" /> Like
+              <ThumbsUp className="mr-2 h-4 w-4" /> 
+              <span className="group-hover:hidden">
+                {isLiked ? 'Liked' : 'Like'} ({likes})
+              </span>
+              <span className="hidden group-hover:inline">
+                {isLiked ? 'Unlike' : 'Like'} ({likes - 1})
+              </span>
             </Button>
           </div>
         </CardContent>

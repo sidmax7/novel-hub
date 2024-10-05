@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, increment, Timestamp } from 'firebase/firestore'
+import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, increment, Timestamp, arrayRemove, arrayUnion } from 'firebase/firestore'
 import { db } from '@/lib/firebaseConfig'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -60,6 +60,8 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [chaptersLoading, setChaptersLoading] = useState(true)
+  const [likes, setLikes] = useState(novel?.likes ?? 0)
+  const [isLiked, setIsLiked] = useState(false)
   const [activeTab, setActiveTab] = useState('chapters')
 
   const variants = {
@@ -153,6 +155,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
   useEffect(() => {
     if (user && novel) {
       checkIfFollowing()
+      checkIfLiked()
     }
   }, [user, novel])
 
@@ -164,6 +167,20 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
       setIsFollowing(followingDoc.exists())
     } catch (error) {
       console.error('Error checking follow status:', error)
+    }
+  }
+
+  const checkIfLiked = async () => {
+    if (!user || !novel) return
+    try {
+      const userRef = doc(db, 'users', user.uid)
+      const userDoc = await getDoc(userRef)
+      if (userDoc.exists()) {
+        const userData = userDoc.data()
+        setIsLiked(userData.likedNovels?.includes(novel.id) || false)
+      }
+    } catch (error) {
+      console.error('Error checking like status:', error)
     }
   }
 
@@ -194,16 +211,32 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
   }
 
   const handleLikeNovel = async () => {
-    if (!novel) return
+    if (!user) {
+      toast.error('Please log in to like novels')
+      return
+    }
+  
     try {
-      await updateDoc(doc(db, 'novels', novel.id), {
-        likes: increment(1)
-      })
-      setNovel(prev => prev ? { ...prev, likes: (prev.likes || 0) + 1 } : null)
-      toast.success('Novel liked')
+      if (!novel) throw new Error('Novel not found');
+      const novelRef = doc(db, 'novels', novel.id)
+      const userRef = doc(db, 'users', user.uid)
+  
+      if (isLiked) {
+        await updateDoc(novelRef, { likes: increment(-1) })
+        await updateDoc(userRef, { likedNovels: arrayRemove(novel.id) })
+        setLikes(prevLikes => prevLikes - 1)
+        setIsLiked(false)
+        toast.success('Like removed')
+      } else {
+        await updateDoc(novelRef, { likes: increment(1) })
+        await updateDoc(userRef, { likedNovels: arrayUnion(novel.id) })
+        setLikes(prevLikes => prevLikes + 1)
+        setIsLiked(true)
+        toast.success('Novel liked')
+      }
     } catch (error) {
-      console.error('Error liking novel:', error)
-      toast.error('Failed to like novel')
+      console.error('Error updating like:', error)
+      toast.error('Failed to update like')
     }
   }
 
@@ -309,12 +342,46 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                 </div>
               </div>
               <div className="flex space-x-4">
-                <Button className="flex-1 comic-button" onClick={handleFollowNovel}>
-                  <BookMarked className="mr-2 h-4 w-4" /> {isFollowing ? 'Unfollow' : 'Follow'}
+                  <Button
+                  variant="outline"
+                  size="sm"
+                  className={`flex-grow comic-button group border-2 border-[#F1592A] ${
+                    isFollowing 
+                      ? "dark:bg-[#F1592A] bg-[#F1592A] text-[#232120] dark:text-white hover:bg-[#232120] dark:hover:bg-[#232120] hover:text-white" 
+                      : "dark:bg-[#232120] bg-white text-[#232120] dark:text-white hover:bg-[#F1592A] dark:hover:bg-[#F1592A] hover:text-white"
+                  }`}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    handleFollowNovel()
+                  }}
+                >
+                  <BookMarked className="mr-2 h-4 w-4" />
+                  <span className="group-hover:hidden">
+                    {isFollowing ? 'Followed' : 'Follow'}
+                  </span>
+                  <span className="hidden group-hover:inline">
+                    {isFollowing ? 'Unfollow' : 'Follow'}
+                  </span>
                 </Button>
-                <Button variant="outline" className="flex-1 comic-button" onClick={handleLikeNovel}>
-                  <ThumbsUp className="mr-2 h-4 w-4" /> Like
-                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`flex-grow comic-button group ${
+                    theme === 'dark' 
+                      ? "bg-[#232120] text-white hover:bg-[#F1592A] dark:hover:bg-white dark:hover:text-[#232120]" 
+                      : "bg-white text-[#232120] hover:bg-[#232120] hover:text-white"
+                  } ${isLiked ? 'bg-white dark:bg-[#232120] text-[#F1592A] dark:text-[#F1592A]' : ''}`}
+                  onClick={handleLikeNovel}
+                  >
+                    <ThumbsUp className={`mr-2 h-4 w-4 ${isLiked ? 'Liked' : 'Like'}`} />
+                    <span className="group-hover:hidden">
+                      {isLiked ? 'Liked' : 'Like'}
+                    </span>
+                    <span className="hidden group-hover:inline">
+                      {isLiked ? 'Unlike' : 'Like'}
+                    </span>
+                  </Button>
                 <Button variant="outline" className="flex-1 comic-button" onClick={() => router.push(`/novel/${novel.id}/chapters`)}>
                   <BookOpen className="mr-2 h-4 w-4" /> Read
                 </Button>
