@@ -50,6 +50,7 @@ interface Novel {
   rating: number
   coverUrl: string
   authorId: string
+  likes?: number; // Make likes optional
 }
 
 export default function ModernLightNovelsHomepage() {
@@ -314,7 +315,7 @@ export default function ModernLightNovelsHomepage() {
                     variants={fadeIn}
                     whileHover={{ scale: 1.05 }}
                   >
-                    <NovelCard novel={novel} onFollowChange={handleFollowChange} />
+                    <NovelCard novel={{...novel, likes: 0}} onFollowChange={handleFollowChange} />
                   </motion.div>
                 ))}
               </motion.div>
