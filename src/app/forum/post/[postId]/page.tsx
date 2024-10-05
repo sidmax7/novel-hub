@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import ReactMarkdown from 'react-markdown'
+import remarkBreaks from 'remark-breaks'
 
 interface Reply {
   id: string
@@ -107,16 +108,21 @@ const ReplyComponent = ({ reply, allReplies, onReply, userProfiles }: { reply: R
   return (
     <div className="mt-4">
       <div className="flex items-start space-x-4">
-        <Avatar className="w-10 h-10">
+        <Avatar className="w-10 h-10 flex-shrink-0">
           <AvatarImage src={userProfile.profilePicture} alt={userProfile.username} />
           <AvatarFallback>{userProfile.username[0].toUpperCase()}</AvatarFallback>
         </Avatar>
-        <div className="flex-grow">
+        <div className="flex-grow overflow-hidden">
           <div className="flex items-center space-x-2">
             <span className="font-semibold text-[#232120] dark:text-[#E7E7E8]">{userProfile.username}</span>
             <span className="text-xs text-[#3E3F3E] dark:text-[#C3C3C3]">{reply.createdAt.toLocaleString()}</span>
           </div>
-          <p className="mt-1 text-[#232120] dark:text-[#E7E7E8]">{reply.content}</p>
+          <ReactMarkdown 
+            className="mt-1 text-[#232120] dark:text-[#E7E7E8] prose dark:prose-invert max-w-none break-words whitespace-pre-wrap"
+            remarkPlugins={[remarkBreaks]}
+          >
+            {reply.content}
+          </ReactMarkdown>
           {reply.image && (
             <div className="mt-2">
               <Image src={reply.image} alt="Reply image" width={200} height={200} className="rounded-md" />
