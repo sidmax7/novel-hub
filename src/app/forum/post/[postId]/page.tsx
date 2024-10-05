@@ -519,7 +519,7 @@ export default function PostPage({ params }: { params: { postId: string } }) {
                         onChange={(e) => setReplyContent(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Write your reply... (Press Enter to submit, Ctrl+Enter for new line)"
-                        className="w-full bg-[#C3C3C3] dark:bg-[#3E3F3E] text-[#232120] dark:text-[#E7E7E8] border-[#C3C3C3] dark:border-[#3E3F3E]"
+                        className="w-full bg-[#C3C3C3] dark:bg-[#232120] text-[#232120] dark:text-[#E7E7E8] border-[#C3C3C3] dark:border-[#3E3F3E]"
                       />
                       <Button onClick={() => handleReply(null, replyContent)} className="mt-2 bg-[#F1592A] text-[#E7E7E8] hover:bg-[#D14820]">
                         Submit Reply
