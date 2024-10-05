@@ -27,6 +27,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useTheme } from 'next-themes'
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 
 
 export const genreColors = {
@@ -208,13 +213,13 @@ export default function ModernLightNovelsHomepage() {
       animate="visible"
       variants={fadeIn}
     >
-      <header className="border-b dark:border-[#3E3F3E] bg-[#E7E7E8] dark:bg-[#232120] sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-4 py-6 flex items-center justify-between">
+      <header className="fixed top-0 left-0 right-0 border-b dark:border-[#3E3F3E] bg-[#E7E7E8] dark:bg-[#232120] z-10 shadow-sm">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h1 className="text-3xl font-bold text-[#F1592A]">
+            <h1 className="text-2xl md:text-3xl font-bold text-[#F1592A]">
               <Link 
                 href="/" 
-                className="text-3xl font-bold text-[#F1592A] dark:text-[#F1592A] hover:text-[#232120] dark:hover:text-[#E7E7E8] transition-colors"
+                className="text-2xl md:text-3xl font-bold text-[#F1592A] dark:text-[#F1592A] hover:text-[#232120] dark:hover:text-[#E7E7E8] transition-colors"
                 onClick={(e) => {
                   e.preventDefault();
                   scrollToTop();
@@ -225,14 +230,6 @@ export default function ModernLightNovelsHomepage() {
             </h1>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#232120]/60 dark:text-[#E7E7E8]/60" />
-              <Input
-                type="search"
-                placeholder="Search novels..."
-                className="pl-10 pr-4 py-2 w-64 rounded-full bg-[#C3C3C3] dark:bg-[#3E3F3E] focus:outline-none focus:ring-2 focus:ring-[#F1592A] text-[#232120] dark:text-[#E7E7E8] placeholder-[#8E8F8E] dark:placeholder-[#C3C3C3]"
-              />
-            </div>
             <Link href="/forum" passHref>
               <Button
                 variant="outline"
@@ -299,12 +296,21 @@ export default function ModernLightNovelsHomepage() {
         </div>
       </header>
 
-      <main className="flex-grow">
+      <main className="flex-grow pt-[60px]">
         <section className="py-12 md:py-24 bg-gradient-to-br from-[#F1592A] to-[#3E3F3E] dark:from-[#3E3F3E] dark:to-[#F1592A]">
           <div className="container mx-auto px-4 text-center">
-            <h2 className="text-4xl md:text-5xl font-bold text-[#E7E7E8] mb-4">Discover Your Next Adventure</h2>
+            <h2 className="text-3xl md:text-5xl font-bold text-[#E7E7E8] mb-4">Discover Your Next Adventure</h2>
             <p className="text-xl text-[#E7E7E8] mb-8">Explore thousands of light novels across various genres</p>
-            <Button className="bg-[#E7E7E8] text-[#F1592A] hover:bg-[#C3C3C3]">Start Reading Now</Button>
+            <div className="max-w-md mx-auto">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#232120]/60 dark:text-[#E7E7E8]/60" />
+                <Input
+                  type="search"
+                  placeholder="Search novels..."
+                  className="pl-10 pr-4 py-2 w-full rounded-full bg-[#E7E7E8] dark:bg-[#3E3F3E] focus:outline-none focus:ring-2 focus:ring-[#F1592A] text-[#232120] dark:text-[#E7E7E8] placeholder-[#8E8F8E] dark:placeholder-[#C3C3C3]"
+                />
+              </div>
+            </div>
           </div>
         </section>
 
@@ -320,7 +326,7 @@ export default function ModernLightNovelsHomepage() {
               <div className="text-center text-[#232120] dark:text-[#E7E7E8]">Loading popular novels...</div>
             ) : (
               <motion.div 
-                className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8"
+                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8"
                 variants={staggerChildren}
               >
                 {popularNovels.map((novel) => (
@@ -328,14 +334,15 @@ export default function ModernLightNovelsHomepage() {
                     key={novel.id}
                     variants={fadeIn}
                     whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    <NovelCard novel={{...novel, likes: 0}} onFollowChange={handleFollowChange} />
+                    <NovelCard novel={novel} />
                   </motion.div>
                 ))}
               </motion.div>
             )}
             <motion.div 
-              className="mt-12 text-center"
+              className="mt-8 text-center"
               variants={fadeIn}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -348,68 +355,104 @@ export default function ModernLightNovelsHomepage() {
         </section>
 
         <section className="py-12 bg-[#E7E7E8] dark:bg-[#232120]">
-          <div className={`container rounded-lg mx-auto px-12 py-12 ${
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className={`rounded-lg p-6 ${
                 theme === 'dark'
                   ? 'bg-black dark:bg-[#3E3F3E]'
                   : 'bg-white dark:bg-[#3E3F3E] border border-[#F1592A] border-opacity-30'
               } backdrop-blur-md`}>
-            <motion.h2 
-              className="text-3xl font-bold mb-8 text-gray-900 dark:text-gray-100"
-              variants={fadeIn}
-            >
-              Explore Genres
-            </motion.h2>
-            <motion.div 
-              className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8"
-              variants={staggerChildren}
-            >
-              {Object.entries(genreColors).map(([genre, colors]) => (
-                <motion.div
-                  key={genre}
+                <motion.h2 
+                  className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100"
                   variants={fadeIn}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                 >
-                  <Link 
-                    href={`/genre/${genre.toLowerCase()}`} 
-                    className={`p-6 rounded-lg shadow-md text-center block transition-colors h-full
-                    ${theme === 'dark' ? colors.dark : colors.light}`}
-                  >
-                    <span className="font-medium text-lg">{genre}</span>
-                  </Link>
+                  Explore Genres
+                </motion.h2>
+                <motion.div 
+                  className="grid grid-cols-2 gap-4"
+                  variants={staggerChildren}
+                >
+                  {Object.entries(genreColors).slice(0, 6).map(([genre, colors]) => (
+                    <motion.div
+                      key={genre}
+                      variants={fadeIn}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Link 
+                        href={`/genre/${genre.toLowerCase()}`} 
+                        className={`p-4 rounded-lg shadow-md text-center block transition-colors h-full
+                        ${theme === 'dark' ? colors.dark : colors.light}`}
+                      >
+                        <span className="font-medium text-sm">{genre}</span>
+                      </Link>
+                    </motion.div>
+                  ))}
                 </motion.div>
-              ))}
-            </motion.div>
+                {Object.entries(genreColors).length > 6 && (
+                  <motion.div 
+                    className="mt-4 text-center"
+                    variants={fadeIn}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Button variant="link" className="text-[#F1592A] hover:text-[#D14820]">
+                      View All Genres
+                    </Button>
+                  </motion.div>
+                )}
+              </div>
+
+              <div className={`rounded-lg p-6 ${
+                theme === 'dark'
+                  ? 'bg-black dark:bg-[#3E3F3E]'
+                  : 'bg-white dark:bg-[#3E3F3E] border border-[#F1592A] border-opacity-30'
+              } backdrop-blur-md`}>
+                <motion.h2 
+                  className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100"
+                  variants={fadeIn}
+                >
+                  Upcoming Releases
+                </motion.h2>
+                <motion.div 
+                  className="space-y-4"
+                  variants={staggerChildren}
+                >
+                  {[1, 2, 3].map((release) => (
+                    <motion.div 
+                      key={release}
+                      className="flex items-center space-x-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-md"
+                      variants={fadeIn}
+                      whileHover={{ scale: 1.03 }}
+                    >
+                      <Image
+                        src={`/assets/cover.jpg`}
+                        alt={`Upcoming Release ${release}`}
+                        width={60}
+                        height={90}
+                        className="object-cover rounded"
+                      />
+                      <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Novel Title {release}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">Author Name</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Release Date: DD/MM/YYYY</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </div>
+            </div>
           </div>
         </section>
         <section className="py-12 bg-[#E7E7E8] dark:bg-[#232120]">
           <div className="container mx-auto px-4">
             <motion.h2 
-              className="text-3xl font-bold mb-8 text-gray-900 dark:text-gray-100"
+              className="text-3xl font-bold mb-8 text-[#232120] dark:text-[#E7E7E8]"
               variants={fadeIn}
             >
-              Upcoming Releases
+              Additional Content
             </motion.h2>
-            <motion.div 
-              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8"
-              variants={staggerChildren}
-            >
-              {[1, 2, 3].map((release) => (
-                <motion.div 
-                  key={release}
-                  className="flex items-center space-x-4 bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md"
-                  variants={fadeIn}
-                  whileHover={{ scale: 1.03 }}
-                >
-                  <Image
-                    src={`/assets/cover.jpg`}
-                    alt={`Upcoming Release ${release}`}
-                    width={100}
-                    height={150}
-                  />
-                </motion.div>
-              ))}
-            </motion.div>
+            {/* Add your additional content here */}
           </div>
         </section>
       </main>
