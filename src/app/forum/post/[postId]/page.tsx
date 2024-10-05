@@ -26,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import ReactMarkdown from 'react-markdown'
 
 interface Reply {
   id: string
@@ -278,6 +279,21 @@ export default function PostPage({ params }: { params: { postId: string } }) {
       
       setAllReplies(prevReplies => [addedReply, ...prevReplies])
       
+      // Fetch the user's profile if it's not already in userProfiles
+      if (!userProfiles[user.uid]) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        if (userDoc.exists()) {
+          const userData = userDoc.data()
+          setUserProfiles(prevProfiles => ({
+            ...prevProfiles,
+            [user.uid]: {
+              profilePicture: userData.profilePicture || '/assets/default-avatar.png',
+              username: userData.username || 'Anonymous'
+            }
+          }))
+        }
+      }
+      
       toast.success('Reply added successfully')
       setReplyContent('')
     } catch (error) {
@@ -418,7 +434,9 @@ export default function PostPage({ params }: { params: { postId: string } }) {
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-[#232120] dark:text-[#E7E7E8] text-lg">{post.content}</p>
+                  <ReactMarkdown className="text-[#232120] dark:text-[#E7E7E8] text-lg prose dark:prose-invert max-w-none">
+                    {post.content}
+                  </ReactMarkdown>
                   {post.image && (
                     <div className="mt-4">
                       <Image src={post.image} alt="Post image" width={400} height={300} className="rounded-md" />
