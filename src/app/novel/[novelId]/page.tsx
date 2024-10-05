@@ -60,7 +60,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [chaptersLoading, setChaptersLoading] = useState(true)
-  const [likes, setLikes] = useState(novel?.likes ?? 0)
+  const [likes, setLikes] = useState(0)
   const [isLiked, setIsLiked] = useState(false)
   const [activeTab, setActiveTab] = useState('chapters')
 
@@ -111,7 +111,9 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
     try {
       const novelDoc = await getDoc(doc(db, 'novels', params.novelId))
       if (novelDoc.exists()) {
-        setNovel({ id: novelDoc.id, ...novelDoc.data() } as Novel)
+        const novelData = { id: novelDoc.id, ...novelDoc.data() } as Novel
+        setNovel(novelData)
+        setLikes(novelData.likes || 0)
         await updateDoc(doc(db, 'novels', params.novelId), {
           views: increment(0.5)
         })
@@ -252,7 +254,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
         <div className="flex items-center space-x-4">
             <h1 className="text-3xl font-bold text-[#F1592A]">
               <Link href="/" className="text-3xl font-bold text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] dark:hover:text-[#F1592A] transition-colors">
-            NovelHub
+                NovelHub
           </Link>
           </h1>
           </div>
@@ -338,7 +340,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                 </div>
                 <div className="flex items-center">
                   <ThumbsUp className="h-5 w-5 mr-2 text-gray-500" />
-                  <span>{novel.likes || 0} likes</span>
+                  <span>{likes} likes</span>
                 </div>
               </div>
               <div className="flex space-x-4">

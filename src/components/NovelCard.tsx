@@ -177,10 +177,10 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
             >
               <ThumbsUp className="mr-2 h-4 w-4" /> 
               <span className="group-hover:hidden">
-                {isLiked ? 'Liked' : 'Like'} ({likes})
+                {isLiked ? 'Liked' : 'Like'} 
               </span>
               <span className="hidden group-hover:inline">
-                {isLiked ? 'Unlike' : 'Like'} ({likes - 1})
+                {isLiked ? 'Unlike' : 'Like'}
               </span>
             </Button>
           </div>

@@ -16,7 +16,7 @@ import { signOut } from 'firebase/auth'
 import { auth, db, storage } from '@/lib/firebaseConfig'
 import { collection, query, where, orderBy, getDocs, addDoc, serverTimestamp, updateDoc, arrayUnion, doc, getDoc, Timestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { toast } from 'react-hot-toast'
+import { Toaster, toast } from 'react-hot-toast'
 import { useTheme } from 'next-themes'
 import {
   DropdownMenu,
@@ -78,11 +78,19 @@ const ReplyComponent = ({ reply, allReplies, onReply, userProfiles }: { reply: R
   const nestedReplies = allReplies.filter(r => r.parentId === reply.id)
 
   const handleReply = () => {
-    if (replyContent.trim()) {
-      onReply(reply.id, replyContent)
-      setReplyContent('')
-      setIsReplying(false)
+    if (!user) {
+      toast.error('You must be logged in to reply')
+      return
     }
+    
+    if (!replyContent.trim()) {
+      toast.error('Cannot have blank reply')
+      return
+    }
+
+    onReply(reply.id, replyContent)
+    setReplyContent('')
+    setIsReplying(false)
   }
 
   const userProfile = userProfiles[reply.authorId] || { profilePicture: '/assets/default-avatar.png', username: reply.author }
@@ -258,9 +266,16 @@ export default function PostPage({ params }: { params: { postId: string } }) {
       toast.error('You must be logged in to reply')
       return
     }
+    
+    // Check if the reply content is empty or only contains whitespace
+    if (!content.trim()) {
+      toast.error('Cannot have blank reply')
+      return
+    }
+
     try {
       const newReply = {
-        content,
+        content: content.trim(), // Trim the content before saving
         author: userProfile?.username || 'Anonymous',
         authorId: user.uid,
         createdAt: serverTimestamp(),
@@ -336,6 +351,7 @@ export default function PostPage({ params }: { params: { postId: string } }) {
 
   return (
     <div className="min-h-screen bg-[#E7E7E8] dark:bg-[#232120] text-[#232120] dark:text-[#E7E7E8]">
+      <Toaster position="top-center" reverseOrder={false} />
       <motion.div 
         className="flex flex-col min-h-screen"
         initial="hidden"

@@ -65,6 +65,9 @@ export default function ModernLightNovelsHomepage() {
   const [userType, setUserType] = useState<string | null>(null)
   const [userProfile, setUserProfile] = useState<{ profilePicture: string, username: string } | null>(null)
 
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   useEffect(() => {
     setMounted(true)
@@ -208,7 +211,18 @@ export default function ModernLightNovelsHomepage() {
       <header className="border-b dark:border-[#3E3F3E] bg-[#E7E7E8] dark:bg-[#232120] sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4 py-6 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h1 className="text-3xl font-bold text-[#F1592A]">NovelHub</h1>
+            <h1 className="text-3xl font-bold text-[#F1592A]">
+              <Link 
+                href="/" 
+                className="text-3xl font-bold text-[#F1592A] dark:text-[#F1592A] hover:text-[#232120] dark:hover:text-[#E7E7E8] transition-colors"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToTop();
+                }}
+              >
+                NovelHub
+              </Link>
+            </h1>
           </div>
           <div className="flex items-center space-x-4">
             <div className="relative">
