@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, KeyboardEvent } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -85,6 +85,15 @@ const ReplyComponent = ({ reply, allReplies, onReply, userProfiles }: { reply: R
     }
   }
 
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey) {
+      e.preventDefault()
+      handleReply()
+    } else if (e.key === 'Enter' && (e.ctrlKey || e.shiftKey)) {
+      setReplyContent(prev => prev + '\n')
+    }
+  }
+
   const userProfile = userProfiles[reply.authorId] || { profilePicture: '/assets/default-avatar.png', username: reply.author }
 
   return (
@@ -118,7 +127,8 @@ const ReplyComponent = ({ reply, allReplies, onReply, userProfiles }: { reply: R
           <Textarea
             value={replyContent}
             onChange={(e) => setReplyContent(e.target.value)}
-            placeholder="Write your reply..."
+            onKeyDown={handleKeyDown}
+            placeholder="Write your reply... (Press Enter to submit, Ctrl+Enter for new line)"
             className="w-full bg-[#E7E7E8] dark:bg-[#3E3F3E] text-[#232120] dark:text-[#E7E7E8] border-[#C3C3C3] dark:border-[#3E3F3E]"
           />
           <Button onClick={handleReply} className="mt-2 bg-[#F1592A] text-[#E7E7E8] hover:bg-[#D14820]">
@@ -258,6 +268,10 @@ export default function PostPage({ params }: { params: { postId: string } }) {
       toast.error('You must be logged in to reply')
       return
     }
+    if (!content.trim()) {
+      toast.error('Reply cannot be empty')
+      return
+    }
     try {
       const newReply = {
         content,
@@ -299,6 +313,15 @@ export default function PostPage({ params }: { params: { postId: string } }) {
     } catch (error) {
       console.error('Error adding reply:', error)
       toast.error('Failed to add reply')
+    }
+  }
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey) {
+      e.preventDefault()
+      handleReply(null, replyContent)
+    } else if (e.key === 'Enter' && (e.ctrlKey || e.shiftKey)) {
+      setReplyContent(prev => prev + '\n')
     }
   }
 
@@ -476,7 +499,8 @@ export default function PostPage({ params }: { params: { postId: string } }) {
                       <Textarea
                         value={replyContent}
                         onChange={(e) => setReplyContent(e.target.value)}
-                        placeholder="Write your reply..."
+                        onKeyDown={handleKeyDown}
+                        placeholder="Write your reply... (Press Enter to submit, Ctrl+Enter for new line)"
                         className="w-full bg-[#C3C3C3] dark:bg-[#3E3F3E] text-[#232120] dark:text-[#E7E7E8] border-[#C3C3C3] dark:border-[#3E3F3E]"
                       />
                       <Button onClick={() => handleReply(null, replyContent)} className="mt-2 bg-[#F1592A] text-[#E7E7E8] hover:bg-[#D14820]">
