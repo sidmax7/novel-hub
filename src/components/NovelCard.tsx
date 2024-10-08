@@ -7,9 +7,10 @@ import { StarRating } from '@/components/ui/starrating'
 import { BookMarked, ThumbsUp } from 'lucide-react'
 import { useAuth } from '@/app/authcontext'
 import { db } from '@/lib/firebaseConfig'
-import { doc, getDoc, setDoc, deleteDoc, collection, updateDoc, increment, arrayUnion, arrayRemove } from 'firebase/firestore'
+import { doc, getDoc, setDoc, deleteDoc, updateDoc, increment, arrayUnion, arrayRemove } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 import { useTheme } from 'next-themes'
+
 interface Novel {
   id: string
   name: string
@@ -138,11 +139,11 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
             </p>
           </Link>
           <StarRating rating={novel.rating} />
-          <div className="flex mt-2 space-x-2">
+          <div className="flex flex-col sm:flex-row mt-2 space-y-2 sm:space-y-0 sm:space-x-2">
             <Button
               variant="outline"
               size="sm"
-              className={`flex-grow comic-button group border-2 border-[#F1592A] ${
+              className={`w-full sm:w-auto text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2 comic-button group border-2 border-[#F1592A] ${
                 isFollowing 
                   ? "dark:bg-[#F1592A] bg-[#F1592A] text-[#232120] dark:text-white hover:bg-[#232120] dark:hover:bg-[#232120] hover:text-white" 
                   : "dark:bg-[#232120] bg-white text-[#232120] dark:text-white hover:bg-[#F1592A] dark:hover:bg-[#F1592A] hover:text-white"
@@ -153,7 +154,7 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
                 handleFollowNovel()
               }}
             >
-              <BookMarked className="mr-2 h-4 w-4" />
+              <BookMarked className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
               <span className="group-hover:hidden">
                 {isFollowing ? 'Followed' : 'Follow'}
               </span>
@@ -164,7 +165,7 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
             <Button
               variant="outline"
               size="sm"
-              className={`flex-grow comic-button group ${
+              className={`w-full sm:w-auto text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2 comic-button group ${
                 theme === 'dark' 
                   ? "bg-[#232120] text-white hover:bg-[#F1592A] dark:hover:bg-white dark:hover:text-[#232120]" 
                   : "bg-white text-[#232120] hover:bg-[#232120] hover:text-white"
@@ -175,7 +176,7 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
                 handleLikeNovel()
               }}
             >
-              <ThumbsUp className="mr-2 h-4 w-4" /> 
+              <ThumbsUp className="mr-1 h-3 w-3 sm:h-4 sm:w-4" /> 
               <span className="group-hover:hidden">
                 {isLiked ? 'Liked' : 'Like'} 
               </span>
