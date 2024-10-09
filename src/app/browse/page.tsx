@@ -3,24 +3,17 @@
 import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Filter, Check } from "lucide-react"
+import { Search, Check, Heart, BookOpen, Share2, Star } from "lucide-react"
 import Link from "next/link"
 import { motion } from 'framer-motion'
 import { useTheme } from 'next-themes'
-import { NovelCard } from '@/components/NovelCard'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { genreColors } from '@/app/page'
 import { useAuth } from '../authcontext'
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebaseConfig';
 import { toast } from 'react-hot-toast';
 import Image from "next/image";
+import { Tooltip } from "@/components/ui/tooltip"
 
 interface Novel {
   id: string;
@@ -40,6 +33,9 @@ interface Novel {
   rank?: number;
 }
 
+const CACHE_KEY = 'novelHubCache'
+const CACHE_EXPIRATION = 60 * 60 * 1000 // 1 hour in milliseconds
+
 export default function BrowsePage() {
   const { theme } = useTheme()
   const [novels, setNovels] = useState<Novel[]>([])
@@ -52,6 +48,17 @@ export default function BrowsePage() {
   useEffect(() => {
     const fetchNovels = async () => {
       try {
+        const cachedData = localStorage.getItem(CACHE_KEY)
+        if (cachedData) {
+          const { data, timestamp } = JSON.parse(cachedData)
+          if (Date.now() - timestamp < CACHE_EXPIRATION) {
+            console.log("Using cached data")
+            setNovels(data)
+            setFilteredNovels(data)
+            return
+          }
+        }
+
         const novelsRef = collection(db, 'novels');
         const q = query(novelsRef, orderBy('name'));
         const querySnapshot = await getDocs(q);
@@ -66,6 +73,12 @@ export default function BrowsePage() {
         console.log("Fetched novels:", fetchedNovels);
         setNovels(fetchedNovels);
         setFilteredNovels(fetchedNovels);
+
+        // Cache the fetched data
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          data: fetchedNovels,
+          timestamp: Date.now()
+        }));
       } catch (error) {
         console.error("Error fetching novels:", error);
         toast.error("Failed to load novels");
@@ -116,6 +129,31 @@ export default function BrowsePage() {
     );
   };
 
+  const handleReadNow = (novelId: string) => {
+    // Implement logic to start reading the novel
+    console.log(`Start reading novel with id: ${novelId}`);
+  };
+
+  const handleFavorite = (novelId: string) => {
+    // Implement logic to add/remove novel from favorites
+    console.log(`Toggle favorite for novel with id: ${novelId}`);
+  };
+
+  const isFavorite = (novelId: string) => {
+    // Implement logic to check if a novel is in the user's favorites
+    return false; // Placeholder
+  };
+
+  const handleShare = (novel: Novel) => {
+    // Implement logic to share the novel
+    console.log(`Share novel: ${novel.name}`);
+  };
+
+  const formatDate = (dateString: string) => {
+    // Implement date formatting logic
+    return new Date(dateString).toLocaleDateString();
+  };
+
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-[#E7E7E8] dark:bg-[#232120]`}>
       <header className="border-b dark:border-[#3E3F3E] bg-[#E7E7E8] dark:bg-[#232120] sticky top-0 z-10 shadow-sm">
@@ -139,7 +177,13 @@ export default function BrowsePage() {
                     key={genre}
                     onClick={() => toggleGenre(genre)}
                     variant={isSelected ? "default" : "outline"}
-                    className={`w-full justify-between !text-[#232120] dark:!text-[#E7E7E8] ${genreColors[genre as keyof typeof genreColors]?.light} dark:${genreColors[genre as keyof typeof genreColors]?.dark}`}
+                    className={`w-full justify-between ${
+                      isSelected
+                        ? theme === 'dark'
+                          ? `text-white ${genreColors[genre as keyof typeof genreColors]?.dark || 'bg-gray-700'}`
+                          : `text-black ${genreColors[genre as keyof typeof genreColors]?.light || 'bg-gray-300'}`
+                        : 'text-[#232120] dark:text-[#E7E7E8]'
+                    }`}
                   >
                     <span>{genre}</span>
                     {isSelected && <Check size={16} />}
@@ -186,7 +230,7 @@ export default function BrowsePage() {
           </div>
 
           <motion.div 
-            className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            className="space-y-4"
             initial="hidden"
             animate="visible"
             variants={{
@@ -202,31 +246,65 @@ export default function BrowsePage() {
             {filteredNovels.map((novel) => (
               <motion.div
                 key={novel.id}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden"
+                className="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden"
                 variants={{
                   hidden: { opacity: 0, y: 20 },
                   visible: { opacity: 1, y: 0 }
                 }}
               >
-                <div className="relative h-48 w-full">
-                  <Image
-                    src={novel.coverUrl || '/placeholder.svg'}
-                    alt={novel.name}
-                    layout="fill"
-                    objectFit="cover"
-                  />
-                </div>
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-[#232120] dark:text-[#E7E7E8] mb-2">{novel.name}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">by {novel.author}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-3">{novel.description}</p>
-                  <div className="flex justify-between items-center">
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold !text-[#232120] dark:!text-[#E7E7E8] ${genreColors[novel.genre as keyof typeof genreColors]?.light} dark:${genreColors[novel.genre as keyof typeof genreColors]?.dark}`}>
-                      {novel.genre}
-                    </span>
-                    <div className="flex items-center">
-                      <span className="text-yellow-500 mr-1">★</span>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{novel.rating.toFixed(1)}</span>
+                <div className="flex p-4">
+                  <div className="flex-shrink-0 w-24 h-36 mr-4 relative group">
+                    <Image
+                      src={novel.coverUrl || '/placeholder.svg'}
+                      alt={novel.name}
+                      width={96}
+                      height={144}
+                      objectFit="cover"
+                      className="rounded"
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="sm" onClick={() => handleReadNow(novel.id)}>
+                        <BookOpen className="mr-2" size={16} />
+                        Read Now
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex-grow">
+                    <h3 className="text-xl font-semibold text-[#232120] dark:text-[#E7E7E8] mb-2">
+                      <Link href={`/novel/${novel.id}`} className="hover:underline">
+                        {novel.name}
+                      </Link>
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">by {novel.author}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">{novel.description}</p>
+                    <div className="flex items-center space-x-4 mb-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold !text-[#232120] dark:!text-[#E7E7E8] ${genreColors[novel.genre as keyof typeof genreColors]?.light} dark:${genreColors[novel.genre as keyof typeof genreColors]?.dark}`}>
+                        {novel.genre}
+                      </span>
+                      {/* <Tooltip content={`${novel.rating.toFixed(1)} out of 5 stars`}>
+                        <div className="flex items-center">
+                          <Star className="text-yellow-500 mr-1" size={16} />
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{novel.rating.toFixed(1)}</span>
+                        </div>
+                      </Tooltip>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <Tooltip content="Add to favorites">
+                        <Button variant="ghost" size="sm" onClick={() => handleFavorite(novel.id)}>
+                          <Heart className={`${isFavorite(novel.id) ? 'fill-red-500 text-red-500' : 'text-gray-500'}`} size={16} />
+                        </Button>
+                      </Tooltip>
+                      <Tooltip content="Share">
+                        <Button variant="ghost" size="sm" onClick={() => handleShare(novel)}>
+                          <Share2 className="text-gray-500" size={16} />
+                        </Button>
+                      </Tooltip> */}
+                      <span className="text-sm text-gray-500 dark:text-gray-400">{novel.likes} likes</span>
+                      {novel.lastUpdated && (
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          Updated: {formatDate(novel.lastUpdated)}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
