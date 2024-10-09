@@ -35,7 +35,7 @@ interface Novel {
 const CACHE_KEY = 'novelHubCache'
 const CACHE_EXPIRATION = 60 * 60 * 1000 // 1 hour in milliseconds
 
-const genreColors = {
+const colorSchemes = {
   Fantasy: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900 text-purple-100' },
   "Sci-Fi": { light: 'bg-blue-100 text-blue-800', dark: 'bg-blue-900 text-blue-100' },
   Romance: { light: 'bg-pink-100 text-pink-800', dark: 'bg-pink-900 text-pink-100' },
@@ -44,6 +44,13 @@ const genreColors = {
   "Slice of Life": { light: 'bg-green-100 text-green-800', dark: 'bg-green-900 text-green-100' },
   Isekai: { light: 'bg-indigo-100 text-indigo-800', dark: 'bg-indigo-900 text-indigo-100' },
   Horror: { light: 'bg-gray-100 text-gray-800', dark: 'bg-gray-900 text-gray-100' },
+  Adventure: { light: 'bg-orange-100 text-orange-800', dark: 'bg-orange-900 text-orange-100' },
+  Magic: { light: 'bg-teal-100 text-teal-800', dark: 'bg-teal-900 text-teal-100' },
+  Drama: { light: 'bg-rose-100 text-rose-800', dark: 'bg-rose-900 text-rose-100' },
+  Comedy: { light: 'bg-lime-100 text-lime-800', dark: 'bg-lime-900 text-lime-100' },
+  Thriller: { light: 'bg-cyan-100 text-cyan-800', dark: 'bg-cyan-900 text-cyan-100' },
+  Historical: { light: 'bg-amber-100 text-amber-800', dark: 'bg-amber-900 text-amber-100' },
+  Supernatural: { light: 'bg-violet-100 text-violet-800', dark: 'bg-violet-900 text-violet-100' },
 };
 
 export default function BrowsePage() {
@@ -169,6 +176,11 @@ export default function BrowsePage() {
     router.push(`/novel/${novelId}`);
   };
 
+  const getColorScheme = (item: string) => {
+    const key = Object.keys(colorSchemes).find(k => item.toLowerCase().includes(k.toLowerCase()));
+    return key ? colorSchemes[key as keyof typeof colorSchemes] : colorSchemes.Horror; // Default to Horror colors if no match
+  };
+
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-[#E7E7E8] dark:bg-[#232120]`}>
       <header className="border-b dark:border-[#3E3F3E] bg-[#E7E7E8] dark:bg-[#232120] sticky top-0 z-10 shadow-sm">
@@ -185,20 +197,15 @@ export default function BrowsePage() {
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-2 text-[#232120] dark:text-[#E7E7E8]">Genres</h3>
             <div className="space-y-2">
-              {Object.keys(genreColors).map((genre) => {
+              {Object.keys(colorSchemes).map((genre) => {
                 const isSelected = selectedGenres.map(g => g.toLowerCase()).includes(genre.toLowerCase());
+                const colorScheme = getColorScheme(genre);
                 return (
                   <Button
                     key={genre}
                     onClick={() => toggleGenre(genre)}
                     variant={isSelected ? "default" : "outline"}
-                    className={`w-full justify-between ${
-                      isSelected
-                        ? theme === 'dark'
-                          ? `text-white ${genreColors[genre as keyof typeof genreColors]?.dark || 'bg-gray-700'}`
-                          : `text-black ${genreColors[genre as keyof typeof genreColors]?.light || 'bg-gray-300'}`
-                        : 'text-[#232120] dark:text-[#E7E7E8]'
-                    }`}
+                    className={`w-full justify-between ${isSelected ? (theme === 'dark' ? colorScheme.dark : colorScheme.light) : ''}`}
                   >
                     <span>{genre}</span>
                     {isSelected && <Check size={16} />}
@@ -212,12 +219,13 @@ export default function BrowsePage() {
             <div className="space-y-2">
               {allTags.map((tag) => {
                 const isSelected = selectedTags.map(t => t.toLowerCase()).includes(tag.toLowerCase());
+                const colorScheme = getColorScheme(tag);
                 return (
                   <Button
                     key={tag}
                     onClick={() => toggleTag(tag)}
                     variant={isSelected ? "default" : "outline"}
-                    className="w-full justify-between"
+                    className={`w-full justify-between ${isSelected ? (theme === 'dark' ? colorScheme.dark : colorScheme.light) : ''}`}
                   >
                     <span>{tag}</span>
                     {isSelected && <Check size={16} />}
@@ -307,16 +315,29 @@ export default function BrowsePage() {
                       </Link>
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">{novel.description}</p>
-                    <div className="flex items-center space-x-4 mb-2">
-                    <span 
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <span 
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           theme === 'dark'
-                            ? genreColors[novel.genre as keyof typeof genreColors]?.dark || 'bg-gray-700 text-white'
-                            : genreColors[novel.genre as keyof typeof genreColors]?.light || 'bg-gray-300 text-black'
+                            ? getColorScheme(novel.genre).dark
+                            : getColorScheme(novel.genre).light
                         }`}
                       >
                         {novel.genre}   
                       </span>
+                      {novel.tags.map(tag => {
+                        const colorScheme = getColorScheme(tag);
+                        return (
+                          <span
+                            key={tag}
+                            className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                              theme === 'dark' ? colorScheme.dark : colorScheme.light
+                            }`}
+                          >
+                            {tag}
+                          </span>
+                        );
+                      })}
                       <span className="text-sm text-gray-500 dark:text-gray-400">{novel.likes} likes</span>
                       {novel.lastUpdated && (
                         <span className="text-sm text-gray-500 dark:text-gray-400">
