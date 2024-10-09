@@ -7,13 +7,12 @@ import { Search, Check, Heart, BookOpen, Share2, Star } from "lucide-react"
 import Link from "next/link"
 import { motion } from 'framer-motion'
 import { useTheme } from 'next-themes'
-import { genreColors } from '@/app/page'
 import { useAuth } from '../authcontext'
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebaseConfig';
 import { toast } from 'react-hot-toast';
 import Image from "next/image";
-import { Tooltip } from "@/components/ui/tooltip"
+import { useRouter } from 'next/navigation';
 
 interface Novel {
   id: string;
@@ -36,6 +35,17 @@ interface Novel {
 const CACHE_KEY = 'novelHubCache'
 const CACHE_EXPIRATION = 60 * 60 * 1000 // 1 hour in milliseconds
 
+const genreColors = {
+  Fantasy: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900 text-purple-100' },
+  "Sci-Fi": { light: 'bg-blue-100 text-blue-800', dark: 'bg-blue-900 text-blue-100' },
+  Romance: { light: 'bg-pink-100 text-pink-800', dark: 'bg-pink-900 text-pink-100' },
+  Action: { light: 'bg-red-100 text-red-800', dark: 'bg-red-900 text-red-100' },
+  Mystery: { light: 'bg-yellow-100 text-yellow-800', dark: 'bg-yellow-900 text-yellow-100' },
+  "Slice of Life": { light: 'bg-green-100 text-green-800', dark: 'bg-green-900 text-green-100' },
+  Isekai: { light: 'bg-indigo-100 text-indigo-800', dark: 'bg-indigo-900 text-indigo-100' },
+  Horror: { light: 'bg-gray-100 text-gray-800', dark: 'bg-gray-900 text-gray-100' },
+};
+
 export default function BrowsePage() {
   const { theme } = useTheme()
   const [novels, setNovels] = useState<Novel[]>([])
@@ -44,6 +54,7 @@ export default function BrowsePage() {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([])
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const { user } = useAuth()
+  const router = useRouter();
 
   useEffect(() => {
     const fetchNovels = async () => {
@@ -154,6 +165,10 @@ export default function BrowsePage() {
     return new Date(dateString).toLocaleDateString();
   };
 
+  const handleTileClick = (novelId: string) => {
+    router.push(`/novel/${novelId}`);
+  };
+
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-[#E7E7E8] dark:bg-[#232120]`}>
       <header className="border-b dark:border-[#3E3F3E] bg-[#E7E7E8] dark:bg-[#232120] sticky top-0 z-10 shadow-sm">
@@ -246,11 +261,12 @@ export default function BrowsePage() {
             {filteredNovels.map((novel) => (
               <motion.div
                 key={novel.id}
-                className="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden"
+                className="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
                 variants={{
                   hidden: { opacity: 0, y: 20 },
                   visible: { opacity: 1, y: 0 }
                 }}
+                onClick={() => handleTileClick(novel.id)}
               >
                 <div className="flex p-4">
                   <div className="flex-shrink-0 w-24 h-36 mr-4 relative group">
@@ -263,7 +279,14 @@ export default function BrowsePage() {
                       className="rounded"
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="sm" onClick={() => handleReadNow(novel.id)}>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReadNow(novel.id);
+                        }}
+                      >
                         <BookOpen className="mr-2" size={16} />
                         Read Now
                       </Button>
@@ -271,34 +294,29 @@ export default function BrowsePage() {
                   </div>
                   <div className="flex-grow">
                     <h3 className="text-xl font-semibold text-[#232120] dark:text-[#E7E7E8] mb-2">
-                      <Link href={`/novel/${novel.id}`} className="hover:underline">
-                        {novel.name}
-                      </Link>
+                      {novel.name}
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">by {novel.author}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                      by{' '}
+                      <Link 
+                        href={`/author/${novel.authorId}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="hover:underline"
+                      >
+                        {novel.author}
+                      </Link>
+                    </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">{novel.description}</p>
                     <div className="flex items-center space-x-4 mb-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold !text-[#232120] dark:!text-[#E7E7E8] ${genreColors[novel.genre as keyof typeof genreColors]?.light} dark:${genreColors[novel.genre as keyof typeof genreColors]?.dark}`}>
-                        {novel.genre}
+                    <span 
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          theme === 'dark'
+                            ? genreColors[novel.genre as keyof typeof genreColors]?.dark || 'bg-gray-700 text-white'
+                            : genreColors[novel.genre as keyof typeof genreColors]?.light || 'bg-gray-300 text-black'
+                        }`}
+                      >
+                        {novel.genre}   
                       </span>
-                      {/* <Tooltip content={`${novel.rating.toFixed(1)} out of 5 stars`}>
-                        <div className="flex items-center">
-                          <Star className="text-yellow-500 mr-1" size={16} />
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{novel.rating.toFixed(1)}</span>
-                        </div>
-                      </Tooltip>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <Tooltip content="Add to favorites">
-                        <Button variant="ghost" size="sm" onClick={() => handleFavorite(novel.id)}>
-                          <Heart className={`${isFavorite(novel.id) ? 'fill-red-500 text-red-500' : 'text-gray-500'}`} size={16} />
-                        </Button>
-                      </Tooltip>
-                      <Tooltip content="Share">
-                        <Button variant="ghost" size="sm" onClick={() => handleShare(novel)}>
-                          <Share2 className="text-gray-500" size={16} />
-                        </Button>
-                      </Tooltip> */}
                       <span className="text-sm text-gray-500 dark:text-gray-400">{novel.likes} likes</span>
                       {novel.lastUpdated && (
                         <span className="text-sm text-gray-500 dark:text-gray-400">
