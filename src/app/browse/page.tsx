@@ -325,7 +325,7 @@ export default function BrowsePage() {
                       >
                         {novel.genre}   
                       </span>
-                      {novel.tags.map(tag => {
+                      {/* {novel.tags.map(tag => {
                         const colorScheme = getColorScheme(tag);
                         return (
                           <span
@@ -337,7 +337,7 @@ export default function BrowsePage() {
                             {tag}
                           </span>
                         );
-                      })}
+                      })} */}
                       <span className="text-sm text-gray-500 dark:text-gray-400">{novel.likes} likes</span>
                       {novel.lastUpdated && (
                         <span className="text-sm text-gray-500 dark:text-gray-400">
