@@ -1,24 +1,23 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Check, BookOpen, ChevronLeft, ChevronRight, ArrowUpDown, X } from "lucide-react"
+import { Search, Check, ChevronLeft, ChevronRight, BookOpen } from "lucide-react"
 import Link from "next/link"
 import { motion } from 'framer-motion'
 import { useTheme } from 'next-themes'
 import { useAuth } from '../authcontext'
-import { collection, query, orderBy, getDocs, Timestamp } from 'firebase/firestore'
+import { collection, query, orderBy, getDocs, where } from 'firebase/firestore'
 import { db } from '@/lib/firebaseConfig'
 import { toast } from 'react-hot-toast'
 import Image from "next/image"
 import { useRouter } from 'next/navigation'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { ArrowUpDown } from "lucide-react";
+import { X } from "lucide-react";
+
 
 interface Novel {
   id: string
@@ -32,7 +31,7 @@ interface Novel {
   likes: number
   description: string
   type?: string
-  lastUpdated?: Timestamp
+  lastUpdated?: string
   releaseDate?: string | null
   chapters?: number
   language?: string
@@ -63,12 +62,17 @@ const colorSchemes = {
   Supernatural: { light: 'bg-violet-100 text-violet-800', dark: 'bg-violet-900 text-violet-100' },
 }
 
+const CACHE_KEY = 'novelHubCache'
+const CACHE_EXPIRATION = 60 * 60 * 1000 // 1 hour in milliseconds
+const FILTER_STATE_KEY = 'novelHubFilterState'
+
 export default function BrowsePage() {
   const { theme } = useTheme()
   const [novels, setNovels] = useState<Novel[]>([])
   const [filteredNovels, setFilteredNovels] = useState<Novel[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedGenres, setSelectedGenres] = useState<string[]>([])
+  const [appliedGenres, setAppliedGenres] = useState<string[]>([])
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const { user } = useAuth()
   const router = useRouter()
@@ -80,87 +84,159 @@ export default function BrowsePage() {
   const [genreIndex, setGenreIndex] = useState<NovelIndex>({})
   const [tagIndex, setTagIndex] = useState<NovelIndex>({})
 
+  // Pagination states
+  const [itemsPerPage] = useState(2)
+
+  // Load filter state from localStorage on initial render
   useEffect(() => {
-    fetchNovels()
-  }, [sortCriteria, sortOrder])
+    const savedFilterState = localStorage.getItem(FILTER_STATE_KEY)
+    if (savedFilterState) {
+      const { appliedGenres, selectedTags, searchTerm } = JSON.parse(savedFilterState)
+      setAppliedGenres(appliedGenres)
+      setSelectedGenres(appliedGenres)
+      setSelectedTags(selectedTags)
+      setSearchTerm(searchTerm)
+    }
+  }, [])
 
-  const fetchNovels = async () => {
+  const fetchNovels = useCallback(async () => {
     try {
-      const novelsRef = collection(db, 'novels')
-      let novelQuery = query(novelsRef, orderBy(sortCriteria, sortOrder))
+      const cachedData = localStorage.getItem(CACHE_KEY)
+      if (cachedData) {
+        const { data, timestamp } = JSON.parse(cachedData)
+        if (Date.now() - timestamp < CACHE_EXPIRATION) {
+          console.log("Using cached data")
+          setNovels(data)
+          setFilteredNovels(data)
+          return
+        }
+      }
 
-      const querySnapshot = await getDocs(novelQuery)
-      const fetchedNovels = querySnapshot.docs.map(doc => {
-        const data = doc.data()
-        return {
-          id: doc.id,
-          ...data,
-          likes: data.likes || 0,
-          description: data.description || 'No description available.',
-          rating: data.rating || 0,
-          tags: data.tags || [],
-          releaseDate: data.releaseDate || null,
-        } as Novel
-      })
+      let novelsRef = collection(db, 'novels')
+      let q = query(novelsRef, orderBy('name'))
 
+      const querySnapshot = await getDocs(q)
+      const fetchedNovels = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        likes: doc.data().likes || 0,
+        description: doc.data().description || 'No description available.',
+        rating: doc.data().rating || 0,
+        tags: doc.data().tags || [],
+      } as Novel))
+
+      console.log("Fetched novels:", fetchedNovels)
       setNovels(fetchedNovels)
-      createIndexes(fetchedNovels)
-
-      console.log(`Fetched ${fetchedNovels.length} novels.`)
+      
+      // Apply filters immediately after fetching
+      applyFilters(fetchedNovels)
     } catch (error) {
       console.error("Error fetching novels:", error)
       toast.error("Failed to load novels")
     }
-  }
-
-  const createIndexes = (novels: Novel[]) => {
-    const newGenreIndex: NovelIndex = {}
-    const newTagIndex: NovelIndex = {}
-
-    novels.forEach(novel => {
-      if (!newGenreIndex[novel.genre]) {
-        newGenreIndex[novel.genre] = new Set()
-      }
-      newGenreIndex[novel.genre].add(novel.id)
-
-      novel.tags.forEach(tag => {
-        if (!newTagIndex[tag]) {
-          newTagIndex[tag] = new Set()
-        }
-        newTagIndex[tag].add(novel.id)
-      })
-    })
-
-    setGenreIndex(newGenreIndex)
-    setTagIndex(newTagIndex)
-  }
+  }, [])
 
   useEffect(() => {
-    const filtered = novels.filter(novel => {
+    fetchNovels()
+  }, [fetchNovels])
+
+  const applyFilters = useCallback((novelsList: Novel[] = novels) => {
+    let filtered = novelsList.filter(novel => {
       const searchTermLower = searchTerm.toLowerCase()
-      const nameLower = novel.name.toLowerCase()
-      const authorLower = novel.author.toLowerCase()
       const genreLower = novel.genre.toLowerCase()
       const tagsLower = novel.tags.map(tag => tag.toLowerCase())
 
       const matchesSearch = 
-        nameLower.includes(searchTermLower) ||
-        authorLower.includes(searchTermLower) ||
+        novel.name.toLowerCase().includes(searchTermLower) ||
+        novel.author.toLowerCase().includes(searchTermLower) ||
         genreLower.includes(searchTermLower) ||
         tagsLower.some(tag => tag.includes(searchTermLower))
 
       const matchesGenre = selectedGenres.length === 0 || 
-        selectedGenres.some(g => genreLower.includes(g.toLowerCase()))
+        selectedGenres.map(g => g.toLowerCase()).includes(genreLower)
       const matchesTag = selectedTags.length === 0 || 
-        tagsLower.some(tag => selectedTags.some(t => tag.includes(t.toLowerCase())))
+        novel.tags.some(tag => selectedTags.map(t => t.toLowerCase()).includes(tag.toLowerCase()))
 
       return matchesSearch && matchesGenre && matchesTag
     })
 
+    // Apply sorting
+    filtered.sort((a, b) => {
+      if (sortCriteria === 'name') {
+        return sortOrder === 'asc' 
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name)
+      } else {
+        const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0
+        const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA
+      }
+    })
+
+    console.log("Filtered and sorted novels:", filtered)
     setFilteredNovels(filtered)
     setCurrentPage(1)
-    setTotalPages(Math.ceil(filtered.length / NOVELS_PER_PAGE))
-  }, [searchTerm, selectedGenres, selectedTags, novels])
+
+    // Save filter state to localStorage
+    localStorage.setItem(FILTER_STATE_KEY, JSON.stringify({
+      selectedGenres,
+      selectedTags,
+      searchTerm
+    }))
+  }, [novels, searchTerm, selectedGenres, selectedTags, sortCriteria, sortOrder])
+
+  const handleApplyFilters = useCallback(() => {
+    setAppliedGenres(selectedGenres)
+    applyFilters(novels)
+  }, [selectedGenres, applyFilters, novels])
+
+  useEffect(() => {
+    // Only apply sorting, not filtering
+    const sorted = [...filteredNovels].sort((a, b) => {
+      if (sortCriteria === 'name') {
+        return sortOrder === 'asc' 
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name)
+      } else {
+        const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0
+        const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA
+      }
+    })
+    setFilteredNovels(sorted)
+  }, [sortCriteria, sortOrder])
+
+  const getSortButtonText = () => {
+    if (sortCriteria === 'name') {
+      return sortOrder === 'asc' ? 'A-Z' : 'Z-A'
+    } else {
+      return sortOrder === 'desc' ? 'Newest first' : 'Oldest first'
+    }
+  }
+
+  const handleResetFilters = () => {
+    setSelectedGenres([])
+    setAppliedGenres([])
+    setSelectedTags([])
+    setSearchTerm('')
+    setCurrentPage(1)
+    
+    // Apply current sorting to all novels
+    const sortedNovels = [...novels].sort((a, b) => {
+      if (sortCriteria === 'name') {
+        return sortOrder === 'asc' 
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name)
+      } else {
+        const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0
+        const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA
+      }
+    })
+    
+    setFilteredNovels(sortedNovels)
+    localStorage.removeItem(FILTER_STATE_KEY)
+  }
 
   const toggleGenre = (genre: string) => {
     setSelectedGenres(prev => 
@@ -220,7 +296,12 @@ export default function BrowsePage() {
     setCurrentPage(1)
   }
 
-  const paginatedNovels = filteredNovels.slice((currentPage - 1) * NOVELS_PER_PAGE, currentPage * NOVELS_PER_PAGE)
+  // Pagination logic
+  const indexOfLastNovel = currentPage * itemsPerPage
+  const indexOfFirstNovel = indexOfLastNovel - itemsPerPage
+  const currentNovels = filteredNovels.slice(indexOfFirstNovel, indexOfLastNovel)
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
 
   const renderPageNumbers = () => {
     const pageNumbers = []
@@ -266,18 +347,9 @@ export default function BrowsePage() {
       </header>
 
       <main className="container mx-auto px-4 py-8 flex">
-        <aside className="w-64 pr-8">
+        <aside className="w-full md:w-64 pr-8 mb-8 md:mb-0">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]">Filters</h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={resetFilters}
-              className="text-[#F1592A] hover:text-[#232120] dark:hover:text-[#E7E7E8]"
-            >
-              <X size={16} className="mr-1" />
-              Reset
-            </Button>
           </div>
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-2 text-[#232120] dark:text-[#E7E7E8]">Genres</h3>
@@ -299,6 +371,10 @@ export default function BrowsePage() {
               })}
             </div>
           </div>
+          <div className="flex space-x-2 mb-6">
+            <Button onClick={handleApplyFilters} className="flex-1 bg-[#F1592A] text-white hover:bg-[#E7E7E8] hover:border-2 hover:border-[#F1592A] hover:text-[#F1592A] dark:hover:bg-[#232120]">Apply</Button>
+            <Button onClick={handleResetFilters} variant="outline" className="flex-1">Reset</Button>
+          </div>
           <div>
             <h3 className="text-lg font-semibold mb-2 text-[#232120] dark:text-[#E7E7E8]">Tags</h3>
             <div className="space-y-2">
@@ -309,9 +385,7 @@ export default function BrowsePage() {
                   <Button
                     key={tag}
                     onClick={() => toggleTag(tag)}
-                    variant={isSelected ? "default" 
-
- : "outline"}
+                    variant={isSelected ? "default" : "outline"}
                     className={`w-full justify-between ${isSelected ? (theme === 'dark' ? colorScheme.dark : colorScheme.light) : ''}`}
                   >
                     <span>{tag}</span>
@@ -330,30 +404,30 @@ export default function BrowsePage() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="ml-auto">
                   <ArrowUpDown className="mr-2 h-4 w-4" />
-                  Sort by
+                  Sort by : {getSortButtonText()}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => {
-                  changeSortCriteria('releaseDate')
+                  setSortCriteria('releaseDate')
                   setSortOrder('desc')
                 }}>
                   Newest first
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => {
-                  changeSortCriteria('releaseDate')
+                  setSortCriteria('releaseDate')
                   setSortOrder('asc')
                 }}>
                   Oldest first
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => {
-                  changeSortCriteria('name')
+                  setSortCriteria('name')
                   setSortOrder('asc')
                 }}>
                   A-Z
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => {
-                  changeSortCriteria('name')
+                  setSortCriteria('name')
                   setSortOrder('desc')
                 }}>
                   Z-A
@@ -399,7 +473,7 @@ export default function BrowsePage() {
               }
             }}
           >
-            {paginatedNovels.map((novel) => (
+            {currentNovels.map((novel) => (
               <motion.div
                 key={novel.id}
                 className="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
@@ -471,22 +545,33 @@ export default function BrowsePage() {
             ))}
           </motion.div>
 
-          {filteredNovels.length > 0 && (
-            <div className="mt-8 flex justify-center items-center space-x-2">
+          {/* Updated pagination controls */}
+          {filteredNovels.length > itemsPerPage && (
+            <div className="flex justify-center mt-8 space-x-2">
               <Button
-                onClick={() => changePage(currentPage - 1)}
+                onClick={() => paginate(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="px-3 py-2 rounded"
+                variant="outline"
               >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={16} />
+                Previous
               </Button>
-              {renderPageNumbers()}
+              {Array.from({ length: Math.ceil(filteredNovels.length / itemsPerPage) }, (_, i) => (
+                <Button
+                  key={i + 1}
+                  onClick={() => paginate(i + 1)}
+                  variant={currentPage === i + 1 ? "default" : "outline"}
+                >
+                  {i + 1}
+                </Button>
+              ))}
               <Button
-                onClick={() => changePage(currentPage + 1)}
-                disabled={currentPage >= totalPages}
-                className="px-3 py-2 rounded"
+                onClick={() => paginate(currentPage + 1)}
+                disabled={currentPage === Math.ceil(filteredNovels.length / itemsPerPage)}
+                variant="outline"
               >
-                <ChevronRight size={20} />
+                Next
+                <ChevronRight size={16} />
               </Button>
             </div>
           )}
