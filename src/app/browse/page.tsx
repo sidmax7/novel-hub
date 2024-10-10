@@ -234,11 +234,12 @@ export default function BrowsePage() {
   }
 
   const toggleGenre = (genre: string) => {
-    setSelectedGenres(prev => 
-      prev.some(g => g.toLowerCase() === genre.toLowerCase())
+    setSelectedGenres(prev => {
+      if (!prev) return [genre];
+      return prev.some(g => g.toLowerCase() === genre.toLowerCase())
         ? prev.filter(g => g.toLowerCase() !== genre.toLowerCase())
         : [...prev, genre]
-    )
+    })
   }
 
   const toggleTag = (tag: string) => {
@@ -350,7 +351,7 @@ export default function BrowsePage() {
             <h3 className="text-lg font-semibold mb-2 text-[#232120] dark:text-[#E7E7E8]">Genres</h3>
             <div className="space-y-2">
               {Object.keys(colorSchemes).map((genre) => {
-                const isSelected = selectedGenres.map(g => g.toLowerCase()).includes(genre.toLowerCase())
+                const isSelected = selectedGenres?.map(g => g.toLowerCase()).includes(genre.toLowerCase()) || false
                 const colorScheme = getColorScheme(genre)
                 return (
                   <Button
