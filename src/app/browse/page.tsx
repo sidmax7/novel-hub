@@ -14,7 +14,7 @@ import { toast } from 'react-hot-toast'
 import Image from "next/image"
 import { useRouter } from 'next/navigation'
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { ArrowUpDown } from "lucide-react";
 import { X } from "lucide-react";
 
@@ -41,8 +41,6 @@ interface Novel {
 interface NovelIndex {
   [key: string]: Set<string>
 }
-
-const NOVELS_PER_PAGE = 3
 
 const colorSchemes = {
   Fantasy: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900 text-purple-100' },
@@ -81,11 +79,8 @@ export default function BrowsePage() {
   const [sortCriteria, setSortCriteria] = useState<'releaseDate' | 'name'>('releaseDate')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
-  const [genreIndex, setGenreIndex] = useState<NovelIndex>({})
-  const [tagIndex, setTagIndex] = useState<NovelIndex>({})
-
   // Pagination states
-  const [itemsPerPage] = useState(2)
+  const [itemsPerPage] = useState(10)
 
   // Load filter state from localStorage on initial render
   useEffect(() => {
@@ -545,7 +540,7 @@ export default function BrowsePage() {
             ))}
           </motion.div>
 
-          {/* Updated pagination controls */}
+          {}
           {filteredNovels.length > itemsPerPage && (
             <div className="flex justify-center mt-8 space-x-2">
               <Button
