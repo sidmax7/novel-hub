@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Check, ChevronLeft, ChevronRight, BookOpen } from "lucide-react"
+import { Search, Check, ChevronLeft, ChevronRight, BookOpen, X } from "lucide-react"
 import Link from "next/link"
 import { motion } from 'framer-motion'
 import { useTheme } from 'next-themes'
@@ -16,7 +16,6 @@ import { useRouter } from 'next/navigation'
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { ArrowUpDown } from "lucide-react";
-import { X } from "lucide-react";
 
 
 interface Novel {
@@ -80,7 +79,7 @@ export default function BrowsePage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
   // Pagination states
-  const [itemsPerPage] = useState(10)
+  const [itemsPerPage] = useState(2)
 
   // Load filter state from localStorage on initial render
   useEffect(() => {
@@ -234,11 +233,12 @@ export default function BrowsePage() {
   }
 
   const toggleGenre = (genre: string) => {
-    setSelectedGenres(prev => 
-      prev.some(g => g.toLowerCase() === genre.toLowerCase())
-        ? prev.filter(g => g.toLowerCase() !== genre.toLowerCase())
-        : [...prev, genre]
-    )
+    setSelectedGenres(prev => {
+      const currentGenres = prev || []; // Ensure prev is an array
+      return currentGenres.some(g => g.toLowerCase() === genre.toLowerCase())
+        ? currentGenres.filter(g => g.toLowerCase() !== genre.toLowerCase())
+        : [...currentGenres, genre]
+    })
   }
 
   const toggleTag = (tag: string) => {
@@ -331,6 +331,10 @@ export default function BrowsePage() {
     setCurrentPage(1)
   }
 
+  const handleSearch = () => {
+    handleApplyFilters()
+  }
+
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-[#E7E7E8] dark:bg-[#232120]`}>
       <header className="border-b dark:border-[#3E3F3E] bg-[#E7E7E8] dark:bg-[#232120] sticky top-0 z-10 shadow-sm">
@@ -350,7 +354,7 @@ export default function BrowsePage() {
             <h3 className="text-lg font-semibold mb-2 text-[#232120] dark:text-[#E7E7E8]">Genres</h3>
             <div className="space-y-2">
               {Object.keys(colorSchemes).map((genre) => {
-                const isSelected = selectedGenres.map(g => g.toLowerCase()).includes(genre.toLowerCase())
+                const isSelected = (selectedGenres || []).map(g => g.toLowerCase()).includes(genre.toLowerCase())
                 const colorScheme = getColorScheme(genre)
                 return (
                   <Button
@@ -432,20 +436,31 @@ export default function BrowsePage() {
           </div>
           
           <div className="mb-8">
-            <div className="relative">
+            <div className="relative flex items-center">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#232120]/60 dark:text-[#E7E7E8]/60" />
               <Input
                 type="search"
                 placeholder="Search novels, authors, genres, or tags..."
-                className="pl-10 pr-4 py-2 w-full rounded-full bg-[#C3C3C3] dark:bg-[#3E3F3E] focus:outline-none focus:ring-2 focus:ring-[#F1592A] text-[#232120] dark:text-[#E7E7E8] placeholder-[#8E8F8E] dark:placeholder-[#C3C3C3]"
+                className="pl-10 pr-4 py-2 w-full rounded-l-full bg-[#C3C3C3] dark:bg-[#3E3F3E] focus:outline-none focus:ring-2 focus:ring-[#F1592A] text-[#232120] dark:text-[#E7E7E8] placeholder-[#8E8F8E] dark:placeholder-[#C3C3C3]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch()
+                  }
+                }}
               />
+              <Button
+                onClick={handleSearch}
+                className="rounded-r-full bg-[#F1592A] text-white hover:bg-[#E7E7E8] hover:text-[#F1592A] dark:hover:bg-[#232120]"
+              >
+                Search
+              </Button>
               {searchTerm && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                  className="absolute right-24 top-1/2 transform -translate-y-1/2"
                   onClick={() => setSearchTerm('')}
                 >
                   <X size={16} />
