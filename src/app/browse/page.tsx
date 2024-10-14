@@ -16,7 +16,13 @@ import { useRouter } from 'next/navigation'
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { ArrowUpDown } from "lucide-react";
+import { Redis } from '@upstash/redis'
 
+// Initialize Redis client
+const redis = new Redis({
+  url: process.env.NEXT_PUBLIC_REDIS_URL,
+  token: process.env.NEXT_PUBLIC_REDIS_TOKEN,
+})
 
 interface Novel {
   id: string
@@ -95,17 +101,24 @@ export default function BrowsePage() {
 
   const fetchNovels = useCallback(async () => {
     try {
-      const cachedData = localStorage.getItem(CACHE_KEY)
-      if (cachedData) {
-        const { data, timestamp } = JSON.parse(cachedData)
-        if (Date.now() - timestamp < CACHE_EXPIRATION) {
-          console.log("Using cached data")
-          setNovels(data)
-          setFilteredNovels(data)
+      // Try to get data from Redis cache first
+      const cachedNovels = await redis.get('all_novels')
+      
+      if (cachedNovels) {
+        console.log("Raw cached data from Redis:", cachedNovels)
+        
+        if (Array.isArray(cachedNovels)) {
+          console.log("Using cached data from Redis")
+          setNovels(cachedNovels)
+          setFilteredNovels(cachedNovels)
           return
+        } else {
+          console.error("Unexpected data format from Redis")
+          // Continue to fetch from Firebase if format is unexpected
         }
       }
 
+      // If not in cache or unexpected format, fetch from Firebase
       let novelsRef = collection(db, 'novels')
       let q = query(novelsRef, orderBy('name'))
 
@@ -119,11 +132,18 @@ export default function BrowsePage() {
         tags: doc.data().tags || [],
       } as Novel))
 
-      console.log("Fetched novels:", fetchedNovels)
-      setNovels(fetchedNovels)
+      console.log("Fetched novels from Firebase:", fetchedNovels)
       
-      // Apply filters immediately after fetching
-      applyFilters(fetchedNovels)
+      // Store fetched data in Redis cache
+      try {
+        await redis.set('all_novels', fetchedNovels, { ex: 3600 }) // Cache for 1 hour
+        console.log("Stored novels in Redis cache")
+      } catch (cacheError) {
+        console.error("Error storing novels in Redis cache:", cacheError)
+      }
+
+      setNovels(fetchedNovels)
+      setFilteredNovels(fetchedNovels)
     } catch (error) {
       console.error("Error fetching novels:", error)
       toast.error("Failed to load novels")
