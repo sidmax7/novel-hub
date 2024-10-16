@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Check, ChevronLeft, ChevronRight, BookOpen } from "lucide-react"
+import { Search, Check, ChevronLeft, ChevronRight, BookOpen, X, Home, Sun, Moon } from "lucide-react"
 import Link from "next/link"
 import { motion } from 'framer-motion'
 import { useTheme } from 'next-themes'
@@ -16,8 +16,13 @@ import { useRouter } from 'next/navigation'
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { ArrowUpDown } from "lucide-react";
-import { X } from "lucide-react";
+import { Redis } from '@upstash/redis'
 
+// Initialize Redis client
+const redis = new Redis({
+  url: process.env.NEXT_PUBLIC_REDIS_URL,
+  token: process.env.NEXT_PUBLIC_REDIS_TOKEN,
+})
 
 interface Novel {
   id: string
@@ -65,7 +70,7 @@ const CACHE_EXPIRATION = 60 * 60 * 1000 // 1 hour in milliseconds
 const FILTER_STATE_KEY = 'novelHubFilterState'
 
 export default function BrowsePage() {
-  const { theme } = useTheme()
+  const { theme, setTheme } = useTheme()
   const [novels, setNovels] = useState<Novel[]>([])
   const [filteredNovels, setFilteredNovels] = useState<Novel[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -80,7 +85,7 @@ export default function BrowsePage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
   // Pagination states
-  const [itemsPerPage] = useState(10)
+  const [itemsPerPage] = useState(2)
 
   // Load filter state from localStorage on initial render
   useEffect(() => {
@@ -96,17 +101,24 @@ export default function BrowsePage() {
 
   const fetchNovels = useCallback(async () => {
     try {
-      const cachedData = localStorage.getItem(CACHE_KEY)
-      if (cachedData) {
-        const { data, timestamp } = JSON.parse(cachedData)
-        if (Date.now() - timestamp < CACHE_EXPIRATION) {
-          console.log("Using cached data")
-          setNovels(data)
-          setFilteredNovels(data)
+      // Try to get data from Redis cache first
+      const cachedNovels = await redis.get('all_novels')
+      
+      if (cachedNovels) {
+        console.log("Raw cached data from Redis:", cachedNovels)
+        
+        if (Array.isArray(cachedNovels)) {
+          console.log("Using cached data from Redis")
+          setNovels(cachedNovels)
+          setFilteredNovels(cachedNovels)
           return
+        } else {
+          console.error("Unexpected data format from Redis")
+          // Continue to fetch from Firebase if format is unexpected
         }
       }
 
+      // If not in cache or unexpected format, fetch from Firebase
       let novelsRef = collection(db, 'novels')
       let q = query(novelsRef, orderBy('name'))
 
@@ -120,11 +132,18 @@ export default function BrowsePage() {
         tags: doc.data().tags || [],
       } as Novel))
 
-      console.log("Fetched novels:", fetchedNovels)
-      setNovels(fetchedNovels)
+      console.log("Fetched novels from Firebase:", fetchedNovels)
       
-      // Apply filters immediately after fetching
-      applyFilters(fetchedNovels)
+      // Store fetched data in Redis cache
+      try {
+        await redis.set('all_novels', fetchedNovels, { ex: 3600 }) // Cache for 1 hour
+        console.log("Stored novels in Redis cache")
+      } catch (cacheError) {
+        console.error("Error storing novels in Redis cache:", cacheError)
+      }
+
+      setNovels(fetchedNovels)
+      setFilteredNovels(fetchedNovels)
     } catch (error) {
       console.error("Error fetching novels:", error)
       toast.error("Failed to load novels")
@@ -332,13 +351,46 @@ export default function BrowsePage() {
     setCurrentPage(1)
   }
 
+  const handleSearch = () => {
+    handleApplyFilters()
+  }
+
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-[#E7E7E8] dark:bg-[#232120]`}>
-      <header className="border-b dark:border-[#3E3F3E] bg-[#E7E7E8] dark:bg-[#232120] sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-4 py-6 flex items-center justify-between">
-          <Link href="/" className="text-3xl font-bold text-[#F1592A] dark:text-[#F1592A] hover:text-[#232120] dark:hover:text-[#E7E7E8] transition-colors">
-            NovelHub
-          </Link>
+      <header className="bg-white dark:bg-[#232120] shadow">
+        <div className="container mx-auto px-4 py-6 flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-3xl font-bold text-[#F1592A]">
+              <Link href="/" className="text-3xl font-bold text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] dark:hover:text-[#F1592A] transition-colors">
+                NovelHub
+              </Link>
+            </h1>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Link href="/" passHref>
+              <Button
+                variant="outline"
+                size="icon"
+                className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
+              >
+                <Home className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" />
+                <span className="sr-only">Home</span>
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+              className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" />
+              ) : (
+                <Moon className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" />
+              )}
+              <span className="sr-only">Toggle theme</span>
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -433,20 +485,31 @@ export default function BrowsePage() {
           </div>
           
           <div className="mb-8">
-            <div className="relative">
+            <div className="relative flex items-center">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#232120]/60 dark:text-[#E7E7E8]/60" />
               <Input
                 type="search"
                 placeholder="Search novels, authors, genres, or tags..."
-                className="pl-10 pr-4 py-2 w-full rounded-full bg-[#C3C3C3] dark:bg-[#3E3F3E] focus:outline-none focus:ring-2 focus:ring-[#F1592A] text-[#232120] dark:text-[#E7E7E8] placeholder-[#8E8F8E] dark:placeholder-[#C3C3C3]"
+                className="pl-10 pr-4 py-2 w-full rounded-l-full bg-[#C3C3C3] dark:bg-[#3E3F3E] focus:outline-none focus:ring-2 focus:ring-[#F1592A] text-[#232120] dark:text-[#E7E7E8] placeholder-[#8E8F8E] dark:placeholder-[#C3C3C3]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch()
+                  }
+                }}
               />
+              <Button
+                onClick={handleSearch}
+                className="rounded-r-full bg-[#F1592A] text-white hover:bg-[#E7E7E8] hover:text-[#F1592A] dark:hover:bg-[#232120]"
+              >
+                Search
+              </Button>
               {searchTerm && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                  className="absolute right-24 top-1/2 transform -translate-y-1/2"
                   onClick={() => setSearchTerm('')}
                 >
                   <X size={16} />

@@ -37,6 +37,7 @@ interface UserProfile {
   followedNovels: string[]
 }
 
+// Ensure this is the only Novel interface definition
 interface Novel {
   authorId: string
   id: string
@@ -45,6 +46,7 @@ interface Novel {
   coverUrl: string
   rating: number
   genre: string
+  likes: number // Add this line
 }
 
 export default function UserProfilePage() {
