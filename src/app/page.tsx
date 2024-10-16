@@ -33,6 +33,7 @@ export const genreColors = {
   "Slice of Life": { light: 'bg-green-100 text-green-800', dark: 'bg-green-900 text-green-100' },
   Isekai: { light: 'bg-indigo-100 text-indigo-800', dark: 'bg-indigo-900 text-indigo-100' },
   Horror: { light: 'bg-gray-100 text-gray-800', dark: 'bg-gray-900 text-gray-100' },
+  
 }
 
 interface Novel {
@@ -322,9 +323,11 @@ export default function ModernLightNovelsHomepage() {
               whileHover={{ scale: 1.05  }}
               whileTap={{ scale: 0.95 }}
             >
-              <Button variant="outline" className="border-[#F1592A] text-[#F1592A] hover:bg-[#F1592A] hover:text-white dark:border-[#F1592A] dark:text-[#F1592A] dark:hover:bg-[#F1592A] dark:hover:text-[#E7E7E8]">
-                Browse All Novels
-              </Button>
+              <Link href="/browse">
+                <Button variant="outline" className="border-[#F1592A] text-[#F1592A] hover:bg-[#F1592A] hover:text-white dark:border-[#F1592A] dark:text-[#F1592A] dark:hover:bg-[#F1592A] dark:hover:text-[#E7E7E8]">
+                  Browse All Novels
+                </Button>
+              </Link>
             </motion.div>
           </div>
         </section>
