@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useTheme } from 'next-themes'
 
-export const genreColors = {
+const genreColors = {
   Fantasy: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900 text-purple-100' },
   "Sci-Fi": { light: 'bg-blue-100 text-blue-800', dark: 'bg-blue-900 text-blue-100' },
   Romance: { light: 'bg-pink-100 text-pink-800', dark: 'bg-pink-900 text-pink-100' },
@@ -169,20 +169,22 @@ export default function Home() {
   }
 
   const ThemeToggle = () => {
-    if (!mounted) return null
+    const [isMounted, setIsMounted] = useState(false)
+
+    useEffect(() => {
+      setIsMounted(true)
+    }, [])
 
     return (
       <Button
         variant="outline"
         size="icon"
         onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-        className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
+        className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group relative overflow-hidden transition-colors duration-300"
       >
-        {theme === 'dark' ? (
-          <Sun className="h-4 w-4 text-[#E7E7E8]" />
-        ) : (
-          <Moon className="h-4 w-4 text-[#232120] group-hover:text-white" />
-        )}
+        <Sun className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-300 opacity-100 dark:opacity-0" />
+        <Moon className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-300 opacity-0 dark:opacity-100" />
+        <span className="sr-only">Toggle theme</span>
       </Button>
     )
   }
