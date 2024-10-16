@@ -23,14 +23,7 @@ export default function AuthPage() {
   const router = useRouter()
   const { user } = useAuth()
 
-  useEffect(() => {
-    if (user) {
-      router.push('/')
-    }
-  }, [user, router])
-  const handleContinueWithoutSignIn = () => {
-    router.push('./') // Redirect to the desired page without authentication
-  }
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -81,6 +74,14 @@ export default function AuthPage() {
 
   setLoading(false)
 }
+useEffect(() => {
+  if (user) {
+    router.push('/')
+  }
+  }, [user, router])
+  const handleContinueWithoutSignIn = () => {
+    router.push('./') // Redirect to the desired page without authentication
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">

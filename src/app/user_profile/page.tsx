@@ -70,13 +70,7 @@ export default function UserProfilePage() {
     setMounted(true)
   }, [])
 
-  useEffect(() => {
-    if (user) {
-      fetchUserProfile()
-      fetchFollowedNovels(user.uid)
-      fetchRecommendations()
-    }
-  }, [user])
+  
 
   const toggleDarkMode = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
@@ -261,6 +255,15 @@ export default function UserProfilePage() {
       toast.error('Failed to update followed novels')
     }
   }, [user, fetchFollowedNovels])
+
+
+  useEffect(() => {
+    if (user) {
+      fetchUserProfile()
+      fetchFollowedNovels(user.uid)
+      fetchRecommendations()
+    }
+  }, [user, fetchUserProfile, fetchFollowedNovels, fetchRecommendations])
 
   if (!mounted) return null
 

@@ -138,6 +138,13 @@ export default function AuthorPage({ params }: { params: { userId: string } }) {
       toast.error('Failed to fetch user novels')
     }
   }
+  useEffect(() => {
+    setMounted(true)
+    if (params.userId) {
+      fetchUserData()
+      fetchUserNovels()
+    }
+  }, [params.userId])
 
   const NovelCard = ({ novel }: { novel: Novel }) => {
     console.log("Rendering NovelCard for novel:", novel);

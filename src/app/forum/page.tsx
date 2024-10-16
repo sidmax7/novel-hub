@@ -103,28 +103,7 @@ const [activeTab, setActiveTab] = useState("announcements")
 const fileInputRef = useRef<HTMLInputElement>(null)
 const [scrollToPostId, setScrollToPostId] = useState<string | null>(null)
 
-useEffect(() => {
-  setMounted(true)
-  const params = new URLSearchParams(window.location.search)
-  const tab = params.get('tab')
-  const scrollTo = params.get('scrollTo')
-  if (tab) setActiveTab(tab)
-  if (scrollTo) setScrollToPostId(scrollTo)
-  fetchPosts()
-  if (user) {
-    fetchUserProfile()
-  }
-}, [user])
 
-useEffect(() => {
-  if (scrollToPostId) {
-    const postElement = document.getElementById(`post-${scrollToPostId}`)
-    if (postElement) {
-      postElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      setScrollToPostId(null)
-    }
-  }
-}, [posts, scrollToPostId])
 
 const fetchPosts = async () => {
   setLoading(true)
@@ -291,6 +270,29 @@ const renderPosts = (section: string) => {
     </div>
   )
 }
+
+useEffect(() => {
+  setMounted(true)
+  const params = new URLSearchParams(window.location.search)
+  const tab = params.get('tab')
+  const scrollTo = params.get('scrollTo')
+  if (tab) setActiveTab(tab)
+  if (scrollTo) setScrollToPostId(scrollTo)
+  fetchPosts()
+  if (user) {
+    fetchUserProfile()
+  }
+}, [user])
+
+useEffect(() => {
+  if (scrollToPostId) {
+    const postElement = document.getElementById(`post-${scrollToPostId}`)
+    if (postElement) {
+      postElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setScrollToPostId(null)
+    }
+  }
+}, [posts, scrollToPostId])
 
 if (!mounted) return null
 

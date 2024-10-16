@@ -204,21 +204,7 @@ export default function BrowsePage() {
     applyFilters(novels)
   }, [selectedGenres, applyFilters, novels])
 
-  useEffect(() => {
-    // Only apply sorting, not filtering
-    const sorted = [...filteredNovels].sort((a, b) => {
-      if (sortCriteria === 'name') {
-        return sortOrder === 'asc' 
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name)
-      } else {
-        const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0
-        const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0
-        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA
-      }
-    })
-    setFilteredNovels(sorted)
-  }, [sortCriteria, sortOrder])
+  
 
   const getSortButtonText = () => {
     if (sortCriteria === 'name') {
@@ -355,6 +341,34 @@ export default function BrowsePage() {
     handleApplyFilters()
   }
 
+  useEffect(() => {
+    const savedFilterState = localStorage.getItem(FILTER_STATE_KEY)
+    if (savedFilterState) {
+      const { appliedGenres, selectedTags, searchTerm } = JSON.parse(savedFilterState)
+      setAppliedGenres(appliedGenres)
+      setSelectedGenres(appliedGenres)
+      setSelectedTags(selectedTags)
+      setSearchTerm(searchTerm)
+    }
+  }, [])
+
+  useEffect(() => {
+    // Only apply sorting, not filtering
+    const sorted = [...filteredNovels].sort((a, b) => {
+      if (sortCriteria === 'name') {
+        return sortOrder === 'asc' 
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name)
+      } else {
+        const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0
+        const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA
+      }
+    })
+    setFilteredNovels(sorted)
+  }, [sortCriteria, sortOrder])
+
+  
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-[#E7E7E8] dark:bg-[#232120]`}>
       <header className="bg-white dark:bg-[#232120] shadow">

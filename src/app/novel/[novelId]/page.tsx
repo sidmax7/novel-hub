@@ -97,13 +97,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
     }
   }, [activeTab]);
 
-  useEffect(() => {
-    setMounted(true)
-    if (params.novelId) {
-      fetchNovel()
-      fetchChapters()
-    }
-  }, [params.novelId])
+  
 
   const fetchNovel = async () => {
     if (!params.novelId) return
@@ -242,6 +236,16 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
     }
   }
 
+
+  useEffect(() => {
+    setMounted(true)
+    if (params.novelId) {
+      fetchNovel()
+      fetchChapters()
+    }
+  }, [params.novelId])
+
+  
   if (!mounted) return null
   if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>
   if (!novel) return <div className="flex justify-center items-center h-screen">Novel not found</div>

@@ -35,12 +35,7 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
   const { user } = useAuth()
   const { theme } = useTheme()
 
-  useEffect(() => {
-    if (user) {
-      checkIfFollowing()
-      checkIfLiked()
-    }
-  }, [user, novel.id])
+  
 
   const checkIfFollowing = async () => {
     if (!user) return
@@ -119,6 +114,13 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
       toast.error('Failed to update like')
     }
   }
+
+  useEffect(() => {
+    if (user) {
+      checkIfFollowing()
+      checkIfLiked()
+    }
+  }, [user, novel.id, checkIfFollowing, checkIfLiked])
 
   return (
     <Card className="overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300">

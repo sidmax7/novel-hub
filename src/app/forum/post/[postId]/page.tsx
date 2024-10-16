@@ -195,13 +195,7 @@ export default function PostPage({ params }: { params: { postId: string } }) {
   const [allReplies, setAllReplies] = useState<Reply[]>([])
   const [userProfiles, setUserProfiles] = useState<{[key: string]: {profilePicture: string, username: string}}>({})
 
-  useEffect(() => {
-    setMounted(true)
-    fetchPost()
-    if (user) {
-      fetchUserProfile()
-    }
-  }, [user, params.postId])
+  
 
   const fetchPost = async () => {
     setLoading(true)
@@ -371,6 +365,14 @@ export default function PostPage({ params }: { params: { postId: string } }) {
     const page = searchParams.get('page') || '1'
     router.push(`/forum?tab=${tab}&page=${page}&scrollTo=${params.postId}`)
   }
+
+  useEffect(() => {
+    setMounted(true)
+    fetchPost()
+    if (user) {
+      fetchUserProfile()
+    }
+  }, [user, params.postId])
 
   if (!mounted) return null
 

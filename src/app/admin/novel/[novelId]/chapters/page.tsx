@@ -45,35 +45,7 @@ export default function ChapterManagement() {
   const params = useParams()
   const novelId = params.novelId as string
 
-  useEffect(() => {
-    const checkUserType = async () => {
-      if (user) {
-        try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid))
-          if (userDoc.exists() && userDoc.data().userType === 'author') {
-            setIsAuthor(true)
-            if (novelId) {
-              fetchNovelDetails()
-              fetchChapters()
-            } else {
-              setError("Novel ID not provided.")
-              setLoading(false)
-            }
-          } else {
-            router.push('/')
-          }
-        } catch (error) {
-          console.error('Error checking user type:', error)
-          setError('Failed to verify user permissions')
-          setLoading(false)
-        }
-      } else {
-        router.push('/')
-      }
-    }
-
-    checkUserType()
-  }, [user, novelId, router])
+  
 
   const fetchNovelDetails = async () => {
     try {
@@ -180,6 +152,35 @@ export default function ChapterManagement() {
       toast.error(`Failed to update chapter order: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
+  useEffect(() => {
+    const checkUserType = async () => {
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid))
+          if (userDoc.exists() && userDoc.data().userType === 'author') {
+            setIsAuthor(true)
+            if (novelId) {
+              fetchNovelDetails()
+              fetchChapters()
+            } else {
+              setError("Novel ID not provided.")
+              setLoading(false)
+            }
+          } else {
+            router.push('/')
+          }
+        } catch (error) {
+          console.error('Error checking user type:', error)
+          setError('Failed to verify user permissions')
+          setLoading(false)
+        }
+      } else {
+        router.push('/')
+      }
+    }
+
+    checkUserType()
+  }, [user, novelId, router])
 
   if (!isAuthor) {
     return null // Return null while checking user type or redirecting

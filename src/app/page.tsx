@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Menu, Moon, Sun, LogOut, User, ChevronsLeftRightIcon, MessageSquare } from "lucide-react"
@@ -47,37 +47,27 @@ interface Novel {
   likes?: number;
 }
 
-export default function ModernLightNovelsHomepage() {
+export default function Home() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [popularNovels, setPopularNovels] = useState<Novel[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
   const router = useRouter()
-  const [followedNovels, setFollowedNovels] = useState<string[]>([])
+  const [_followedNovels, setFollowedNovels] = useState<string[]>([])
   const [userType, setUserType] = useState<string | null>(null)
   const [userProfile, setUserProfile] = useState<{ profilePicture: string, username: string } | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const scrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  useEffect(() => {
-    setMounted(true)
-    fetchPopularNovels()
-    if (user) {
-      fetchFollowedNovels()
-      fetchUserType()
-      fetchUserProfile()
-    }
-  }, [user])
+  
 
-  const toggleDarkMode = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark')
-  }
-
-  const fetchPopularNovels = async () => {
-    setLoading(true)
+  const fetchPopularNovels = useCallback(async () => {
+    if (!loading) setLoading(true)
+    setError(null)
     try {
       const q = query(collection(db, 'novels'), orderBy('rating', 'desc'), limit(10))
       const querySnapshot = await getDocs(q)
@@ -86,12 +76,24 @@ export default function ModernLightNovelsHomepage() {
         ...doc.data(),
         authorId: doc.data().authorId || doc.id
       } as Novel))
-      setPopularNovels(novels)
+      if (novels.length === 0) {
+        setError('No popular novels found. Please try again later.')
+      } else {
+        setPopularNovels(novels)
+      }
     } catch (error) {
       console.error('Error fetching popular novels:', error)
+      setError('Failed to fetch popular novels. Please try again.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchPopularNovels()
+  }, [fetchPopularNovels])
+
+  const memoizedPopularNovels = useMemo(() => popularNovels, [popularNovels])
 
   const fetchUserProfile = async () => {
     if (!user) return
@@ -184,6 +186,14 @@ export default function ModernLightNovelsHomepage() {
       </Button>
     )
   }
+  useEffect(() => {
+    setMounted(true)
+    if (user) {
+      fetchFollowedNovels()
+      fetchUserType()
+      fetchUserProfile()
+    }
+  }, [user, fetchFollowedNovels, fetchUserType, fetchUserProfile])
 
   return (
     <motion.div 
@@ -301,12 +311,14 @@ export default function ModernLightNovelsHomepage() {
             </motion.h2>
             {loading ? (
               <div className="text-center text-[#232120] dark:text-[#E7E7E8]">Loading popular novels...</div>
+            ) : error ? (
+              <div className="text-center text-red-500">{error}</div>
             ) : (
               <motion.div 
                 className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6"
                 variants={staggerChildren}
               >
-                {popularNovels.map((novel) => (
+                {memoizedPopularNovels.map((novel) => (
                   <motion.div
                     key={novel.id}
                     variants={fadeIn}

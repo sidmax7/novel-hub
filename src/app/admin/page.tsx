@@ -57,15 +57,7 @@ export default function AdminDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isAuthor, setIsAuthor] = useState(false)
 
-  useEffect(() => {
-    if (user) {
-      checkUserType()
-      fetchNovels()
-    } else {
-      setError("User not authenticated. Please log in.")
-      setLoading(false)
-    }
-  }, [user])
+  
 
   const checkUserType = async () => {
     if (!user) return
@@ -180,6 +172,16 @@ export default function AdminDashboard() {
     }
     setUploadingImage(false)
   }
+
+  useEffect(() => {
+    if (user) {
+      checkUserType()
+      fetchNovels()
+    } else {
+      setError("User not authenticated. Please log in.")
+      setLoading(false)
+    }
+  }, [user, checkUserType, fetchNovels])
 
   if (!user) {
     return (
