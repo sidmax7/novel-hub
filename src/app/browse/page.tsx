@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Check, ChevronLeft, ChevronRight, BookOpen, X } from "lucide-react"
+import { Search, Check, ChevronLeft, ChevronRight, BookOpen, X, Home, Sun, Moon } from "lucide-react"
 import Link from "next/link"
 import { motion } from 'framer-motion'
 import { useTheme } from 'next-themes'
@@ -70,7 +70,7 @@ const CACHE_EXPIRATION = 60 * 60 * 1000 // 1 hour in milliseconds
 const FILTER_STATE_KEY = 'novelHubFilterState'
 
 export default function BrowsePage() {
-  const { theme } = useTheme()
+  const { theme, setTheme } = useTheme()
   const [novels, setNovels] = useState<Novel[]>([])
   const [filteredNovels, setFilteredNovels] = useState<Novel[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -357,11 +357,40 @@ export default function BrowsePage() {
 
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-[#E7E7E8] dark:bg-[#232120]`}>
-      <header className="border-b dark:border-[#3E3F3E] bg-[#E7E7E8] dark:bg-[#232120] sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-4 py-6 flex items-center justify-between">
-          <Link href="/" className="text-3xl font-bold text-[#F1592A] dark:text-[#F1592A] hover:text-[#232120] dark:hover:text-[#E7E7E8] transition-colors">
-            NovelHub
-          </Link>
+      <header className="bg-white dark:bg-[#232120] shadow">
+        <div className="container mx-auto px-4 py-6 flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-3xl font-bold text-[#F1592A]">
+              <Link href="/" className="text-3xl font-bold text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] dark:hover:text-[#F1592A] transition-colors">
+                NovelHub
+              </Link>
+            </h1>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Link href="/" passHref>
+              <Button
+                variant="outline"
+                size="icon"
+                className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
+              >
+                <Home className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" />
+                <span className="sr-only">Home</span>
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+              className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" />
+              ) : (
+                <Moon className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" />
+              )}
+              <span className="sr-only">Toggle theme</span>
+            </Button>
+          </div>
         </div>
       </header>
 
