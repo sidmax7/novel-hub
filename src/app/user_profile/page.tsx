@@ -37,7 +37,6 @@ interface UserProfile {
   followedNovels: string[]
 }
 
-// Ensure this is the only Novel interface definition
 interface Novel {
   authorId: string
   id: string
@@ -46,7 +45,6 @@ interface Novel {
   coverUrl: string
   rating: number
   genre: string
-  likes: number // Add this line
 }
 
 export default function UserProfilePage() {
@@ -439,7 +437,7 @@ export default function UserProfilePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {followedNovels.length > 0 ? (
                 followedNovels.map((novel) => (
-                  <NovelCard key={novel.id} novel={{...novel, likes: 0}} onFollowChange={handleFollowChange} />
+                  <NovelCard key={novel.id} novel={novel} onFollowChange={handleFollowChange} />
                 ))
               ) : (
                 <p className="col-span-full text-center text-[#8E8F8E] dark:text-[#C3C3C3]">You haven't followed any novels yet.</p>
@@ -449,7 +447,7 @@ export default function UserProfilePage() {
           <TabsContent value="recommendations">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {recommendations.map((novel) => (
-                <NovelCard key={novel.id} novel={{...novel, likes: 0}} />
+                <NovelCard key={novel.id} novel={novel} />
               ))}
             </div>
           </TabsContent>

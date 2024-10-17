@@ -166,9 +166,9 @@ export default function BrowsePage() {
         genreLower.includes(searchTermLower) ||
         tagsLower.some(tag => tag.includes(searchTermLower))
 
-      const matchesGenre = !selectedGenres || selectedGenres.length === 0 || 
+      const matchesGenre = selectedGenres.length === 0 || 
         selectedGenres.map(g => g.toLowerCase()).includes(genreLower)
-      const matchesTag = !selectedTags || selectedTags.length === 0 || 
+      const matchesTag = selectedTags.length === 0 || 
         novel.tags.some(tag => selectedTags.map(t => t.toLowerCase()).includes(tag.toLowerCase()))
 
       return matchesSearch && matchesGenre && matchesTag
@@ -240,10 +240,10 @@ export default function BrowsePage() {
 
   const toggleGenre = (genre: string) => {
     setSelectedGenres(prev => {
-      if (!prev) return [genre];
-      return prev.some(g => g.toLowerCase() === genre.toLowerCase())
-        ? prev.filter(g => g.toLowerCase() !== genre.toLowerCase())
-        : [...prev, genre]
+      const currentGenres = prev || []; // Ensure prev is an array
+      return currentGenres.some(g => g.toLowerCase() === genre.toLowerCase())
+        ? currentGenres.filter(g => g.toLowerCase() !== genre.toLowerCase())
+        : [...currentGenres, genre]
     })
   }
 
@@ -417,7 +417,7 @@ export default function BrowsePage() {
             <h3 className="text-lg font-semibold mb-2 text-[#232120] dark:text-[#E7E7E8]">Genres</h3>
             <div className="space-y-2">
               {Object.keys(colorSchemes).map((genre) => {
-                const isSelected = selectedGenres?.map(g => g.toLowerCase()).includes(genre.toLowerCase()) || false
+                const isSelected = (selectedGenres || []).map(g => g.toLowerCase()).includes(genre.toLowerCase())
                 const colorScheme = getColorScheme(genre)
                 return (
                   <Button
@@ -435,7 +435,7 @@ export default function BrowsePage() {
           </div>
           <div className="flex space-x-2 mb-6">
             <Button onClick={handleApplyFilters} className="flex-1 bg-[#F1592A] text-white hover:bg-[#E7E7E8] hover:border-2 hover:border-[#F1592A] hover:text-[#F1592A] dark:hover:bg-[#232120]">Apply</Button>
-            <Button onClick={handleResetFilters} className="flex-1 bg-[#232120] dark:bg-[#E7E7E8] text-[#E7E7E8] dark:text-[#232120] hover:bg-[#FFFFFF] hover:text-[#000000] dark:hover:bg-[#000000] dark:hover:text-[#E7E7E8]">Reset</Button>
+            <Button onClick={handleResetFilters} variant="outline" className="flex-1">Reset</Button>
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-2 text-[#232120] dark:text-[#E7E7E8]">Tags</h3>
