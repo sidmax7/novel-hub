@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useTheme } from 'next-themes'
+import LoadingSpinner from '@/components/LoadingSpinner' // Add this import
 
 export const genreColors = {
   Fantasy: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900 text-purple-100' },
@@ -321,7 +322,9 @@ export default function ModernLightNovelsHomepage() {
               Popular Novels
             </motion.h2>
             {loading ? (
-              <div className="text-center text-[#232120] dark:text-[#E7E7E8]">Loading popular novels...</div>
+              <div className="flex justify-center items-center h-40">
+                <LoadingSpinner />
+              </div>
             ) : (
               <motion.div 
                 className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6"

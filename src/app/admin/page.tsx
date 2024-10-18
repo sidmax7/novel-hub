@@ -59,43 +59,57 @@ export default function AdminDashboard() {
 
   
 
-  const checkUserType = async () => {
-    if (!user) return
-    try {
-      const userDocRef = doc(db, 'users', user.uid)
-      const userDocSnap = await getDoc(userDocRef)
-      if (userDocSnap.exists()) {
-        const userData = userDocSnap.data()
-        setIsAuthor(userData.userType === 'author')
+  useEffect(() => {
+    const initializeAdminDashboard = async () => {
+      if (user) {
+        setLoading(true);
+        await checkUserType();
+        await fetchNovels();
+        setLoading(false);
       } else {
-        setIsAuthor(false)
+        setError("User not authenticated. Please log in.");
+        setLoading(false);
+      }
+    };
+
+    initializeAdminDashboard();
+  }, [user]);
+
+  const checkUserType = async () => {
+    if (!user) return;
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        setIsAuthor(userData.userType === 'author');
+      } else {
+        setIsAuthor(false);
       }
     } catch (error) {
-      console.error('Error checking user type:', error)
-      setIsAuthor(false)
+      console.error('Error checking user type:', error);
+      setIsAuthor(false);
     }
-  }
+  };
 
   const fetchNovels = async () => {
-    if (!user) return
-    setLoading(true)
-    setError(null)
+    if (!user) return;
+    setError(null);
     try {
       const q = query(
         collection(db, 'novels'),
         where('authorId', '==', user.uid),
         orderBy('name')
-      )
-      const querySnapshot = await getDocs(q)
-      const fetchedNovels = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Novel))
-      setNovels(fetchedNovels)
+      );
+      const querySnapshot = await getDocs(q);
+      const fetchedNovels = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Novel));
+      setNovels(fetchedNovels);
     } catch (error) {
-      console.error('Error fetching novels:', error)
-      setError(`Failed to fetch novels: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      toast.error('Failed to fetch novels. Please try again.')
+      console.error('Error fetching novels:', error);
+      setError(`Failed to fetch novels: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error('Failed to fetch novels. Please try again.');
     }
-    setLoading(false)
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -172,16 +186,6 @@ export default function AdminDashboard() {
     }
     setUploadingImage(false)
   }
-
-  useEffect(() => {
-    if (user) {
-      checkUserType()
-      fetchNovels()
-    } else {
-      setError("User not authenticated. Please log in.")
-      setLoading(false)
-    }
-  }, [user, checkUserType, fetchNovels])
 
   if (!user) {
     return (
