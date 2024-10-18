@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { StarRating } from '@/components/ui/starrating'
-import { BookMarked, ThumbsUp } from 'lucide-react'
+import { ThumbsUp } from 'lucide-react'
 import { useAuth } from '@/app/authcontext'
 import { db } from '@/lib/firebaseConfig'
 import { doc, getDoc, setDoc, deleteDoc, updateDoc, increment, arrayUnion, arrayRemove } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
-import { useTheme } from 'next-themes'
+import LoadingSpinner from '@/components/LoadingSpinner'
 
 interface Novel {
   id: string
@@ -32,12 +32,10 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
   const [isFollowing, setIsFollowing] = useState(false)
   const [likes, setLikes] = useState(novel.likes || 0)
   const [isLiked, setIsLiked] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const { user } = useAuth()
-  const { theme } = useTheme()
 
-  
-
-  const checkIfFollowing = async () => {
+  const checkIfFollowing = useCallback(async () => {
     if (!user) return
     try {
       const followingRef = doc(db, 'users', user.uid, 'following', novel.id)
@@ -46,9 +44,9 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
     } catch (error) {
       console.error('Error checking follow status:', error)
     }
-  }
+  }, [user, novel.id])
 
-  const checkIfLiked = async () => {
+  const checkIfLiked = useCallback(async () => {
     if (!user) return
     try {
       const userRef = doc(db, 'users', user.uid)
@@ -57,6 +55,20 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
     } catch (error) {
       console.error('Error checking like status:', error)
     }
+  }, [user, novel.id])
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (user) {
+        await Promise.all([checkIfFollowing(), checkIfLiked()])
+      }
+      setIsLoading(false)
+    }
+    loadData()
+  }, [user, checkIfFollowing, checkIfLiked])
+
+  if (isLoading) {
+    return <LoadingSpinner />
   }
 
   const handleFollowNovel = async () => {
@@ -115,80 +127,50 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
     }
   }
 
-  useEffect(() => {
-    if (user) {
-      checkIfFollowing()
-      checkIfLiked()
-    }
-  }, [user, novel.id, checkIfFollowing, checkIfLiked])
-  //Change the button style in Novel Card
   return (
-    <Card className="overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300">
-      <Link href={`/novel/${novel.id}`} passHref>
-        <div className="relative aspect-[2/3] w-full">
-          <Image
-            src={novel.coverUrl || '/assets/cover.jpg'}
-            alt={novel.name}
-            layout="fill"
-            objectFit="cover"
-          />
-        </div>
-        <CardContent className="p-4">
-          <h3 className="font-semibold mb-1 truncate">{novel.name}</h3>
-          <Link href={`/author/${novel.authorId}`} passHref>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 truncate hover:text-[#F1592A] dark:hover:text-[#F1592A] cursor-pointer">
-              {novel.author}
-            </p>
-          </Link>
-          <StarRating rating={novel.rating} />
-          <div className="flex flex-col sm:flex-row mt-2 space-y-2 sm:space-y-0 sm:space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className={`w-full sm:w-auto text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2 comic-button group border-2 border-[#F1592A] ${
-                isFollowing 
-                  ? "dark:bg-[#F1592A] bg-[#F1592A] text-[#232120] dark:text-white hover:bg-[#232120] dark:hover:bg-[#232120] hover:text-white" 
-                  : "dark:bg-[#232120] bg-white text-[#232120] dark:text-white hover:bg-[#F1592A] dark:hover:bg-[#F1592A] hover:text-white"
-              }`}
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleFollowNovel()
-              }}
-            >
-              <BookMarked className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="group-hover:hidden">
-                {isFollowing ? 'Followed' : 'Follow'}
-              </span>
-              <span className="hidden group-hover:inline">
-                {isFollowing ? 'Unfollow' : 'Follow'}
-              </span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className={`w-full sm:w-auto text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2 comic-button group ${
-                theme === 'dark' 
-                  ? "bg-[#232120] text-white hover:bg-[#F1592A] dark:hover:bg-white dark:hover:text-[#232120]" 
-                  : "bg-white text-[#232120] hover:bg-[#232120] hover:text-white"
-              } ${isLiked ? 'bg-white dark:bg-[#232120] text-[#F1592A] dark:text-[#F1592A]' : ''}`}
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleLikeNovel()
-              }}
-            >
-              <ThumbsUp className="mr-1 h-3 w-3 sm:h-4 sm:w-4" /> 
-              <span className="group-hover:hidden">
-                {isLiked ? 'Liked' : 'Like'} 
-              </span>
-              <span className="hidden group-hover:inline">
-                {isLiked ? 'Unlike' : 'Like'}
-              </span>
-            </Button>
+    <Card className="overflow-hidden">
+      <Link href={`/novel/${novel.id}`} passHref legacyBehavior>
+        <a className="block">
+          <div className="relative w-full pt-[150%]">
+            <Image
+              src={novel.coverUrl || '/assets/default-cover.jpg'}
+              alt={novel.name}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover"
+            />
           </div>
-        </CardContent>
+          <CardContent className="p-4">
+            <h3 className="font-semibold text-lg mb-1 truncate">{novel.name}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">by {novel.author}</p>
+            <div className="flex items-center justify-between mb-2">
+              <StarRating rating={novel.rating} />
+              
+            </div>
+            <span className={`text-xs px-2 py-1 rounded ${novel.genre ? `bg-${novel.genre.toLowerCase()}-200 text-${novel.genre.toLowerCase()}-800` : 'bg-gray-200 text-gray-800'}`}>
+              {novel.genre}
+            </span>
+          </CardContent>
+        </a>
       </Link>
+      <CardFooter className="p-4 pt-0 flex justify-between items-center">
+        <Button
+          variant={isFollowing ? "secondary" : "default"}
+          size="sm"
+          onClick={handleFollowNovel}
+        >
+          {isFollowing ? 'Unfollow' : 'Follow'}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLikeNovel}
+          className={`flex items-center ${isLiked ? 'text-red-500' : ''}`}
+        >
+          <ThumbsUp className="mr-1" size={16} />
+          <span>{likes}</span>
+        </Button>
+      </CardFooter>
     </Card>
   )
 }

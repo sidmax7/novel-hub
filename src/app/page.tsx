@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Menu, Moon, Sun, LogOut, User, ChevronsLeftRightIcon, MessageSquare } from "lucide-react"
@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useTheme } from 'next-themes'
 
-const genreColors = {
+export const genreColors = {
   Fantasy: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900 text-purple-100' },
   "Sci-Fi": { light: 'bg-blue-100 text-blue-800', dark: 'bg-blue-900 text-blue-100' },
   Romance: { light: 'bg-pink-100 text-pink-800', dark: 'bg-pink-900 text-pink-100' },
@@ -47,53 +47,72 @@ interface Novel {
   likes?: number;
 }
 
-export default function Home() {
+const CACHE_KEY = 'popularNovels'
+const CACHE_EXPIRATION = 5 * 60 * 1000 // 5 minutes in milliseconds
+
+const fetchPopularNovels = async () => {
+  const cachedData = localStorage.getItem(CACHE_KEY)
+  if (cachedData) {
+    const { data, timestamp } = JSON.parse(cachedData)
+    if (Date.now() - timestamp < CACHE_EXPIRATION) {
+      return data
+    }
+  }
+
+  // If cache is invalid or expired, fetch from Firestore
+  const q = query(collection(db, 'novels'), orderBy('rating', 'desc'), limit(10))
+  const querySnapshot = await getDocs(q)
+  const novels = querySnapshot.docs.map(doc => ({ 
+    id: doc.id, 
+    ...doc.data(),
+    authorId: doc.data().authorId || doc.id
+  } as Novel))
+
+  // Cache the fetched data
+  localStorage.setItem(CACHE_KEY, JSON.stringify({ data: novels, timestamp: Date.now() }))
+
+  return novels
+}
+
+export default function ModernLightNovelsHomepage() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [popularNovels, setPopularNovels] = useState<Novel[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
   const router = useRouter()
-  const [_followedNovels, setFollowedNovels] = useState<string[]>([])
+  const [followedNovels, setFollowedNovels] = useState<string[]>([])
   const [userType, setUserType] = useState<string | null>(null)
   const [userProfile, setUserProfile] = useState<{ profilePicture: string, username: string } | null>(null)
-  const [error, setError] = useState<string | null>(null)
 
   const scrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  
-
-  const fetchPopularNovels = useCallback(async () => {
-    if (!loading) setLoading(true)
-    setError(null)
-    try {
-      const q = query(collection(db, 'novels'), orderBy('rating', 'desc'), limit(10))
-      const querySnapshot = await getDocs(q)
-      const novels = querySnapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data(),
-        authorId: doc.data().authorId || doc.id
-      } as Novel))
-      if (novels.length === 0) {
-        setError('No popular novels found. Please try again later.')
-      } else {
+  useEffect(() => {
+    setMounted(true)
+    const loadPopularNovels = async () => {
+      setLoading(true)
+      try {
+        const novels = await fetchPopularNovels()
         setPopularNovels(novels)
+      } catch (error) {
+        console.error('Error fetching popular novels:', error)
       }
-    } catch (error) {
-      console.error('Error fetching popular novels:', error)
-      setError('Failed to fetch popular novels. Please try again.')
-    } finally {
       setLoading(false)
     }
-  }, [])
 
-  useEffect(() => {
-    fetchPopularNovels()
-  }, [fetchPopularNovels])
+    loadPopularNovels()
+    if (user) {
+      fetchFollowedNovels()
+      fetchUserType()
+      fetchUserProfile()
+    }
+  }, [user])
 
-  const memoizedPopularNovels = useMemo(() => popularNovels, [popularNovels])
+  const toggleDarkMode = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark')
+  }
 
   const fetchUserProfile = async () => {
     if (!user) return
@@ -169,33 +188,23 @@ export default function Home() {
   }
 
   const ThemeToggle = () => {
-    const [isMounted, setIsMounted] = useState(false)
-
-    useEffect(() => {
-      setIsMounted(true)
-    }, [])
+    if (!mounted) return null
 
     return (
       <Button
         variant="outline"
         size="icon"
         onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-        className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group relative overflow-hidden transition-colors duration-300"
+        className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
       >
-        <Sun className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-300 opacity-100 dark:opacity-0" />
-        <Moon className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-300 opacity-0 dark:opacity-100" />
-        <span className="sr-only">Toggle theme</span>
+        {theme === 'dark' ? (
+          <Sun className="h-4 w-4 text-[#E7E7E8]" />
+        ) : (
+          <Moon className="h-4 w-4 text-[#232120] group-hover:text-white" />
+        )}
       </Button>
     )
   }
-  useEffect(() => {
-    setMounted(true)
-    if (user) {
-      fetchFollowedNovels()
-      fetchUserType()
-      fetchUserProfile()
-    }
-  }, [user, fetchFollowedNovels, fetchUserType, fetchUserProfile])
 
   return (
     <motion.div 
@@ -313,14 +322,12 @@ export default function Home() {
             </motion.h2>
             {loading ? (
               <div className="text-center text-[#232120] dark:text-[#E7E7E8]">Loading popular novels...</div>
-            ) : error ? (
-              <div className="text-center text-red-500">{error}</div>
             ) : (
               <motion.div 
                 className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6"
                 variants={staggerChildren}
               >
-                {memoizedPopularNovels.map((novel) => (
+                {popularNovels.map((novel) => (
                   <motion.div
                     key={novel.id}
                     variants={fadeIn}

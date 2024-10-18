@@ -15,8 +15,36 @@ import Image from "next/image"
 import { useRouter } from 'next/navigation'
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown } from "lucide-react"
 import { Redis } from '@upstash/redis'
+import dynamic from 'next/dynamic'
+import { LucideProps } from 'lucide-react'
+import dynamicIconImports from 'lucide-react/dynamicIconImports'
+import LoadingSpinner from '@/components/LoadingSpinner'
+
+interface IconProps extends LucideProps {
+  name: keyof typeof dynamicIconImports
+}
+
+const Icon = ({ name, ...props }: IconProps) => {
+  const LucideIcon = dynamic(dynamicIconImports[name])
+  return <LucideIcon {...props} />
+}
+
+const ClientSideIcon = ({ name, ...props }: IconProps) => {
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  if (!isMounted) {
+    return null
+  }
+
+  return <Icon name={name} {...props} />
+}
+
 
 // Initialize Redis client
 const redis = new Redis({
@@ -368,9 +396,28 @@ export default function BrowsePage() {
     setFilteredNovels(sorted)
   }, [sortCriteria, sortOrder])
 
-  
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const loadData = async () => {
+      await fetchNovels();
+      setIsLoading(false);
+    };
+    loadData();
+  }, [fetchNovels]);
+
+  if (isLoading) {
+    return <LoadingSpinner />
+  }
+
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-[#E7E7E8] dark:bg-[#232120]`}>
+    <div className={`min-h-screen bg-[#E7E7E8] dark:bg-[#232120] ${mounted && theme === 'dark' ? 'dark' : ''}`}>
       <header className="bg-white dark:bg-[#232120] shadow">
         <div className="container mx-auto px-4 py-6 flex justify-between items-center">
           <div className="flex items-center space-x-4">
@@ -391,23 +438,24 @@ export default function BrowsePage() {
                 <span className="sr-only">Home</span>
               </Button>
             </Link>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-              className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
-            >
-              {theme === 'dark' ? (
-                <Sun className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" />
-              ) : (
-                <Moon className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" />
-              )}
-              <span className="sr-only">Toggle theme</span>
-            </Button>
+            {mounted && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
+              >
+                <ClientSideIcon 
+                  name={theme === 'dark' ? 'sun' : 'moon'} 
+                  className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" 
+                />
+                <span className="sr-only">Toggle theme</span>
+              </Button>
+            )}
           </div>
         </div>
       </header>
-
+      
       <main className="container mx-auto px-4 py-8 flex">
         <aside className="w-full md:w-64 pr-8 mb-8 md:mb-0">
           <div className="flex justify-between items-center mb-4">
@@ -500,7 +548,7 @@ export default function BrowsePage() {
           
           <div className="mb-8">
             <div className="relative flex items-center">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#232120]/60 dark:text-[#E7E7E8]/60" />
+              <ClientSideIcon name="search" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#232120]/60 dark:text-[#E7E7E8]/60" />
               <Input
                 type="search"
                 placeholder="Search novels, authors, genres, or tags..."
@@ -546,7 +594,7 @@ export default function BrowsePage() {
               }
             }}
           >
-            {currentNovels.map((novel) => (
+            {currentNovels.map((novel, index) => (
               <motion.div
                 key={novel.id}
                 className="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
@@ -558,14 +606,17 @@ export default function BrowsePage() {
               >
                 <div className="flex p-4">
                   <div className="flex-shrink-0 w-24 h-36 mr-4 relative group">
-                    <Image
-                      src={novel.coverUrl || '/placeholder.svg'}
-                      alt={novel.name}
-                      width={96}
-                      height={144}
-                      objectFit="cover"
-                      className="rounded"
-                    />
+                    <div className="relative w-24 h-36">
+                      <Image
+                        src={novel.coverUrl || '/placeholder.svg'}
+                        alt={novel.name}
+                        fill
+                        sizes="96px"
+                        priority={index < 3} // Add priority for the first 3 images
+                        style={{ objectFit: "cover" }}
+                        className="rounded"
+                      />
+                    </div>
                     <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button 
                         variant="ghost" 
@@ -575,7 +626,7 @@ export default function BrowsePage() {
                           handleReadNow(novel.id)
                         }}
                       >
-                        <BookOpen className="mr-2" size={16} />
+                        <ClientSideIcon name="book-open" className="mr-2" size={16} />
                         Read Now
                       </Button>
                     </div>
