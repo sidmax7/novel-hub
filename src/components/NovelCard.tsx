@@ -119,7 +119,7 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
       toast.error('Failed to update like')
     }
   }
-
+  //Change the button style in Novel Card
   return (
     <Card className="overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300">
       <Link href={`/novel/${novel.id}`} passHref>
