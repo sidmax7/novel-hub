@@ -351,7 +351,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                   <Button
                   variant="outline"
                   size="sm"
-                  className={`flex-grow comic-button group border-2 border-[#F1592A] ${
+                  className={`flex-grow  group border-2 border-[#F1592A] ${
                     isFollowing 
                       ? "dark:bg-[#F1592A] bg-[#F1592A] text-[#232120] dark:text-white hover:bg-[#232120] dark:hover:bg-[#232120] hover:text-white" 
                       : "dark:bg-[#232120] bg-white text-[#232120] dark:text-white hover:bg-[#F1592A] dark:hover:bg-[#F1592A] hover:text-white"
@@ -373,9 +373,9 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className={`flex-grow comic-button group ${
+                  className={`flex-grow group ${
                     theme === 'dark' 
-                      ? "bg-[#232120] text-white hover:bg-[#F1592A] dark:hover:bg-white dark:hover:text-[#232120]" 
+                      ? "bg-black text-white hover:bg-[#F1592A] dark:hover:bg-white dark:hover:text-[#232120]" 
                       : "bg-white text-[#232120] hover:bg-[#232120] hover:text-white"
                   } ${isLiked ? 'bg-white dark:bg-[#232120] text-[#F1592A] dark:text-[#F1592A]' : ''}`}
                   onClick={handleLikeNovel}
@@ -388,7 +388,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                       {isLiked ? 'Unlike' : 'Like'}
                     </span>
                   </Button>
-                <Button variant="outline" className="flex-1 comic-button" onClick={() => router.push(`/novel/${novel.id}/chapters`)}>
+                <Button variant="outline" className="flex-1 " onClick={() => router.push(`/novel/${novel.id}/chapters`)}>
                   <BookOpen className="mr-2 h-4 w-4" /> Read
                 </Button>
               </div>
