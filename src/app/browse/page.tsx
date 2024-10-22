@@ -21,6 +21,7 @@ import dynamic from 'next/dynamic'
 import { LucideProps } from 'lucide-react'
 import dynamicIconImports from 'lucide-react/dynamicIconImports'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import { genreColors } from '../genreColors'
 
 interface IconProps extends LucideProps {
   name: keyof typeof dynamicIconImports
@@ -73,24 +74,6 @@ interface Novel {
 
 interface NovelIndex {
   [key: string]: Set<string>
-}
-
-const colorSchemes = {
-  Fantasy: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900 text-purple-100' },
-  "Science Fiction": { light: 'bg-blue-100 text-blue-800', dark: 'bg-blue-900 text-blue-100' },
-  Romance: { light: 'bg-pink-100 text-pink-800', dark: 'bg-pink-900 text-pink-100' },
-  Action: { light: 'bg-red-100 text-red-800', dark: 'bg-red-900 text-red-100' },
-  Mystery: { light: 'bg-yellow-100 text-yellow-800', dark: 'bg-yellow-900 text-yellow-100' },
-  "Slice of Life": { light: 'bg-green-100 text-green-800', dark: 'bg-green-900 text-green-100' },
-  Isekai: { light: 'bg-indigo-100 text-indigo-800', dark: 'bg-indigo-900 text-indigo-100' },
-  Horror: { light: 'bg-gray-100 text-gray-800', dark: 'bg-gray-900 text-gray-100' },
-  Adventure: { light: 'bg-orange-100 text-orange-800', dark: 'bg-orange-900 text-orange-100' },
-  Magic: { light: 'bg-teal-100 text-teal-800', dark: 'bg-teal-900 text-teal-100' },
-  Drama: { light: 'bg-rose-100 text-rose-800', dark: 'bg-rose-900 text-rose-100' },
-  Comedy: { light: 'bg-lime-100 text-lime-800', dark: 'bg-lime-900 text-lime-100' },
-  Thriller: { light: 'bg-cyan-100 text-cyan-800', dark: 'bg-cyan-900 text-cyan-100' },
-  Historical: { light: 'bg-amber-100 text-amber-800', dark: 'bg-amber-900 text-amber-100' },
-  Supernatural: { light: 'bg-violet-100 text-violet-800', dark: 'bg-violet-900 text-violet-100' },
 }
 
 const CACHE_KEY = 'novelHubCache'
@@ -221,16 +204,15 @@ export default function BrowsePage() {
 
     // Save filter state to localStorage
     localStorage.setItem(FILTER_STATE_KEY, JSON.stringify({
-      selectedGenres,
+      appliedGenres: selectedGenres,
       selectedTags,
       searchTerm
     }))
   }, [novels, searchTerm, selectedGenres, selectedTags, sortCriteria, sortOrder])
 
   const handleApplyFilters = useCallback(() => {
-    setAppliedGenres(selectedGenres)
-    applyFilters(novels)
-  }, [selectedGenres, applyFilters, novels])
+    applyFilters(novels);
+  }, [applyFilters, novels]);
 
   
 
@@ -267,8 +249,9 @@ export default function BrowsePage() {
   }
 
   const toggleGenre = (genre: string) => {
+    console.log('Toggling genre:', genre);
     setSelectedGenres(prev => {
-      const currentGenres = prev || []; // Ensure prev is an array
+      const currentGenres = prev || [];
       return currentGenres.some(g => g.toLowerCase() === genre.toLowerCase())
         ? currentGenres.filter(g => g.toLowerCase() !== genre.toLowerCase())
         : [...currentGenres, genre]
@@ -305,8 +288,8 @@ export default function BrowsePage() {
   }
 
   const getColorScheme = (item: string) => {
-    const key = Object.keys(colorSchemes).find(k => item.toLowerCase().includes(k.toLowerCase()))
-    return key ? colorSchemes[key as keyof typeof colorSchemes] : colorSchemes.Horror
+    const key = Object.keys(genreColors).find(k => item.toLowerCase().includes(k.toLowerCase()));
+    return key ? genreColors[key as keyof typeof genreColors] : genreColors.Horror;
   }
 
   const changePage = (newPage: number) => {
@@ -464,13 +447,16 @@ export default function BrowsePage() {
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-2 text-[#232120] dark:text-[#E7E7E8]">Genres</h3>
             <div className="space-y-2">
-              {Object.keys(colorSchemes).map((genre) => {
+              {Object.keys(genreColors).map((genre) => {
                 const isSelected = (selectedGenres || []).map(g => g.toLowerCase()).includes(genre.toLowerCase())
                 const colorScheme = getColorScheme(genre)
                 return (
                   <Button
                     key={genre}
-                    onClick={() => toggleGenre(genre)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleGenre(genre);
+                    }}
                     variant={isSelected ? "default" : "outline"}
                     className={`w-full justify-between ${isSelected ? (theme === 'dark' ? colorScheme.dark : colorScheme.light) : ''}`}
                   >
@@ -488,7 +474,7 @@ export default function BrowsePage() {
           <div>
             <h3 className="text-lg font-semibold mb-2 text-[#232120] dark:text-[#E7E7E8]">Tags</h3>
             <div className="space-y-2">
-              {Object.keys(colorSchemes).map((tag) => {
+              {Object.keys(genreColors).map((tag) => {
                 const isSelected = selectedTags.map(t => t.toLowerCase()).includes(tag.toLowerCase())
                 const colorScheme = getColorScheme(tag)
                 return (

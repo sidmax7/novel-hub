@@ -1,0 +1,17 @@
+export const genreColors = {
+    Fantasy: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900 text-purple-100' },
+    "Science Fiction": { light: 'bg-blue-100 text-blue-800', dark: 'bg-blue-900 text-blue-100' },
+    Romance: { light: 'bg-pink-100 text-pink-800', dark: 'bg-pink-900 text-pink-100' },
+    Action: { light: 'bg-red-100 text-red-800', dark: 'bg-red-900 text-red-100' },
+    Mystery: { light: 'bg-yellow-100 text-yellow-800', dark: 'bg-yellow-900 text-yellow-100' },
+    "Slice of Life": { light: 'bg-green-100 text-green-800', dark: 'bg-green-900 text-green-100' },
+    Isekai: { light: 'bg-indigo-100 text-indigo-800', dark: 'bg-indigo-900 text-indigo-100' },
+    Horror: { light: 'bg-gray-100 text-gray-800', dark: 'bg-gray-900 text-gray-100' },
+    Adventure: { light: 'bg-orange-100 text-orange-800', dark: 'bg-orange-900 text-orange-100' },
+    Magic: { light: 'bg-teal-100 text-teal-800', dark: 'bg-teal-900 text-teal-100' },
+    Drama: { light: 'bg-rose-100 text-rose-800', dark: 'bg-rose-900 text-rose-100' },
+    Comedy: { light: 'bg-lime-100 text-lime-800', dark: 'bg-lime-900 text-lime-100' },
+    Thriller: { light: 'bg-cyan-100 text-cyan-800', dark: 'bg-cyan-900 text-cyan-100' },
+    Historical: { light: 'bg-amber-100 text-amber-800', dark: 'bg-amber-900 text-amber-100' },
+    Supernatural: { light: 'bg-violet-100 text-violet-800', dark: 'bg-violet-900 text-violet-100' },
+  };
