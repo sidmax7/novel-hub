@@ -24,18 +24,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useTheme } from 'next-themes'
 import LoadingSpinner from '@/components/LoadingSpinner' // Add this import
+import { genreColors } from './genreColors'
 
-export const genreColors = {
-  Fantasy: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900 text-purple-100' },
-  "Sci-Fi": { light: 'bg-blue-100 text-blue-800', dark: 'bg-blue-900 text-blue-100' },
-  Romance: { light: 'bg-pink-100 text-pink-800', dark: 'bg-pink-900 text-pink-100' },
-  Action: { light: 'bg-red-100 text-red-800', dark: 'bg-red-900 text-red-100' },
-  Mystery: { light: 'bg-yellow-100 text-yellow-800', dark: 'bg-yellow-900 text-yellow-100' },
-  "Slice of Life": { light: 'bg-green-100 text-green-800', dark: 'bg-green-900 text-green-100' },
-  Isekai: { light: 'bg-indigo-100 text-indigo-800', dark: 'bg-indigo-900 text-indigo-100' },
-  Horror: { light: 'bg-gray-100 text-gray-800', dark: 'bg-gray-900 text-gray-100' },
-  
-}
 
 interface Novel {
   id: string

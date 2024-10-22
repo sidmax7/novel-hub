@@ -45,6 +45,7 @@ interface Novel {
   coverUrl: string
   rating: number
   genre: string
+  likes: number
 }
 
 export default function UserProfilePage() {
