@@ -258,7 +258,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
         <div className="flex items-center space-x-4">
             <h1 className="text-3xl font-bold text-[#F1592A]">
               <Link href="/" className="text-3xl font-bold text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] dark:hover:text-[#F1592A] transition-colors">
-                NovelHub
+                Novellize
           </Link>
           </h1>
           </div>

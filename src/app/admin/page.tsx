@@ -28,6 +28,7 @@ interface Novel {
   genre: string
   tags: string[]
   type: string
+  likes: number
   releaseDate: string
   lastUpdated: string
   language: string
@@ -124,7 +125,8 @@ export default function AdminDashboard() {
         rating: Number(currentNovel.rating),
         chapters: Number(currentNovel.chapters),
         views: Number(currentNovel.views),
-        rank: Number(currentNovel.rank)
+        rank: Number(currentNovel.rank),
+        likes: currentNovel.id ? currentNovel.likes : 0 // Set likes to 0 for new novels
       }
 
       if (currentNovel.id) {
@@ -203,7 +205,7 @@ export default function AdminDashboard() {
     <div className="container mx-auto p-4">
       <Toaster />
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Novel Admin Dashboard</h1>
+        <h1 className="text-2xl font-bold">Novellize Admin Dashboard</h1>
         <Link href="./" passHref>
           <Button variant="outline">
             <Home className="mr-2 h-4 w-4" /> Back to Home

@@ -277,7 +277,7 @@ export default function UserProfilePage() {
         <div className="container mx-auto px-4 py-6 flex justify-between items-center">
         <h1 className="text-3xl font-bold text-[#F1592A]">
               <Link href="/" className="text-3xl font-bold text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] dark:hover:text-[#F1592A] transition-colors">
-            NovelHub
+            Novellize
           </Link>
           </h1>
           <div className="flex items-center space-x-4">

@@ -216,7 +216,7 @@ export default function ModernLightNovelsHomepage() {
                   scrollToTop();
                 }}
               >
-                NovelHub
+                Novellize
               </Link>
             </h1>
           </div>
@@ -425,7 +425,7 @@ export default function ModernLightNovelsHomepage() {
             variants={fadeIn}
           >
             <p className="text-sm text-[#464646] dark:text-[#C3C3C3]">
-              © 2023 NovelHub. All rights reserved.
+              © 2024 Novellize. All rights reserved.
             </p>
           </motion.div>
           <motion.nav 

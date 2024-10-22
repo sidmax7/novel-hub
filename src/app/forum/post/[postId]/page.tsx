@@ -389,7 +389,7 @@ export default function PostPage({ params }: { params: { postId: string } }) {
           <div className="container mx-auto px-4 py-6 flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Link href="/forum" className="text-3xl font-bold text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] dark:hover:text-[#F1592A] transition-colors">
-                NovelHub Forums
+                Novellize Forums
               </Link>
             </div>
             <div className="flex items-center space-x-4">
@@ -550,7 +550,7 @@ export default function PostPage({ params }: { params: { postId: string } }) {
 
         <footer className="border-t border-[#C3C3C3] dark:border-[#3E3F3E] py-8 bg-[#E7E7E8] dark:bg-[#232120]">
           <div className="container mx-auto px-4 text-center text-[#8E8F8E] dark:text-[#C3C3C3]">
-            <p className="text-sm">© 2023 NovelHub Forums. All rights reserved.</p>
+            <p className="text-sm">© 2024 Novellize Forums. All rights reserved.</p>
           </div>
         </footer>
       </motion.div>

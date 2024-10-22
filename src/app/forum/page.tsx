@@ -308,7 +308,7 @@ return (
         <div className="container mx-auto px-4 py-6 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Link href="/" className="text-3xl font-bold text-[#232120] hover:text-[#F1592A] dark:hover:text-[#F1592A] transition-colors dark:text-[#E7E7E8]">
-              NovelHub Forums
+              Novellize Forums
             </Link>
           </div>
           <div className="flex items-center space-x-4">
@@ -496,7 +496,7 @@ return (
 
       <footer className="border-t border-[#C3C3C3] dark:border-[#3E3F3E] py-4 bg-[#E7E7E8] dark:bg-[#232120] h-[var(--footer-height)] mt-auto">
         <div className="container mx-auto px-4 text-center text-[#8E8F8E] dark:text-[#C3C3C3]">
-          <p className="text-sm">© 2023 NovelHub Forums. All rights reserved.</p>
+          <p className="text-sm">© 2024 Novellize Forums. All rights reserved.</p>
         </div>
       </footer>
     </motion.div>
