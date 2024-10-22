@@ -396,7 +396,7 @@ export default function ModernLightNovelsHomepage() {
               {[1, 2, 3].map((release) => (
                 <motion.div 
                   key={release}
-                  className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4 bg-gray-50 dark:bg-gray-700 p-4 md:p-6 rounded-lg shadow-md"
+                  className="flex flex-col md:flex-row items-center space-y-2 md:space-x-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg"
                   variants={fadeIn}
                   whileHover={{ scale: 1.03 }}
                 >
