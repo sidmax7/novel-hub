@@ -113,27 +113,28 @@ export default function BrowsePage() {
   const fetchNovels = useCallback(async () => {
     try {
       // Try to get data from Redis cache first
-      const cachedNovels = await redis.get('all_novels')
+      let cachedNovels;
+      try {
+        cachedNovels = await redis.get('all_novels');
+        console.log("Raw data from Redis:", cachedNovels);
+      } catch (redisError) {
+        console.error("Error fetching from Redis:", redisError);
+        // If Redis fails, we'll fall back to Firebase
+      }
       
-      if (cachedNovels) {
-        console.log("Raw cached data from Redis:", cachedNovels)
-        
-        if (Array.isArray(cachedNovels)) {
-          console.log("Using cached data from Redis")
-          setNovels(cachedNovels)
-          setFilteredNovels(cachedNovels)
-          return
-        } else {
-          console.error("Unexpected data format from Redis")
-          // Continue to fetch from Firebase if format is unexpected
-        }
+      if (cachedNovels && Array.isArray(cachedNovels) && cachedNovels.length > 0) {
+        console.log("Using cached data from Redis");
+        setNovels(cachedNovels);
+        setFilteredNovels(cachedNovels);
+        return;
       }
 
-      // If not in cache or unexpected format, fetch from Firebase
-      let novelsRef = collection(db, 'novels')
-      let q = query(novelsRef, orderBy('name'))
+      // If not in cache or invalid, fetch from Firebase
+      console.log("Fetching from Firebase");
+      let novelsRef = collection(db, 'novels');
+      let q = query(novelsRef, orderBy('name'));
 
-      const querySnapshot = await getDocs(q)
+      const querySnapshot = await getDocs(q);
       const fetchedNovels = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
@@ -141,25 +142,25 @@ export default function BrowsePage() {
         description: doc.data().description || 'No description available.',
         rating: doc.data().rating || 0,
         tags: doc.data().tags || [],
-      } as Novel))
+      } as Novel));
 
-      console.log("Fetched novels from Firebase:", fetchedNovels)
+      console.log("Fetched novels from Firebase:", fetchedNovels);
       
       // Store fetched data in Redis cache
       try {
-        await redis.set('all_novels', fetchedNovels, { ex: 3600 }) // Cache for 1 hour
-        console.log("Stored novels in Redis cache")
+        await redis.set('all_novels', JSON.stringify(fetchedNovels), { ex: 3600 }); // Cache for 1 hour
+        console.log("Stored novels in Redis cache");
       } catch (cacheError) {
-        console.error("Error storing novels in Redis cache:", cacheError)
+        console.error("Error storing novels in Redis cache:", cacheError);
       }
 
-      setNovels(fetchedNovels)
-      setFilteredNovels(fetchedNovels)
+      setNovels(fetchedNovels);
+      setFilteredNovels(fetchedNovels);
     } catch (error) {
-      console.error("Error fetching novels:", error)
-      toast.error("Failed to load novels")
+      console.error("Error fetching novels:", error);
+      toast.error("Failed to load novels. Please try again later.");
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     fetchNovels()
@@ -694,3 +695,4 @@ export default function BrowsePage() {
     </div>
   )
 }
+
