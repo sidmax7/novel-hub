@@ -51,7 +51,13 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
     try {
       const userRef = doc(db, 'users', user.uid)
       const userDoc = await getDoc(userRef)
-      setIsLiked(userDoc.data()?.likedNovels?.includes(novel.id) || false)
+      const isLiked = userDoc.data()?.likedNovels?.includes(novel.id) || false
+      setIsLiked(isLiked)
+      
+      // Update likes count if the novel is liked
+      if (isLiked) {
+        setLikes(prevLikes => Math.max(prevLikes, 1))
+      }
     } catch (error) {
       console.error('Error checking like status:', error)
     }
@@ -111,7 +117,7 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
       if (isLiked) {
         await updateDoc(novelRef, { likes: increment(-1) })
         await updateDoc(userRef, { likedNovels: arrayRemove(novel.id) })
-        setLikes(prevLikes => prevLikes - 1)
+        setLikes(prevLikes => Math.max(prevLikes - 1, 0))
         setIsLiked(false)
         toast.success('Like removed')
       } else {

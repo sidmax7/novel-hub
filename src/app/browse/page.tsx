@@ -12,7 +12,7 @@ import { collection, query, orderBy, getDocs, where } from 'firebase/firestore'
 import { db } from '@/lib/firebaseConfig'
 import { toast } from 'react-hot-toast'
 import Image from "next/image"
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { ArrowUpDown } from "lucide-react"
@@ -98,6 +98,8 @@ export default function BrowsePage() {
   // Pagination states
   const [itemsPerPage] = useState(2)
 
+  const searchParams = useSearchParams()
+
   // Load filter state from localStorage on initial render
   useEffect(() => {
     const savedFilterState = localStorage.getItem(FILTER_STATE_KEY)
@@ -108,7 +110,13 @@ export default function BrowsePage() {
       setSelectedTags(selectedTags)
       setSearchTerm(searchTerm)
     }
-  }, [])
+
+    const genreFromUrl = searchParams.get('genre')
+    if (genreFromUrl) {
+      setSelectedGenres([genreFromUrl])
+      setAppliedGenres([genreFromUrl])
+    }
+  }, [searchParams])
 
   const fetchNovels = useCallback(async () => {
     try {
@@ -365,8 +373,20 @@ export default function BrowsePage() {
   }, [])
 
   useEffect(() => {
-    // Only apply sorting, not filtering
-    const sorted = [...filteredNovels].sort((a, b) => {
+    // Apply filters and sorting
+    const filtered = novels.filter(novel => {
+      const matchesGenre = selectedGenres.length === 0 || 
+        selectedGenres.map(g => g.toLowerCase()).includes(novel.genre.toLowerCase())
+      const matchesTag = selectedTags.length === 0 || 
+        novel.tags.some(tag => selectedTags.map(t => t.toLowerCase()).includes(tag.toLowerCase()))
+      const matchesSearch = searchTerm === '' ||
+        novel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        novel.author.toLowerCase().includes(searchTerm.toLowerCase())
+
+      return matchesGenre && matchesTag && matchesSearch
+    })
+
+    const sorted = [...filtered].sort((a, b) => {
       if (sortCriteria === 'name') {
         return sortOrder === 'asc' 
           ? a.name.localeCompare(b.name)
@@ -377,8 +397,10 @@ export default function BrowsePage() {
         return sortOrder === 'asc' ? dateA - dateB : dateB - dateA
       }
     })
+
     setFilteredNovels(sorted)
-  }, [sortCriteria, sortOrder])
+    setCurrentPage(1)
+  }, [novels, selectedGenres, selectedTags, searchTerm, sortCriteria, sortOrder])
 
   const [mounted, setMounted] = useState(false)
 
@@ -695,4 +717,3 @@ export default function BrowsePage() {
     </div>
   )
 }
-

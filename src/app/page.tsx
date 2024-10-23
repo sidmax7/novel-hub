@@ -370,7 +370,7 @@ export default function ModernLightNovelsHomepage() {
                   whileTap={{ scale: 0.95 }}
                 >
                   <Link 
-                    href={`/genre/${genre.toLowerCase()}`} 
+                    href={`/browse?genre=${encodeURIComponent(genre.toLowerCase())}`}
                     className={`p-4 md:p-6 rounded-lg shadow-md text-center block transition-colors h-full
                     ${theme === 'dark' ? colors.dark : colors.light}`}
                   >

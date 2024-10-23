@@ -427,7 +427,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                     transition={{
                       x: { type: "tween", duration: 0.5, ease: "easeInOut" },
                     }}
-                    className="absolute w-full"
+                    className="absolute w-full h-full"
                   >
                 <ScrollArea className="h-full w-full">
                   {activeTab === 'chapters' ? (
