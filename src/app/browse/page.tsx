@@ -22,6 +22,7 @@ import { LucideProps } from 'lucide-react'
 import dynamicIconImports from 'lucide-react/dynamicIconImports'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { genreColors } from '../genreColors'
+import { Suspense } from 'react'
 
 interface IconProps extends LucideProps {
   name: keyof typeof dynamicIconImports
@@ -80,7 +81,7 @@ const CACHE_KEY = 'novelHubCache'
 const CACHE_EXPIRATION = 60 * 60 * 1000 // 1 hour in milliseconds
 const FILTER_STATE_KEY = 'novelHubFilterState'
 
-export default function BrowsePage() {
+function BrowsePageContent() {
   const { theme, setTheme } = useTheme()
   const [novels, setNovels] = useState<Novel[]>([])
   const [filteredNovels, setFilteredNovels] = useState<Novel[]>([])
@@ -418,10 +419,6 @@ export default function BrowsePage() {
     loadData();
   }, [fetchNovels]);
 
-  if (isLoading) {
-    return <LoadingSpinner />
-  }
-
   return (
     <div className={`min-h-screen bg-[#E7E7E8] dark:bg-[#232120] ${mounted && theme === 'dark' ? 'dark' : ''}`}>
       <header className="bg-white dark:bg-[#232120] shadow">
@@ -715,5 +712,13 @@ export default function BrowsePage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function BrowsePage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <BrowsePageContent />
+    </Suspense>
   )
 }
