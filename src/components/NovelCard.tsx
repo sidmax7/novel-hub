@@ -26,6 +26,9 @@ interface Novel {
     english?: string
   }
   likes: number
+  availability: {
+    type: "FREE" | "PAID" | "FREEMIUM"
+  }
 }
 
 interface NovelCardProps {
@@ -154,6 +157,15 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-cover"
             />
+            <div className="absolute top-2 right-2">
+              <span className={`px-2 py-1 rounded-md text-xs font-semibold ${
+                theme === 'dark' 
+                  ? 'bg-gray-800 text-white' 
+                  : 'bg-white text-gray-800'
+              } opacity-90`}>
+                {novel.availability?.type || 'Free'}
+              </span>
+            </div>
           </div>
           <CardContent className="p-4">
             <h3 className="font-semibold text-lg mb-1 truncate">{novel.title}</h3>

@@ -58,6 +58,9 @@ interface Novel {
     english?: string
   }
   likes: number
+  availability: {
+    type: "FREE" | "PAID" | "FREEMIUM"
+  }
 }
 
 export default function UserProfilePage() {
@@ -114,14 +117,11 @@ export default function UserProfilePage() {
       const followingQuery = query(followingRef, where('following', '==', true))
       const followingSnapshot = await getDocs(followingQuery)
       
-      console.log('Number of followed novels:', followingSnapshot.size)
-      
       const novelPromises = followingSnapshot.docs.map(async (followingDoc) => {
         const novelId = followingDoc.id
         const novelDoc = await getDoc(doc(db, 'novels', novelId))
         if (novelDoc.exists()) {
           const novelData = novelDoc.data()
-          console.log('Fetched novel data:', novelData) // Add this log
           return {
             id: novelId,
             rating: novelData.rating,
@@ -132,7 +132,8 @@ export default function UserProfilePage() {
             publishers: Array.isArray(novelData.publishers) ? novelData.publishers.map((publisher: any) => ({
               original: publisher.original || '',
               english: publisher.english
-            })) : novelData.publishers // Handle non-array case
+            })) : novelData.publishers,
+            availability: novelData.availability // Add this line
           } as Novel
         }
         return null
@@ -140,7 +141,6 @@ export default function UserProfilePage() {
       
       const novels = await Promise.all(novelPromises)
       const validNovels = novels.filter((novel): novel is Novel => novel !== null)
-      console.log('Valid followed novels:', validNovels) // Add this log
       setFollowedNovels(validNovels)
       return validNovels
     } catch (error) {
