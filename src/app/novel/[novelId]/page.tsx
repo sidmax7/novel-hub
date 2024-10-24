@@ -19,13 +19,14 @@ import CommentSystem from '@/components/ui/commentsystem'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/app/authcontext'
 import { setDoc, deleteDoc } from 'firebase/firestore'
+import { genreColors } from '@/app/genreColors'
 
 interface Novel {
   id: string
   title: string
   synopsis: string
   coverPhoto: string
-  genre: string
+  genres: { name: string }[]
   rating: number
   publishers: {
     original: string
@@ -252,6 +253,11 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
   if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>
   if (!novel) return <div className="flex justify-center items-center h-screen">Novel not found</div>
 
+  const getColorScheme = (item: string) => {
+    const key = Object.keys(genreColors).find(k => item.toLowerCase().includes(k.toLowerCase()));
+    return key ? genreColors[key as keyof typeof genreColors] : genreColors.Horror;
+  }
+
   return (
     <div className="min-h-screen bg-[#E7E7E8] dark:bg-[#232120]">
       <Toaster />
@@ -317,9 +323,20 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                   <span className="ml-2 text-gray-600 dark:text-gray-400">({novel.rating.toFixed(1)})</span>
                 </div>
                 <div className="mb-4">
-                  <span className="px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100">
-                    {novel.genre}
-                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {novel.genres.map((g, i) => (
+                      <span 
+                        key={i}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          theme === 'dark'
+                            ? getColorScheme(g.name).dark
+                            : getColorScheme(g.name).light
+                        }`}
+                      >
+                        {g.name}
+                      </span>
+                    ))}
+                  </div>
                 </div>
                 
                 <div className="mt-4">
