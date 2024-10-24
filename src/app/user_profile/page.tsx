@@ -35,16 +35,28 @@ interface UserProfile {
   readingGoal: number
   timeCreated: Timestamp
   followedNovels: string[]
+  socialLinks?: {
+    twitter?: string
+    facebook?: string
+    website?: string
+  }
+  totalWorks?: number
+  totalLikes?: number
+  verified: boolean
 }
 
 interface Novel {
-  authorId: string
   id: string
-  name: string
-  author: string
-  coverUrl: string
+  title: string
+  genres: {
+    name: string
+  }[] // Update to an array of strings
   rating: number
-  genre: string
+  coverPhoto: string
+  publishers: {
+    original: string
+    english?: string
+  }
   likes: number
 }
 
@@ -106,17 +118,29 @@ export default function UserProfilePage() {
       
       const novelPromises = followingSnapshot.docs.map(async (followingDoc) => {
         const novelId = followingDoc.id
-        console.log('Fetching novel details for:', novelId)
         const novelDoc = await getDoc(doc(db, 'novels', novelId))
         if (novelDoc.exists()) {
-          return { id: novelId, ...novelDoc.data() } as Novel
+          const novelData = novelDoc.data()
+          console.log('Fetched novel data:', novelData) // Add this log
+          return {
+            id: novelId,
+            rating: novelData.rating,
+            genres: novelData.genres,
+            likes: novelData.likes,
+            title: novelData.title,
+            coverPhoto: novelData.coverPhoto,
+            publishers: Array.isArray(novelData.publishers) ? novelData.publishers.map((publisher: any) => ({
+              original: publisher.original || '',
+              english: publisher.english
+            })) : novelData.publishers // Handle non-array case
+          } as Novel
         }
         return null
       })
       
       const novels = await Promise.all(novelPromises)
       const validNovels = novels.filter((novel): novel is Novel => novel !== null)
-      console.log('Valid followed novels:', validNovels)
+      console.log('Valid followed novels:', validNovels) // Add this log
       setFollowedNovels(validNovels)
       return validNovels
     } catch (error) {
@@ -447,7 +471,7 @@ export default function UserProfilePage() {
           </TabsContent>
           <TabsContent value="recommendations">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {recommendations.map((novel) => (
+              {recommendations.map((novel: Novel) => (
                 <NovelCard key={novel.id} novel={novel} />
               ))}
             </div>

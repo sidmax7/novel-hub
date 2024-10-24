@@ -469,7 +469,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                           <div className="overflow-x-auto">
                             <table className="w-full">
                               <thead>
-                                <tr className="bg-gray-100 dark:bg-gray-800">
+                                <tr className="bg-[#E7E7E8] dark:bg-[#3E3F3E]">
                                   <th className="px-4 py-2 text-left">Chapter</th>
                                   <th className="px-4 py-2 text-left">Title</th>
                                   <th className="px-4 py-2 text-left">Release Date</th>

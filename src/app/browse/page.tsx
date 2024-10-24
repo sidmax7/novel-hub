@@ -176,8 +176,13 @@ function BrowsePageContent() {
   }, []);
 
   useEffect(() => {
-    fetchNovels()
-  }, [fetchNovels])
+    const loadData = async () => {
+      console.log("Fetching novels...");
+      await fetchNovels();
+      setIsLoading(false);
+    };
+    loadData();
+  }, []); // Ensure this useEffect only runs once on mount
 
   const applyFilters = useCallback((novelsList: Novel[] = novels) => {
     let filtered = novelsList.filter(novel => {
@@ -414,14 +419,6 @@ function BrowsePageContent() {
   }, [])
 
   const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    const loadData = async () => {
-      await fetchNovels();
-      setIsLoading(false);
-    };
-    loadData();
-  }, [fetchNovels]);
 
   return (
     <div className={`min-h-screen bg-[#E7E7E8] dark:bg-[#232120] ${mounted && theme === 'dark' ? 'dark' : ''}`}>
