@@ -27,9 +27,12 @@ interface Chapter {
 
 interface Novel {
   id?: string
-  name: string
-  author: string
-  coverUrl: string
+  title: string
+  coverPhoto: string
+  brand: {
+    name: string
+    logo: string
+  }
 }
 
 export default function ChapterManagement() {
@@ -44,8 +47,6 @@ export default function ChapterManagement() {
   const router = useRouter()
   const params = useParams()
   const novelId = params.novelId as string
-
-  
 
   const fetchNovelDetails = async () => {
     try {
@@ -86,7 +87,7 @@ export default function ChapterManagement() {
       const chapterData = {
         ...currentChapter,
         chapter: Number(currentChapter.chapter),
-        releaseDate: Timestamp.now() // Add this line to include the current timestamp
+        releaseDate: Timestamp.now()
       }
 
       if (currentChapter.id) {
@@ -152,6 +153,7 @@ export default function ChapterManagement() {
       toast.error(`Failed to update chapter order: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
+
   useEffect(() => {
     const checkUserType = async () => {
       if (user) {
@@ -183,7 +185,7 @@ export default function ChapterManagement() {
   }, [user, novelId, router])
 
   if (!isAuthor) {
-    return null // Return null while checking user type or redirecting
+    return null
   }
 
   return (
@@ -204,10 +206,10 @@ export default function ChapterManagement() {
         <CardContent>
           {novel && (
             <div className="flex items-center space-x-4 mb-4">
-              <img src={novel.coverUrl} alt={novel.name} className="w-16 h-24 object-cover rounded" />
+              <img src={novel.coverPhoto} alt={novel.title} className="w-16 h-24 object-cover rounded" />
               <div>
-                <h2 className="text-xl font-semibold">{novel.name}</h2>
-                <p className="text-gray-600">by {novel.author}</p>
+                <h2 className="text-xl font-semibold">{novel.title}</h2>
+                <p className="text-gray-600">Published by {novel.brand.name}</p>
               </div>
             </div>
           )}

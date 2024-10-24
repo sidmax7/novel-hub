@@ -56,15 +56,18 @@ const redis = new Redis({
 
 interface Novel {
   id: string
-  name: string
-  author: string
-  genre: string
+  title: string
+  publishers: {
+    original: string
+    english?: string
+  }
+  genres: { name: string }[]
   rating: number
-  coverUrl: string
+  coverPhoto: string
   authorId: string
   tags: string[]
   likes: number
-  description: string
+  synopsis: string
   type?: string
   lastUpdated?: string
   releaseDate?: string | null
@@ -141,14 +144,15 @@ function BrowsePageContent() {
       // If not in cache or invalid, fetch from Firebase
       console.log("Fetching from Firebase");
       let novelsRef = collection(db, 'novels');
-      let q = query(novelsRef, orderBy('name'));
+      let q = query(novelsRef, orderBy('title'));
 
       const querySnapshot = await getDocs(q);
       const fetchedNovels = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
+        genres: doc.data().genres || [], // Ensure genres is an array
         likes: doc.data().likes || 0,
-        description: doc.data().description || 'No description available.',
+        synopsis: doc.data().synopsis || 'No synopsis available.',
         rating: doc.data().rating || 0,
         tags: doc.data().tags || [],
       } as Novel));
@@ -178,17 +182,17 @@ function BrowsePageContent() {
   const applyFilters = useCallback((novelsList: Novel[] = novels) => {
     let filtered = novelsList.filter(novel => {
       const searchTermLower = searchTerm.toLowerCase()
-      const genreLower = novel.genre.toLowerCase()
+      const genresLower = novel.genres.map(g => g.name.toLowerCase())
       const tagsLower = novel.tags.map(tag => tag.toLowerCase())
 
       const matchesSearch = 
-        novel.name.toLowerCase().includes(searchTermLower) ||
-        novel.author.toLowerCase().includes(searchTermLower) ||
-        genreLower.includes(searchTermLower) ||
+        novel.title.toLowerCase().includes(searchTermLower) ||
+        novel.publishers.original.toLowerCase().includes(searchTermLower) ||
+        genresLower.some(genre => genre.includes(searchTermLower)) ||
         tagsLower.some(tag => tag.includes(searchTermLower))
 
       const matchesGenre = selectedGenres.length === 0 || 
-        selectedGenres.map(g => g.toLowerCase()).includes(genreLower)
+        selectedGenres.map(g => g.toLowerCase()).some(selected => genresLower.includes(selected))
       const matchesTag = selectedTags.length === 0 || 
         novel.tags.some(tag => selectedTags.map(t => t.toLowerCase()).includes(tag.toLowerCase()))
 
@@ -199,8 +203,8 @@ function BrowsePageContent() {
     filtered.sort((a, b) => {
       if (sortCriteria === 'name') {
         return sortOrder === 'asc' 
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name)
+          ? a.title.localeCompare(b.title)
+          : b.title.localeCompare(a.title)
       } else {
         const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0
         const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0
@@ -245,8 +249,8 @@ function BrowsePageContent() {
     const sortedNovels = [...novels].sort((a, b) => {
       if (sortCriteria === 'name') {
         return sortOrder === 'asc' 
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name)
+          ? a.title.localeCompare(b.title)
+          : b.title.localeCompare(a.title)
       } else {
         const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0
         const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0
@@ -377,12 +381,12 @@ function BrowsePageContent() {
     // Apply filters and sorting
     const filtered = novels.filter(novel => {
       const matchesGenre = selectedGenres.length === 0 || 
-        selectedGenres.map(g => g.toLowerCase()).includes(novel.genre.toLowerCase())
+        selectedGenres.map(g => g.toLowerCase()).some(g => novel.genres.map(genre => genre.name.toLowerCase()).includes(g))
       const matchesTag = selectedTags.length === 0 || 
         novel.tags.some(tag => selectedTags.map(t => t.toLowerCase()).includes(tag.toLowerCase()))
       const matchesSearch = searchTerm === '' ||
-        novel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        novel.author.toLowerCase().includes(searchTerm.toLowerCase())
+        novel.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        novel.publishers.original.toLowerCase().includes(searchTerm.toLowerCase())
 
       return matchesGenre && matchesTag && matchesSearch
     })
@@ -390,8 +394,8 @@ function BrowsePageContent() {
     const sorted = [...filtered].sort((a, b) => {
       if (sortCriteria === 'name') {
         return sortOrder === 'asc' 
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name)
+          ? a.title.localeCompare(b.title)
+          : b.title.localeCompare(a.title)
       } else {
         const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0
         const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0
@@ -604,21 +608,17 @@ function BrowsePageContent() {
               <motion.div
                 key={novel.id}
                 className="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: { opacity: 1, y: 0 }
-                }}
                 onClick={() => handleTileClick(novel.id)}
               >
                 <div className="flex p-4">
                   <div className="flex-shrink-0 w-24 h-36 mr-4 relative group">
                     <div className="relative w-24 h-36">
                       <Image
-                        src={novel.coverUrl || '/placeholder.svg'}
-                        alt={novel.name}
+                        src={novel.coverPhoto || '/placeholder.svg'}
+                        alt={novel.title}
                         fill
                         sizes="96px"
-                        priority={index < 3} // Add priority for the first 3 images
+                        priority={index < 3}
                         style={{ objectFit: "cover" }}
                         className="rounded"
                       />
@@ -639,29 +639,31 @@ function BrowsePageContent() {
                   </div>
                   <div className="flex-grow">
                     <h3 className="text-xl font-semibold text-[#232120] dark:text-[#E7E7E8] mb-2">
-                      {novel.name}
+                      {novel.title}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                      by{' '}
-                      <Link 
-                        href={`/author/${novel.authorId}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="hover:underline"
-                      >
-                        {novel.author}
-                      </Link>
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">{novel.description}</p>
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <span 
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          theme === 'dark'
-                            ? getColorScheme(novel.genre).dark
-                            : getColorScheme(novel.genre).light
-                        }`}
-                      >
-                        {novel.genre}   
+                      Published by{' '}
+                      <span className="font-semibold">
+                        {novel.publishers.original}
                       </span>
+                      {novel.publishers.english && (
+                        <span> / {novel.publishers.english}</span>
+                      )}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">{novel.synopsis}</p>
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      {novel.genres.slice(0, 3).map((g, i) => (
+                        <span 
+                          key={i}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            theme === 'dark'
+                              ? getColorScheme(g.name).dark
+                              : getColorScheme(g.name).light
+                          }`}
+                        >
+                          {g.name}
+                        </span>
+                      ))}
                       <span className="text-sm text-gray-500 dark:text-gray-400">{novel.likes} likes</span>
                       {novel.releaseDate && (
                         <span className="text-sm text-gray-500 dark:text-gray-400">

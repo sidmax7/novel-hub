@@ -10,15 +10,21 @@ import { db } from '@/lib/firebaseConfig'
 import { doc, getDoc, setDoc, deleteDoc, updateDoc, increment, arrayUnion, arrayRemove } from 'firebase/firestore'
 import { toast } from 'react-hot-toast'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import { genreColors } from '@/app/genreColors'
+import { useTheme } from 'next-themes'
 
 interface Novel {
   id: string
-  name: string
-  author: string
-  genre: string
+  title: string
+  genres: {
+    name: string
+  }[] // Update to an array of strings
   rating: number
-  coverUrl: string
-  authorId: string
+  coverPhoto: string
+  publishers: {
+    original: string
+    english?: string
+  }
   likes: number
 }
 
@@ -29,6 +35,7 @@ interface NovelCardProps {
 }
 
 export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) => {
+  const { theme} = useTheme()
   const [isFollowing, setIsFollowing] = useState(false)
   const [likes, setLikes] = useState(novel.likes || 0)
   const [isLiked, setIsLiked] = useState(false)
@@ -54,7 +61,6 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
       const isLiked = userDoc.data()?.likedNovels?.includes(novel.id) || false
       setIsLiked(isLiked)
       
-      // Update likes count if the novel is liked
       if (isLiked) {
         setLikes(prevLikes => Math.max(prevLikes, 1))
       }
@@ -132,30 +138,43 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
       toast.error('Failed to update like')
     }
   }
-
+  const getColorScheme = (item: string) => {
+    const key = Object.keys(genreColors).find(k => item.toLowerCase().includes(k.toLowerCase()));
+    return key ? genreColors[key as keyof typeof genreColors] : genreColors.Horror;
+  }
   return (
     <Card className="overflow-hidden">
       <Link href={`/novel/${novel.id}`} passHref legacyBehavior>
         <a className="block">
           <div className="relative w-full pt-[150%]">
             <Image
-              src={novel.coverUrl || '/assets/default-cover.jpg'}
-              alt={novel.name}
+              src={novel.coverPhoto || '/assets/default-cover.jpg'}
+              alt={novel.title}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-cover"
             />
           </div>
           <CardContent className="p-4">
-            <h3 className="font-semibold text-lg mb-1 truncate">{novel.name}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">by {novel.author}</p>
+            <h3 className="font-semibold text-lg mb-1 truncate">{novel.title}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Published by {novel.publishers.original}</p>
             <div className="flex items-center justify-between mb-2">
               <StarRating rating={novel.rating} />
-              
             </div>
-            <span className={`text-xs px-2 py-1 rounded ${novel.genre ? `bg-${novel.genre.toLowerCase()}-200 text-${novel.genre.toLowerCase()}-800` : 'bg-gray-200 text-gray-800'}`}>
-              {novel.genre}
-            </span>
+            <div className="flex flex-wrap gap-1">
+            {novel.genres.slice(0, 3).map((g, i) => (
+                        <span 
+                          key={i}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            theme === 'dark'
+                              ? getColorScheme(g.name).dark
+                              : getColorScheme(g.name).light
+                          }`}
+                        >
+                          {g.name}
+                        </span>
+              ))}
+            </div>
           </CardContent>
         </a>
       </Link>

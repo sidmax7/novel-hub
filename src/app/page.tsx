@@ -29,13 +29,17 @@ import { genreColors } from './genreColors'
 
 interface Novel {
   id: string
-  name: string
-  author: string
-  genre: string
+  title: string
+  coverPhoto: string
+  genres: {
+    name: string
+  } // This should be an array
   rating: number
-  coverUrl: string
-  authorId: string
-  likes?: number;
+  publishers: {
+    original: string
+    english?: string
+  }
+  likes: number
 }
 
 const CACHE_KEY = 'popularNovels'
@@ -56,8 +60,8 @@ const fetchPopularNovels = async () => {
   const novels = querySnapshot.docs.map(doc => ({ 
     id: doc.id, 
     ...doc.data(),
-    authorId: doc.data().authorId || doc.id
-  } as Novel))
+    genres: doc.data().genres || [] // Map 'genres' to 'genre' and provide a default empty array
+  } as Novel)) // Ensure this cast is correct
 
   // Cache the fetched data
   localStorage.setItem(CACHE_KEY, JSON.stringify({ data: novels, timestamp: Date.now() }))
@@ -100,6 +104,14 @@ export default function ModernLightNovelsHomepage() {
       fetchUserProfile()
     }
   }, [user])
+
+  const fetchPopularNovels = async (): Promise<Novel[]> => {
+    const querySnapshot = await getDocs(collection(db, 'novels'))
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Novel[]
+  }
 
   const toggleDarkMode = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
@@ -232,27 +244,13 @@ export default function ModernLightNovelsHomepage() {
               </Button>
             </Link>
             <ThemeToggle />
-            {user && (
+            {user ? (
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar>
-                      {userProfile?.profilePicture ? (
-                        <AvatarImage
-                          src={userProfile.profilePicture}
-                          alt="User avatar"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <AvatarImage
-                          src="/assets/default-avatar.png"
-                          alt="Default avatar"
-                          className="object-cover"
-                        />
-                      )}
-                      <AvatarFallback>{userProfile?.username?.[0] || '?'}</AvatarFallback>
-                    </Avatar>
-                  </Button>
+                <DropdownMenuTrigger>
+                  <Avatar>
+                    <AvatarImage src={userProfile?.profilePicture} alt={userProfile?.username} />
+                    <AvatarFallback>{userProfile?.username?.charAt(0)}</AvatarFallback>
+                  </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
@@ -279,8 +277,7 @@ export default function ModernLightNovelsHomepage() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            )}
-            {!user && (
+            ) : (
               <Button variant="ghost" onClick={() => router.push('/auth')} className="text-[#F1592A] text-sm md:text-base">Login</Button>
             )}
           </div>
@@ -288,7 +285,7 @@ export default function ModernLightNovelsHomepage() {
       </header>
 
       <main className="flex-grow">
-      <section className="pt-24 pb-16 md:pt-32 md:pb-24 lg:py-24 bg-gradient-to-br from-[#F1592A] to-[#3E3F3E] dark:from-[#3E3F3E] dark:to-[#F1592A] flex items-center justify-center">
+        <section className="pt-24 pb-16 md:pt-32 md:pb-24 lg:py-24 bg-gradient-to-br from-[#F1592A] to-[#3E3F3E] dark:from-[#3E3F3E] dark:to-[#F1592A] flex items-center justify-center">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#E7E7E8] mb-4">Discover Your Next Adventure</h2>
             <p className="text-base md:text-lg lg:text-xl text-[#E7E7E8] mb-6">Explore thousands of light novels across various genres</p>
@@ -326,7 +323,7 @@ export default function ModernLightNovelsHomepage() {
                     variants={fadeIn}
                     whileHover={{ scale: 1.05 }}
                   >
-                    <NovelCard novel={{...novel, likes: 0}} onFollowChange={handleFollowChange} />
+                    <NovelCard novel={novel as any} onFollowChange={handleFollowChange} />
                   </motion.div>
                 ))}
               </motion.div>
@@ -381,6 +378,7 @@ export default function ModernLightNovelsHomepage() {
             </motion.div>
           </div>
         </section>
+
         <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
           <div className="container mx-auto px-4">
             <motion.h2 
@@ -409,7 +407,7 @@ export default function ModernLightNovelsHomepage() {
                   />
                   <div className="flex flex-col justify-center">
                     <h3 className="font-semibold text-lg mb-1">Novel Title {release}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Author Name</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Published by Publisher Name</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Release Date: Soon</p>
                   </div>
                 </motion.div>

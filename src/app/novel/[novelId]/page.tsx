@@ -21,18 +21,20 @@ import { useAuth } from '@/app/authcontext'
 import { setDoc, deleteDoc } from 'firebase/firestore'
 
 interface Novel {
-  authorId: string
   id: string
-  name: string
-  author: string
-  coverUrl: string
-  rating: number
-  releaseDate: string
+  title: string
   synopsis: string
+  coverPhoto: string
   genre: string
-  chapters: number
-  views: number
+  rating: number
+  publishers: {
+    original: string
+    english?: string
+  }
   likes: number
+  views: number
+  totalChapters: number
+  seriesStatus: 'ONGOING' | 'COMPLETED' | 'ON HOLD' | 'CANCELLED' | 'UPCOMING'
 }
 
 interface Chapter {
@@ -296,8 +298,8 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
               <div className="w-full md:w-1/4">
                 <div className="relative aspect-[2/3] w-full md:w-4/5 mx-auto">
                   <Image
-                    src={novel.coverUrl}
-                    alt={novel.name}
+                    src={novel.coverPhoto}
+                    alt={novel.title}
                     layout="fill"
                     objectFit="cover"
                     className="rounded-lg shadow-lg"
@@ -305,13 +307,11 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                 </div>
               </div>
               <div className="w-full md:w-3/4">
-                <h2 className="text-3xl font-bold mb-2">{novel.name}</h2>
-                <Link href={`/author/${novel.authorId}`} passHref>
-                  <p className="text-md text-gray-600 dark:text-gray-400 mb-2 truncate hover:text-[#F1592A] dark:hover:text-[#F1592A] cursor-pointer">
-                    by {novel.author}
-                  </p>
-                </Link>
-                <p className="mb-4">Release Date: {novel.releaseDate}</p>
+                <h2 className="text-3xl font-bold mb-2">{novel.title}</h2>
+                <p className="text-md text-gray-600 dark:text-gray-400 mb-2 truncate hover:text-[#F1592A] dark:hover:text-[#F1592A] cursor-pointer">
+                  Published by {novel.publishers.original}
+                </p>
+                {/* <p className="mb-4">Release Date: {novel.releaseDate}</p> */}
                 <div className="flex items-center mb-4">
                   <StarRating rating={novel.rating} />
                   <span className="ml-2 text-gray-600 dark:text-gray-400">({novel.rating.toFixed(1)})</span>
@@ -333,7 +333,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
               <div className="flex flex-wrap gap-4 mb-6">
                 <div className="flex items-center">
                   <BookOpen className="h-5 w-5 mr-2 text-gray-500" />
-                  <span>{novel.chapters} chapters</span>
+                  <span>{novel.totalChapters} chapters</span>
                 </div>
                 <div className="flex items-center">
                   <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
