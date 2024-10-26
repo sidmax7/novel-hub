@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/app/authcontext'
 import { db, storage } from '@/lib/firebaseConfig'
 import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, orderBy, getDoc } from 'firebase/firestore'
@@ -110,68 +110,16 @@ export default function AdminDashboard() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [authorsList, setAuthorsList] = useState<{ id: string; name: string; username: string; }[]>([]);
 
-  
-
-  useEffect(() => {
-    const initializeAdminDashboard = async () => {
-      if (user) {
-        setLoading(true);
-        try {
-          await checkUserType();
-          if (isAdmin) {  // Only fetch authors if user is admin
-            console.log("Is admin, fetching authors..."); // Debug log
-            await fetchAuthors();
-          }
-          await fetchNovels();
-        } catch (error) {
-          console.error("Error in initialization:", error);
-        }
-        setLoading(false);
-      } else {
-        setError("User not authenticated. Please log in.");
-        setLoading(false);
-      }
-    };
-
-    initializeAdminDashboard();
-  }, [user, isAdmin]);
-
-  const checkUserType = async () => {
-    if (!user) return;
-    try {
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDocSnap = await getDoc(userDocRef);
-      if (userDocSnap.exists()) {
-        const userData = userDocSnap.data();
-        console.log("User data:", userData); // Debug log
-        console.log("User type:", userData.userType); // Debug log
-        setIsAuthor(userData.userType === 'author');
-        setIsAdmin(userData.userType === 'admin');
-      } else {
-        setIsAuthor(false);
-        setIsAdmin(false);
-      }
-    } catch (error) {
-      console.error('Error checking user type:', error);
-      setIsAuthor(false);
-      setIsAdmin(false);
-    }
-  };
-
-  const fetchNovels = async () => {
+  // Define fetchNovels as a callback
+  const fetchNovels = useCallback(async () => {
     if (!user) return;
     setError(null);
     try {
+      setLoading(true);
       let q;
-      console.log("Is admin?", isAdmin); // Debug log
       if (isAdmin) {
-        // Admin sees all novels
-        q = query(
-          collection(db, 'novels'),
-          orderBy('title')
-        );
+        q = query(collection(db, 'novels'), orderBy('title'));
       } else {
-        // Authors see only their uploaded novels
         q = query(
           collection(db, 'novels'),
           where('uploader', '==', user.uid),
@@ -179,50 +127,76 @@ export default function AdminDashboard() {
         );
       }
       const querySnapshot = await getDocs(q);
-      console.log("Fetched novels count:", querySnapshot.size); // Debug log
-      const fetchedNovels = querySnapshot.docs.map(doc => ({  novelId: doc.id, ...doc.data() } as Novel));
-      console.log("Fetched novels:", fetchedNovels); // Debug log
+      const fetchedNovels = querySnapshot.docs.map(doc => ({
+        novelId: doc.id,
+        ...doc.data()
+      } as Novel));
       setNovels(fetchedNovels);
     } catch (error) {
       console.error('Error fetching novels:', error);
       setError(`Failed to fetch novels: ${error instanceof Error ? error.message : 'Unknown error'}`);
       toast.error('Failed to fetch novels. Please try again.');
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [user, isAdmin]); // Dependencies for the callback
 
-  const fetchAuthors = async () => {
-    try {
-      console.log("Fetching authors..."); // Debug log
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('userType', 'in', ['author', 'admin']));
-      const querySnapshot = await getDocs(q);
-      console.log("Query snapshot size:", querySnapshot.size); // Debug log
-      
-      querySnapshot.forEach((doc) => {
-        console.log("User document:", doc.id, doc.data()); // Debug log
-      });
-
-      const authors = querySnapshot.docs.map(doc => {
-        const userData = doc.data();
-        console.log("Processing user data:", userData); // Debug log
-        return {
-          id: doc.id,
-          name: userData.username || userData.displayName || userData.email || 'Unknown Author',
-          username: userData.username || 'Unknown'
-        };
-      });
-      console.log("Processed authors:", authors); // Debug log
-      setAuthorsList(authors);
-    } catch (error) {
-      console.error('Error fetching authors:', error);
-      if (error instanceof Error && error.name === 'FirebaseError') {
-        const fbError = error as { code?: string, message?: string }
-        console.error('Firestore error code:', fbError.code)
-        console.error('Firestore error message:', fbError.message)
+  // Check user type
+  useEffect(() => {
+    const checkUserType = async () => {
+      if (!user) {
+        setIsAuthor(false);
+        setIsAdmin(false);
+        return;
       }
-      toast.error('Failed to fetch authors list');
-    }
-  };
+      try {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          setIsAuthor(userData.userType === 'author');
+          setIsAdmin(userData.userType === 'admin');
+        }
+      } catch (error) {
+        console.error('Error checking user type:', error);
+        setIsAuthor(false);
+        setIsAdmin(false);
+      }
+    };
+
+    checkUserType();
+  }, [user]);
+
+  // Fetch authors when isAdmin changes
+  useEffect(() => {
+    const fetchAuthors = async () => {
+      if (!isAdmin) return;
+      try {
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('userType', 'in', ['author', 'admin']));
+        const querySnapshot = await getDocs(q);
+        const authors = querySnapshot.docs.map(doc => {
+          const userData = doc.data();
+          return {
+            id: doc.id,
+            name: userData.username || userData.displayName || userData.email || 'Unknown Author',
+            username: userData.username || 'Unknown'
+          };
+        });
+        setAuthorsList(authors);
+      } catch (error) {
+        console.error('Error fetching authors:', error);
+        toast.error('Failed to fetch authors list');
+      }
+    };
+
+    fetchAuthors();
+  }, [isAdmin]);
+
+  // Fetch novels when dependencies change
+  useEffect(() => {
+    fetchNovels();
+  }, [fetchNovels]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -309,7 +283,7 @@ export default function AdminDashboard() {
         toast.success('Novel added successfully');
       }
       setIsDialogOpen(false);
-      fetchNovels();
+      await fetchNovels(); // Refresh the novels list after submit
     } catch (error) {
       console.error('Error saving novel:', error);
       toast.error(`Failed to save novel: ${error instanceof Error ? error.message : 'Unknown error'}`);

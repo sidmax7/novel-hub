@@ -265,11 +265,23 @@ export default function ModernLightNovelsHomepage() {
                     <span>My Profile</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+                  {userType === 'admin' && (
+                    <>
+                      <DropdownMenuItem onClick={() => router.push('/admin')}>
+                        <ChevronsLeftRightIcon className="mr-2 h-4 w-4" />
+                        <span>Admin Console</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   {userType === 'author' && (
-                    <DropdownMenuItem onClick={() => router.push('/admin')}>
-                      <ChevronsLeftRightIcon className="mr-2 h-4 w-4" />
-                      <span>Admin Console</span>
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem onClick={() => router.push('/admin')}>
+                        <ChevronsLeftRightIcon className="mr-2 h-4 w-4" />
+                        <span>Author Console</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
                   )}
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
