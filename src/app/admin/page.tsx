@@ -14,19 +14,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast, Toaster } from 'react-hot-toast'
-import { PlusIcon, Pencil, Trash, Upload, AlertTriangle, BookOpen, Home } from 'lucide-react'
+import { PlusIcon, Pencil, Trash, AlertTriangle, BookOpen, Home } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Timestamp } from 'firebase/firestore'
 import { Novel } from '@/models/Novel'
-
-const genres = [
-  "Fantasy", "Science Fiction", "Romance", "Action", "Mystery", "Slice of Life", "Isekai", "Horror"
-]
-
-const types = [
-  "Light Novel", "Manga", "Education", "Biography", "History", "Fiction"
-]
 
 export default function AdminDashboard() {
   const [novels, setNovels] = useState<Novel[]>([])
@@ -103,9 +95,7 @@ export default function AdminDashboard() {
     rating: 0,
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [uploadingImage, setUploadingImage] = useState(false)
   const { user } = useAuth()
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [isAuthor, setIsAuthor] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false);
   const [authorsList, setAuthorsList] = useState<{ id: string; name: string; username: string; }[]>([]);
@@ -380,24 +370,6 @@ export default function AdminDashboard() {
   const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const tags = e.target.value.split(',').map(tag => tag.trim())
     setCurrentNovel(prev => ({ ...prev!, tags }))
-  }
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file || !user) return
-
-    await setUploadingImage(true)
-    try {
-      const storageRef = ref(storage, `novel-cover/${user.uid}/${currentNovel?.title}`)
-      await uploadBytes(storageRef, file)
-      const downloadURL = await getDownloadURL(storageRef)
-      setCurrentNovel(prev => ({ ...prev!, coverUrl: downloadURL }))
-      toast.success('Image uploaded successfully')
-    } catch (error) {
-      console.error('Error uploading image:', error)
-      toast.error(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-    setUploadingImage(false)
   }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
