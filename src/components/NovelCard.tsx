@@ -14,7 +14,7 @@ import { genreColors } from '@/app/genreColors'
 import { useTheme } from 'next-themes'
 
 interface Novel {
-  id: string
+  novelId: string
   title: string
   genres: {
     name: string
@@ -48,20 +48,20 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
   const checkIfFollowing = useCallback(async () => {
     if (!user) return
     try {
-      const followingRef = doc(db, 'users', user.uid, 'following', novel.id)
+      const followingRef = doc(db, 'users', user.uid, 'following', novel.novelId)
       const followingDoc = await getDoc(followingRef)
       setIsFollowing(followingDoc.exists())
     } catch (error) {
       console.error('Error checking follow status:', error)
     }
-  }, [user, novel.id])
+  }, [user, novel.novelId])
 
   const checkIfLiked = useCallback(async () => {
     if (!user) return
     try {
       const userRef = doc(db, 'users', user.uid)
       const userDoc = await getDoc(userRef)
-      const isLiked = userDoc.data()?.likedNovels?.includes(novel.id) || false
+      const isLiked = userDoc.data()?.likedNovels?.includes(novel.novelId) || false
       setIsLiked(isLiked)
       
       if (isLiked) {
@@ -70,7 +70,7 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
     } catch (error) {
       console.error('Error checking like status:', error)
     }
-  }, [user, novel.id])
+  }, [user, novel.novelId])
 
   useEffect(() => {
     const loadData = async () => {
@@ -92,7 +92,7 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
       return
     }
 
-    const followingRef = doc(db, 'users', user.uid, 'following', novel.id)
+    const followingRef = doc(db, 'users', user.uid, 'following', novel.novelId)
 
     try {
       if (isFollowing) {
@@ -105,7 +105,7 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
         toast.success('Novel followed')
       }
       if (onFollowChange) {
-        onFollowChange(novel.id, !isFollowing)
+        onFollowChange(novel.novelId, !isFollowing)
       }
     } catch (error) {
       console.error('Error updating followed novels:', error)
@@ -120,18 +120,18 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
     }
 
     try {
-      const novelRef = doc(db, 'novels', novel.id)
+      const novelRef = doc(db, 'novels', novel.novelId)
       const userRef = doc(db, 'users', user.uid)
 
       if (isLiked) {
         await updateDoc(novelRef, { likes: increment(-1) })
-        await updateDoc(userRef, { likedNovels: arrayRemove(novel.id) })
+        await updateDoc(userRef, { likedNovels: arrayRemove(novel.novelId) })
         setLikes(prevLikes => Math.max(prevLikes - 1, 0))
         setIsLiked(false)
         toast.success('Like removed')
       } else {
         await updateDoc(novelRef, { likes: increment(1) })
-        await updateDoc(userRef, { likedNovels: arrayUnion(novel.id) })
+        await updateDoc(userRef, { likedNovels: arrayUnion(novel.novelId) })
         setLikes(prevLikes => prevLikes + 1)
         setIsLiked(true)
         toast.success('Novel liked')
@@ -147,7 +147,7 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
   }
   return (
     <Card className="overflow-hidden">
-      <Link href={`/novel/${novel.id}`} passHref legacyBehavior>
+      <Link href={`/novel/${novel.novelId}`} passHref legacyBehavior>
         <a className="block">
           <div className="relative w-full pt-[150%]">
             <Image

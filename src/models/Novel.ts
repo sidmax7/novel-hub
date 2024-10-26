@@ -1,7 +1,7 @@
 import { Timestamp } from 'firebase/firestore'
 
 export interface Novel {
-  id: string;
+  novelId: string;
   title: string;
   synopsis: string;
   coverPhoto: string;

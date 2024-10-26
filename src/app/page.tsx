@@ -28,7 +28,7 @@ import { genreColors } from './genreColors'
 
 
 interface Novel {
-  id: string
+  novelId: string
   title: string
   coverPhoto: string
   genres: {
@@ -58,7 +58,7 @@ const fetchPopularNovels = async () => {
   const q = query(collection(db, 'novels'), orderBy('rating', 'desc'), limit(10))
   const querySnapshot = await getDocs(q)
   const novels = querySnapshot.docs.map(doc => ({ 
-    id: doc.id, 
+    novelId: doc.id, 
     ...doc.data(),
     genres: doc.data().genres || [] // Map 'genres' to 'genre' and provide a default empty array
   } as Novel)) // Ensure this cast is correct
@@ -108,7 +108,7 @@ export default function ModernLightNovelsHomepage() {
   const fetchPopularNovels = async (): Promise<Novel[]> => {
     const querySnapshot = await getDocs(collection(db, 'novels'))
     return querySnapshot.docs.map(doc => ({
-      id: doc.id,
+      novelId: doc.id,
       ...doc.data()
     })) as Novel[]
   }
@@ -319,7 +319,7 @@ export default function ModernLightNovelsHomepage() {
               >
                 {popularNovels.map((novel) => (
                   <motion.div
-                    key={novel.id}
+                    key={novel.novelId}
                     variants={fadeIn}
                     whileHover={{ scale: 1.05 }}
                   >

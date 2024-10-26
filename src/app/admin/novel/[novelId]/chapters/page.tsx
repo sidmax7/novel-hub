@@ -26,7 +26,7 @@ interface Chapter {
 }
 
 interface Novel {
-  id?: string
+  novelId?: string
   title: string
   coverPhoto: string
   brand: {
@@ -52,7 +52,7 @@ export default function ChapterManagement() {
     try {
       const novelDoc = await getDoc(doc(db, 'novels', novelId))
       if (novelDoc.exists()) {
-        setNovel({ id: novelDoc.id, ...novelDoc.data() } as Novel)
+        setNovel({ novelId: novelDoc.id, ...novelDoc.data() } as Novel)
       } else {
         setError("Novel not found")
       }

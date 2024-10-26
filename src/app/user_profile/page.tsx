@@ -46,7 +46,7 @@ interface UserProfile {
 }
 
 interface Novel {
-  id: string
+  novelId: string
   title: string
   genres: {
     name: string
@@ -123,7 +123,7 @@ export default function UserProfilePage() {
         if (novelDoc.exists()) {
           const novelData = novelDoc.data()
           return {
-            id: novelId,
+            novelId: novelId,
             rating: novelData.rating,
             genres: novelData.genres,
             likes: novelData.likes,
@@ -153,7 +153,7 @@ export default function UserProfilePage() {
     try {
       const recommendationsQuery = query(collection(db, 'novels'), orderBy('rating', 'desc'), limit(4))
       const querySnapshot = await getDocs(recommendationsQuery)
-      const novels = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Novel))
+      const novels = querySnapshot.docs.map(doc => ({ novelId: doc.id, ...doc.data() } as Novel))
       setRecommendations(novels)
     } catch (error) {
       console.error('Error fetching recommendations:', error)
@@ -462,7 +462,7 @@ export default function UserProfilePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {followedNovels.length > 0 ? (
                 followedNovels.map((novel) => (
-                  <NovelCard key={novel.id} novel={novel} onFollowChange={handleFollowChange} />
+                  <NovelCard key={novel.novelId} novel={novel} onFollowChange={handleFollowChange} />
                 ))
               ) : (
                 <p className="col-span-full text-center text-[#8E8F8E] dark:text-[#C3C3C3]">You haven't followed any novels yet.</p>
@@ -472,7 +472,7 @@ export default function UserProfilePage() {
           <TabsContent value="recommendations">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {recommendations.map((novel: Novel) => (
-                <NovelCard key={novel.id} novel={novel} />
+                <NovelCard key={novel.novelId} novel={novel} />
               ))}
             </div>
           </TabsContent>

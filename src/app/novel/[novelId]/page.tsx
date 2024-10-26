@@ -22,7 +22,7 @@ import { setDoc, deleteDoc } from 'firebase/firestore'
 import { genreColors } from '@/app/genreColors'
 
 interface Novel {
-  id: string
+  novelId: string
   title: string
   synopsis: string
   coverPhoto: string
@@ -108,7 +108,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
     try {
       const novelDoc = await getDoc(doc(db, 'novels', params.novelId))
       if (novelDoc.exists()) {
-        const novelData = { id: novelDoc.id, ...novelDoc.data() } as Novel
+        const novelData = { novelId: novelDoc.id, ...novelDoc.data() } as Novel
         setNovel(novelData)
         setLikes(novelData.likes || 0)
         await updateDoc(doc(db, 'novels', params.novelId), {
@@ -161,7 +161,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
   const checkIfFollowing = async () => {
     if (!user || !novel) return
     try {
-      const followingRef = doc(db, 'users', user.uid, 'following', novel.id)
+      const followingRef = doc(db, 'users', user.uid, 'following', novel.novelId)
       const followingDoc = await getDoc(followingRef)
       setIsFollowing(followingDoc.exists())
     } catch (error) {
@@ -176,7 +176,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
       const userDoc = await getDoc(userRef)
       if (userDoc.exists()) {
         const userData = userDoc.data()
-        setIsLiked(userData.likedNovels?.includes(novel.id) || false)
+        setIsLiked(userData.likedNovels?.includes(novel.novelId) || false)
       }
     } catch (error) {
       console.error('Error checking like status:', error)
@@ -191,7 +191,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
 
     if (!novel) return
 
-    const followingRef = doc(db, 'users', user.uid, 'following', novel.id)
+    const followingRef = doc(db, 'users', user.uid, 'following', novel.novelId)
 
     try {
       if (isFollowing) {
@@ -217,18 +217,18 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
   
     try {
       if (!novel) throw new Error('Novel not found');
-      const novelRef = doc(db, 'novels', novel.id)
+      const novelRef = doc(db, 'novels', novel.novelId)
       const userRef = doc(db, 'users', user.uid)
   
       if (isLiked) {
         await updateDoc(novelRef, { likes: increment(-1) })
-        await updateDoc(userRef, { likedNovels: arrayRemove(novel.id) })
+        await updateDoc(userRef, { likedNovels: arrayRemove(novel.novelId) })
         setLikes(prevLikes => prevLikes - 1)
         setIsLiked(false)
         toast.success('Like removed')
       } else {
         await updateDoc(novelRef, { likes: increment(1) })
-        await updateDoc(userRef, { likedNovels: arrayUnion(novel.id) })
+        await updateDoc(userRef, { likedNovels: arrayUnion(novel.novelId) })
         setLikes(prevLikes => prevLikes + 1)
         setIsLiked(true)
         toast.success('Novel liked')
@@ -405,7 +405,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                       {isLiked ? 'Unlike' : 'Like'}
                     </span>
                   </Button>
-                <Button variant="outline" className="flex-1 " onClick={() => router.push(`/novel/${novel.id}/chapters`)}>
+                <Button variant="outline" className="flex-1 " onClick={() => router.push(`/novel/${novel.novelId}/chapters`)}>
                   <BookOpen className="mr-2 h-4 w-4" /> Read
                 </Button>
               </div>
@@ -508,7 +508,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <CommentSystem novelId={novel.id} />
+                        <CommentSystem novelId={novel.novelId} />
                       </CardContent>
                     </Card>
                   )}

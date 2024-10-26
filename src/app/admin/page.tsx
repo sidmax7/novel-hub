@@ -33,7 +33,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentNovel, setCurrentNovel] = useState<Novel | null>({
-    id: '',
+    novelId: '',
     title: '',
     synopsis: '',
     coverPhoto: '',
@@ -107,6 +107,8 @@ export default function AdminDashboard() {
   const { user } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isAuthor, setIsAuthor] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [authorsList, setAuthorsList] = useState<{ id: string; name: string; username: string; }[]>([]);
 
   
 
@@ -114,8 +116,16 @@ export default function AdminDashboard() {
     const initializeAdminDashboard = async () => {
       if (user) {
         setLoading(true);
-        await checkUserType();
-        await fetchNovels();
+        try {
+          await checkUserType();
+          if (isAdmin) {  // Only fetch authors if user is admin
+            console.log("Is admin, fetching authors..."); // Debug log
+            await fetchAuthors();
+          }
+          await fetchNovels();
+        } catch (error) {
+          console.error("Error in initialization:", error);
+        }
         setLoading(false);
       } else {
         setError("User not authenticated. Please log in.");
@@ -124,7 +134,7 @@ export default function AdminDashboard() {
     };
 
     initializeAdminDashboard();
-  }, [user]);
+  }, [user, isAdmin]);
 
   const checkUserType = async () => {
     if (!user) return;
@@ -133,13 +143,18 @@ export default function AdminDashboard() {
       const userDocSnap = await getDoc(userDocRef);
       if (userDocSnap.exists()) {
         const userData = userDocSnap.data();
+        console.log("User data:", userData); // Debug log
+        console.log("User type:", userData.userType); // Debug log
         setIsAuthor(userData.userType === 'author');
+        setIsAdmin(userData.userType === 'admin');
       } else {
         setIsAuthor(false);
+        setIsAdmin(false);
       }
     } catch (error) {
       console.error('Error checking user type:', error);
       setIsAuthor(false);
+      setIsAdmin(false);
     }
   };
 
@@ -147,12 +162,26 @@ export default function AdminDashboard() {
     if (!user) return;
     setError(null);
     try {
-      const q = query(
-        collection(db, 'novels'),
-        orderBy('title')
-      );
+      let q;
+      console.log("Is admin?", isAdmin); // Debug log
+      if (isAdmin) {
+        // Admin sees all novels
+        q = query(
+          collection(db, 'novels'),
+          orderBy('title')
+        );
+      } else {
+        // Authors see only their uploaded novels
+        q = query(
+          collection(db, 'novels'),
+          where('uploader', '==', user.uid),
+          orderBy('title')
+        );
+      }
       const querySnapshot = await getDocs(q);
-      const fetchedNovels = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Novel));
+      console.log("Fetched novels count:", querySnapshot.size); // Debug log
+      const fetchedNovels = querySnapshot.docs.map(doc => ({  novelId: doc.id, ...doc.data() } as Novel));
+      console.log("Fetched novels:", fetchedNovels); // Debug log
       setNovels(fetchedNovels);
     } catch (error) {
       console.error('Error fetching novels:', error);
@@ -161,12 +190,46 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchAuthors = async () => {
+    try {
+      console.log("Fetching authors..."); // Debug log
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('userType', 'in', ['author', 'admin']));
+      const querySnapshot = await getDocs(q);
+      console.log("Query snapshot size:", querySnapshot.size); // Debug log
+      
+      querySnapshot.forEach((doc) => {
+        console.log("User document:", doc.id, doc.data()); // Debug log
+      });
+
+      const authors = querySnapshot.docs.map(doc => {
+        const userData = doc.data();
+        console.log("Processing user data:", userData); // Debug log
+        return {
+          id: doc.id,
+          name: userData.username || userData.displayName || userData.email || 'Unknown Author',
+          username: userData.username || 'Unknown'
+        };
+      });
+      console.log("Processed authors:", authors); // Debug log
+      setAuthorsList(authors);
+    } catch (error) {
+      console.error('Error fetching authors:', error);
+      if (error instanceof Error && error.name === 'FirebaseError') {
+        const fbError = error as { code?: string, message?: string }
+        console.error('Firestore error code:', fbError.code)
+        console.error('Firestore error message:', fbError.message)
+      }
+      toast.error('Failed to fetch authors list');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user || !currentNovel) return;
 
     try {
-      const novelData: Omit<Novel, 'id'> = {
+      const novelData: Omit<Novel, 'novelId'> = {
         title: currentNovel.title || '',
         synopsis: currentNovel.synopsis || '',
         coverPhoto: currentNovel.coverPhoto || '',
@@ -233,23 +296,16 @@ export default function AdminDashboard() {
         },
         likes: currentNovel.likes || 0,
         views: currentNovel.views || 0,
-        uploader: currentNovel.uploader || user.uid,
-        rating: currentNovel.rating || 0, // Set default rating to 0
+        uploader: isAdmin ? currentNovel.uploader || user.uid : user.uid,
+        rating: currentNovel.rating || 0,
       };
 
-      if (currentNovel.id) {
-        // Update existing novel
-        await updateDoc(doc(db, 'novels', currentNovel.id), novelData as any);
+      if (currentNovel.novelId) {
+        await updateDoc(doc(db, 'novels', currentNovel.novelId), novelData as any);
         toast.success('Novel updated successfully');
       } else {
-        // Add new novel
         const docRef = await addDoc(collection(db, 'novels'), novelData as any);
-        await updateDoc(docRef, { id: docRef.id }); // Set the 'id' field to the document ID
-
-        // Create an empty 'chapters' subcollection
-        const chaptersCollectionRef = collection(docRef, 'chapters');
-        // No need to add a placeholder document
-
+        await updateDoc(docRef, { id: docRef.id });
         toast.success('Novel added successfully');
       }
       setIsDialogOpen(false);
@@ -386,6 +442,13 @@ export default function AdminDashboard() {
     }
   };
 
+  const getPageTitle = () => {
+    if (isAdmin) {
+      return "Novellize Admin Dashboard";
+    }
+    return "Author Dashboard";
+  };
+
   if (!user) {
     return (
       <Alert variant="destructive">
@@ -402,7 +465,7 @@ export default function AdminDashboard() {
     <div className="container mx-auto p-4">
       <Toaster />
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Novellize Admin Dashboard</h1>
+        <h1 className="text-2xl font-bold">{getPageTitle()}</h1>
         <Link href="./" passHref>
           <Button variant="outline">
             <Home className="mr-2 h-4 w-4" /> Back to Home
@@ -428,7 +491,7 @@ export default function AdminDashboard() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{currentNovel?.id ? 'Edit Novel' : 'Add New Novel'}</DialogTitle>
+              <DialogTitle>{currentNovel?.novelId ? 'Edit Novel' : 'Add New Novel'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -532,6 +595,26 @@ export default function AdminDashboard() {
                 <Label htmlFor="tags">Tags (comma-separated)</Label>
                 <Input id="tags" name="tags" value={currentNovel?.tags?.join(', ') || ''} onChange={handleTagsChange} />
               </div>
+              {isAdmin && (
+                <div>
+                  <Label htmlFor="uploader">Uploader</Label>
+                  <Select
+                    value={currentNovel?.uploader || user?.uid}
+                    onValueChange={(value) => handleSelectChange('uploader', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select an uploader" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {authorsList.map((author) => (
+                        <SelectItem key={author.id} value={author.id}>
+                          {author.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <Button type="submit">Save Novel</Button>
             </form>
           </DialogContent>
@@ -555,47 +638,55 @@ export default function AdminDashboard() {
               <TableHead>Status</TableHead>
               <TableHead>Series Type</TableHead>
               <TableHead>Primary Style</TableHead>
+              {isAdmin && <TableHead>Uploader</TableHead>}
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {novels.map((novel) => (
-              <TableRow key={novel.id}>
+              <TableRow key={novel.novelId}>
                 <TableCell>
-                  <Image
-                    src={novel.coverPhoto}
-                    alt={novel.title}
-                    width={64} // Set the desired width
-                    height={64} // Set the desired height
-                    className="object-cover"
-                    placeholder="blur" // Optional: use a blur placeholder
-                    blurDataURL="/path/to/placeholder.png" // Optional: path to a low-res placeholder image
-                  />
+                  <div className="relative w-16 h-24">
+                    <Image
+                      src={novel.coverPhoto}
+                      alt={novel.title}
+                      fill
+                      sizes="64px"
+                      className="object-cover rounded-sm"
+                      placeholder="blur"
+                      blurDataURL="/path/to/placeholder.png"
+                    />
+                  </div>
                 </TableCell>
                 <TableCell>{novel.title}</TableCell>
                 <TableCell>{novel.seriesStatus}</TableCell>
                 <TableCell>{novel.seriesType}</TableCell>
                 <TableCell>{novel.styleCategory.primary}</TableCell>
+                {isAdmin && <TableCell>{authorsList.find(author => author.id === novel.uploader)?.username || 'Unknown'}</TableCell>}
                 <TableCell>
                   <Button variant="outline" size="sm" className="mr-2" onClick={() => { setCurrentNovel(novel); setIsDialogOpen(true); }}>
-                    <Pencil className="h-4 w-4" />
-                    <span className="sr-only">Edit {novel.title}</span>
+                    <Pencil className="h-4 w-4"/>
                   </Button>
-                  <Link href={`/admin/novel/${novel.id}/chapters`} passHref>
+                  <Link href={`/admin/novel/${novel.novelId}/chapters`} passHref>
                     <Button variant="outline" size="sm" className="mr-2">
-                      <BookOpen className="h-4 w-4" />
-                      <span className="sr-only">Manage Chapters for {novel.title}</span>
+                      <BookOpen className="h-4 w-4"/>
                     </Button>
                   </Link>
-                  <Button variant="outline" size="sm" onClick={() => novel.id && handleDelete(novel.id)}>
-                    <Trash className="h-4 w-4" />
-                    <span className="sr-only">Delete {novel.title}</span>
+                  <Button variant="outline" size="sm" onClick={() => novel.novelId && handleDelete(novel.novelId)}>
+                    <Trash className="h-4 w-4"/>
                   </Button>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+      )}
+      {!isAdmin && (
+        <Alert variant="default" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Author View</AlertTitle>
+          <AlertDescription>You are viewing your uploaded novels. Only administrators can view all novels.</AlertDescription>
+        </Alert>
       )}
     </div>
   )

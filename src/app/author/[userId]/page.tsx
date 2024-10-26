@@ -36,7 +36,7 @@ interface User {
 }
 
 interface Novel {
-  id: string
+  novelId: string
   name: string
   coverUrl: string
   rating: number
@@ -118,7 +118,7 @@ export default function AuthorPage({ params }: { params: { userId: string } }) {
       const novelsData = querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
-          id: doc.id,
+          novelId: doc.id,
           ...data,
           rating: data.rating || 0,
           likes: data.likes || 0,
@@ -150,7 +150,7 @@ export default function AuthorPage({ params }: { params: { userId: string } }) {
     console.log("Rendering NovelCard for novel:", novel);
     return (
       <Card className="overflow-hidden border-2 border-gray-300 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300">
-        <Link href={`/novel/${novel.id}`}>
+        <Link href={`/novel/${novel.novelId}`}>
           <div className="relative aspect-[2/3] w-full">
             <Image
               src={novel.coverUrl || '/assets/cover.jpg'}
@@ -293,7 +293,7 @@ export default function AuthorPage({ params }: { params: { userId: string } }) {
               {novels.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {novels.map((novel) => (
-                    <NovelCard key={novel.id} novel={novel} />
+                    <NovelCard key={novel.novelId} novel={novel} />
                   ))}
                 </div>
               ) : (

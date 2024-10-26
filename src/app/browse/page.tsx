@@ -55,7 +55,7 @@ const redis = new Redis({
 })
 
 interface Novel {
-  id: string
+  novelId: string
   title: string
   publishers: {
     original: string
@@ -148,7 +148,7 @@ function BrowsePageContent() {
 
       const querySnapshot = await getDocs(q);
       const fetchedNovels = querySnapshot.docs.map(doc => ({
-        id: doc.id,
+        novelId: doc.id,
         ...doc.data(),
         genres: doc.data().genres || [], // Ensure genres is an array
         likes: doc.data().likes || 0,
@@ -603,9 +603,9 @@ function BrowsePageContent() {
           >
             {currentNovels.map((novel, index) => (
               <motion.div
-                key={novel.id}
+                key={novel.novelId}
                 className="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
-                onClick={() => handleTileClick(novel.id)}
+                onClick={() => handleTileClick(novel.novelId)}
               >
                 <div className="flex p-4">
                   <div className="flex-shrink-0 w-24 h-36 mr-4 relative group">
@@ -626,7 +626,7 @@ function BrowsePageContent() {
                         size="sm" 
                         onClick={(e) => {
                           e.stopPropagation()
-                          handleReadNow(novel.id)
+                          handleReadNow(novel.novelId)
                         }}
                       >
                         <ClientSideIcon name="book-open" className="mr-2" size={16} />
