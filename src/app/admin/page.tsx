@@ -641,11 +641,14 @@ export default function AdminDashboard() {
                   <Button variant="outline" size="sm" className="mr-2" onClick={() => { setCurrentNovel(novel); setIsDialogOpen(true); }}>
                     <Pencil className="h-4 w-4"/>
                   </Button>
-                  <Link href={`/admin/novel/${novel.novelId}/chapters`} passHref>
-                    <Button variant="outline" size="sm" className="mr-2">
-                      <BookOpen className="h-4 w-4"/>
-                    </Button>
-                  </Link>
+                  {/* Add condition to check for both admin and author access */}
+                  {(isAdmin || isAuthor) && (
+                    <Link href={`/admin/novel/${novel.novelId}/chapters`} passHref>
+                      <Button variant="outline" size="sm" className="mr-2">
+                        <BookOpen className="h-4 w-4"/>
+                      </Button>
+                    </Link>
+                  )}
                   <Button variant="outline" size="sm" onClick={() => novel.novelId && handleDelete(novel.novelId)}>
                     <Trash className="h-4 w-4"/>
                   </Button>

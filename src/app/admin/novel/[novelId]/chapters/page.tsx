@@ -16,6 +16,7 @@ import { PlusIcon, Pencil, Trash, AlertTriangle, ArrowLeft, ArrowUp, ArrowDown }
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { parse } from 'papaparse'
 
 interface Chapter {
   id?: string
@@ -42,7 +43,6 @@ export default function ChapterManagement() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [isAuthor, setIsAuthor] = useState(false)
   const { user } = useAuth()
   const router = useRouter()
   const params = useParams()
@@ -154,39 +154,70 @@ export default function ChapterManagement() {
     }
   }
 
-  useEffect(() => {
-    const checkUserType = async () => {
-      if (user) {
+  const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    parse(file, {
+      header: true,
+      complete: async (results) => {
         try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid))
-          if (userDoc.exists() && userDoc.data().userType === 'author') {
-            setIsAuthor(true)
-            if (novelId) {
-              fetchNovelDetails()
-              fetchChapters()
-            } else {
-              setError("Novel ID not provided.")
-              setLoading(false)
-            }
-          } else {
-            router.push('/')
+          const chaptersToAdd = results.data.map((row: any) => ({
+            title: row.title,
+            link: row.link,
+            chapter: Number(row.chapter),
+            releaseDate: Timestamp.now()
+          }))
+
+          // Add chapters in sequence
+          for (const chapter of chaptersToAdd) {
+            await addDoc(collection(db, 'novels', novelId, 'chapters'), chapter)
           }
+
+          toast.success(`Successfully uploaded ${chaptersToAdd.length} chapters`)
+          fetchChapters()
         } catch (error) {
-          console.error('Error checking user type:', error)
-          setError('Failed to verify user permissions')
-          setLoading(false)
+          console.error('Error uploading chapters:', error)
+          toast.error(`Failed to upload chapters: ${error instanceof Error ? error.message : 'Unknown error'}`)
         }
-      } else {
-        router.push('/')
+      },
+      error: (error) => {
+        toast.error(`Error parsing CSV: ${error.message}`)
       }
-    }
-
-    checkUserType()
-  }, [user, novelId, router])
-
-  if (!isAuthor) {
-    return null
+    })
   }
+
+  const copyFormatTemplate = () => {
+    const template = 'title,link,chapter\nChapter Title,https://example.com/chapter-link,1\nChapter Title,https://example.com/chapter-link,2\nChapter Title,https://example.com/chapter-link,3';
+    navigator.clipboard.writeText(template)
+      .then(() => toast.success('Format template copied to clipboard!'))
+      .catch(() => toast.error('Failed to copy template'));
+  };
+
+  useEffect(() => {
+    const checkAccess = async () => {
+      if (!user) return;
+      
+      try {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          if (userData.userType !== 'admin' && userData.userType !== 'author') {
+            router.push('/');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking access:', error);
+        router.push('/');
+      }
+    };
+
+    checkAccess();
+    fetchNovelDetails();
+    fetchChapters();
+  }, [user, router]);
 
   return (
     <div className="container mx-auto p-4">
@@ -225,11 +256,6 @@ export default function ChapterManagement() {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogTrigger asChild>
-          <Button onClick={() => setCurrentChapter({ title: '', link: '', chapter: chapters.length + 1 })} className="mb-4">
-            <PlusIcon className="mr-2 h-4 w-4" /> Add New Chapter
-          </Button>
-        </DialogTrigger>
         <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{currentChapter?.id ? 'Edit Chapter' : 'Add New Chapter'}</DialogTitle>
@@ -260,6 +286,35 @@ export default function ChapterManagement() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <div className="flex gap-4 mb-4">
+        <Button onClick={() => {
+          setCurrentChapter({ title: '', link: '', chapter: chapters.length + 1 });
+          setIsDialogOpen(true);
+        }}>
+          <PlusIcon className="mr-2 h-4 w-4" /> Add New Chapter
+        </Button>
+        
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => document.getElementById('csv-upload')?.click()}>
+            <PlusIcon className="mr-2 h-4 w-4" /> Upload Chapters (CSV)
+          </Button>
+          <Input
+            type="file"
+            accept=".csv"
+            onChange={handleCsvUpload}
+            className="hidden"
+            id="csv-upload"
+          />
+          <Button 
+            variant="ghost" 
+            onClick={copyFormatTemplate}
+            className="text-sm text-gray-500 hover:text-gray-700"
+          >
+            Copy CSV Format
+          </Button>
+        </div>
+      </div>
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
