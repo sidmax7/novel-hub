@@ -35,6 +35,8 @@ interface Novel {
   likes: number
   views: number
   totalChapters: number
+  uploaderId: string
+  uploader: string
   seriesStatus: 'ONGOING' | 'COMPLETED' | 'ON HOLD' | 'CANCELLED' | 'UPCOMING'
 }
 
@@ -66,6 +68,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
   const [likes, setLikes] = useState(0)
   const [isLiked, setIsLiked] = useState(false)
   const [activeTab, setActiveTab] = useState('chapters')
+  const [uploaderUsername, setUploaderUsername] = useState<string>('')
 
   const variants = {
     enter: (direction: number) => {
@@ -111,6 +114,12 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
         const novelData = { novelId: novelDoc.id, ...novelDoc.data() } as Novel
         setNovel(novelData)
         setLikes(novelData.likes || 0)
+        
+        const uploaderDoc = await getDoc(doc(db, 'users', novelData.uploader))
+        if (uploaderDoc.exists()) {
+          setUploaderUsername(uploaderDoc.data().username || 'Unknown User')
+        }
+
         await updateDoc(doc(db, 'novels', params.novelId), {
           views: increment(0.5)
         })
@@ -315,7 +324,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
               <div className="w-full md:w-3/4">
                 <h2 className="text-3xl font-bold mb-2">{novel.title}</h2>
                 <p className="text-md text-gray-600 dark:text-gray-400 mb-2 truncate hover:text-[#F1592A] dark:hover:text-[#F1592A] cursor-pointer">
-                  Published by {novel.publishers.original}
+                  uploaded by {uploaderUsername || 'Unknown User'}
                 </p>
                 {/* <p className="mb-4">Release Date: {novel.releaseDate}</p> */}
                 <div className="flex items-center mb-4">
