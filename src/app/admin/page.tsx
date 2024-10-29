@@ -465,6 +465,10 @@ export default function AdminDashboard() {
                 <Input id="brandLogo" name="brand.logo" value={currentNovel?.brand?.logo || ''} onChange={handleInputChange} />
               </div>
               <div>
+                <Label htmlFor="publishersOriginal">Original Publisher</Label>
+                <Input id="publishersOriginal" name="publishers.original" value={currentNovel?.publishers?.original || ''} onChange={handleInputChange} />
+              </div>
+              <div>
                 <Label htmlFor="seriesType">Series Type</Label>
                 <Select name="seriesType" value={currentNovel?.seriesType || 'ORIGINAL'} onValueChange={(value) => handleSelectChange('seriesType', value as 'ORIGINAL' | 'TRANSLATED' | 'FAN_FIC')}>
                   <SelectTrigger>

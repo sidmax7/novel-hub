@@ -100,7 +100,6 @@ useEffect(() => {
               <div>
                 <Label htmlFor="username" className="text-gray-700 dark:text-gray-300">Username</Label>
                 <div>
-                <Label htmlFor="username" className="text-gray-700 dark:text-gray-300">Username</Label>
                 <Input
                   id="username"
                   type="text"
