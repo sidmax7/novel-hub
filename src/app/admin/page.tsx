@@ -429,8 +429,15 @@ export default function AdminDashboard() {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
-              onClick={() => setCurrentNovel({ author: user.displayName || 'Anonymous', authorId: user.uid } as unknown as Novel)}
-              disabled={!isAuthor}
+              onClick={() => setCurrentNovel({ 
+                ...currentNovel,
+                uploader: user.uid,
+                metadata: {
+                  createdAt: Timestamp.now(),
+                  updatedAt: Timestamp.now(),
+                }
+              } as Novel)}
+              disabled={!isAuthor && !isAdmin}
             >
               <PlusIcon className="mr-2 h-4 w-4" /> Add New Novel
             </Button>
@@ -570,11 +577,11 @@ export default function AdminDashboard() {
           </DialogContent>
         </Dialog>
       </div>
-      {!isAuthor && (
+      {!isAuthor && !isAdmin && (
         <Alert variant="default" className="mb-4 border-yellow-500 bg-yellow-50 text-yellow-800">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Access Restricted</AlertTitle>
-          <AlertDescription>Only authors can add new novels. If you believe this is an error, please contact support.</AlertDescription>
+          <AlertDescription>Only authors and administrators can add new novels. If you believe this is an error, please contact support.</AlertDescription>
         </Alert>
       )}
       {loading ? (
