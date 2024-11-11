@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast, Toaster } from 'react-hot-toast'
-import { PlusIcon, Pencil, Trash, AlertTriangle, BookOpen, Home } from 'lucide-react'
+import { PlusIcon, Pencil, Trash, AlertTriangle, BookOpen, Home, User } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Timestamp } from 'firebase/firestore'
@@ -412,11 +412,18 @@ export default function AdminDashboard() {
       <Toaster />
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">{getPageTitle()}</h1>
-        <Link href="./" passHref>
-          <Button variant="outline">
-            <Home className="mr-2 h-4 w-4" /> Back to Home
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/admin/users" passHref>
+            <Button variant="outline">
+              <User className="mr-2 h-4 w-4" /> Manage Users
+            </Button>
+          </Link>
+          <Link href="./" passHref>
+            <Button variant="outline">
+              <Home className="mr-2 h-4 w-4" /> Back to Home
+            </Button>
+          </Link>
+        </div>
       </div>
       {error && (
         <Alert variant="destructive" className="mb-4">
