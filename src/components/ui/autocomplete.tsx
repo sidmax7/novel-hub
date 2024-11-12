@@ -6,7 +6,7 @@ import { XIcon } from "lucide-react"
 
 interface AutocompleteProps {
   suggestions: string[]
-  selectedItems: string[]
+  selectedItems?: string[]
   onSelect: (items: string[]) => void
   placeholder?: string
   className?: string
@@ -14,14 +14,14 @@ interface AutocompleteProps {
 
 export function Autocomplete({
   suggestions,
-  selectedItems,
+  selectedItems = [],
   onSelect,
-  placeholder,
+  placeholder = "Type to search...",
   className
 }: AutocompleteProps) {
   const [inputValue, setInputValue] = useState('')
-  const [showSuggestions, setShowSuggestions] = useState(false)
   const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([])
+  const [isOpen, setIsOpen] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export function Autocomplete({
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false)
+        setIsOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -43,14 +43,16 @@ export function Autocomplete({
   }, [])
 
   const handleSelect = (item: string) => {
-    onSelect([...selectedItems, item])
-    setInputValue('')
-    setShowSuggestions(false)
-  }
+    if (!selectedItems.includes(item)) {
+      onSelect([...selectedItems, item]);
+    }
+    setInputValue("");
+    setIsOpen(false);
+  };
 
   const handleRemove = (item: string) => {
-    onSelect(selectedItems.filter(i => i !== item))
-  }
+    onSelect(selectedItems.filter(i => i !== item));
+  };
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -58,14 +60,14 @@ export function Autocomplete({
         value={inputValue}
         onChange={(e) => {
           setInputValue(e.target.value)
-          setShowSuggestions(true)
+          setIsOpen(true)
         }}
-        onFocus={() => setShowSuggestions(true)}
+        onFocus={() => setIsOpen(true)}
         placeholder={placeholder}
         className={className}
       />
       
-      {showSuggestions && filteredSuggestions.length > 0 && (
+      {isOpen && filteredSuggestions.length > 0 && (
         <div className="absolute z-10 w-full mt-1 bg-[#E7E7E8] dark:bg-[#232120] rounded-md shadow-lg border border-[#3E3F3E] max-h-[200px] overflow-y-auto">
           <ScrollArea className="h-full">
             {filteredSuggestions.map((suggestion) => (
@@ -82,9 +84,9 @@ export function Autocomplete({
         </div>
       )}
       
-      {selectedItems.length > 0 && (
+      {(selectedItems?.length ?? 0) > 0 && (
         <div className="flex flex-wrap gap-2 mt-2">
-          {selectedItems.map((item) => (
+          {selectedItems?.map((item) => (
             <div
               key={item}
               className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md"
