@@ -21,8 +21,10 @@ import { Timestamp } from 'firebase/firestore'
 import { Novel } from '@/models/Novel'
 import { Autocomplete } from '@/components/ui/autocomplete'
 import { genreColors } from '@/app/genreColors'
-import { tags } from '@/app/tags'
-
+import { tags } from '../tags'
+// import { Calendar } from "@/components/ui/calendar"
+// import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+// import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -248,6 +250,7 @@ export default function AdminDashboard() {
         },
         releaseFrequency: currentNovel.releaseFrequency || '',
         alternativeNames: currentNovel.alternativeNames || '',
+        
         chapterType: currentNovel.chapterType || 'TEXT',
         totalChapters: currentNovel.totalChapters || 0,
         seriesStatus: currentNovel.seriesStatus || 'ONGOING',
@@ -438,7 +441,7 @@ export default function AdminDashboard() {
                 <Input id="title" name="title" value={currentNovel?.title || ''} onChange={handleInputChange} required />
               </div>
               <div>
-                <Label htmlFor="synopsis">Synopsis/Summary</Label>
+                <Label htmlFor="synopsis">Synopsis/Summary/Summary</Label>
                 <Textarea id="synopsis" name="synopsis" value={currentNovel?.synopsis || ''} onChange={handleInputChange} required />
               </div>
               <div>
@@ -467,14 +470,27 @@ export default function AdminDashboard() {
                   }}
                   placeholder="Enter brand name"
                 />
+                <Label htmlFor="brandName">Brand/Company/Group</Label>
+                <Input
+                  id="brandName"
+                  name="brand.name"
+                  value={currentNovel?.brand?.name || ''}
+                  onChange={(e) => {
+                    const { value } = e.target;
+                    setCurrentNovel(prev => ({
+                      ...prev!,
+                      brand: {
+                        ...prev!.brand,
+                        name: value
+                      }
+                    }));
+                  }}
+                  placeholder="Enter brand name"
+                />
               </div>
-              {/* <div>
-                <Label htmlFor="brandLogo">Brand Logo URL</Label>
-                <Input id="brandLogo" name="brand.logo" value={currentNovel?.brand?.logo || ''} onChange={handleInputChange} />
-              </div> */}
               <div>
                 <Label htmlFor="seriesType">Series Type</Label>
-                <Select name="seriesType" value={currentNovel?.seriesType || 'ORIGINAL'} onValueChange={(value) => handleSelectChange('seriesType', value as 'ORIGINAL' | 'TRANSLATED' | 'FAN_FIC')}>
+                  <Select name="seriesType" value={currentNovel?.seriesType || 'ORIGINAL'} onValueChange={(value) => handleSelectChange('seriesType', value as 'ORIGINAL' | 'TRANSLATED' | 'FAN_FIC')}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a series type" />
                   </SelectTrigger>
@@ -501,13 +517,78 @@ export default function AdminDashboard() {
                   }}
                   placeholder="Select a style category..."
                 />
+                <Label htmlFor="styleCategory">Style Category</Label>
+                <Autocomplete
+                  suggestions={styleCategories} // Use the style categories array
+                  selectedItems={currentNovel?.styleCategory?.primary ? [currentNovel.styleCategory.primary] : []}
+                  onSelect={(items) => {
+                    setCurrentNovel(prev => ({
+                      ...prev!,
+                      styleCategory: {
+                        ...prev!.styleCategory,
+                        primary: items[0] || '' // Set the first selected item as the primary style category
+                      }
+                    }))
+                  }}
+                  placeholder="Select a style category..."
+                />
               </div>
-              {/* <div>
-                <Label htmlFor="secondaryStyles">Secondary Style Categories (comma-separated)</Label>
-                <Input id="secondaryStyles" name="styleCategory.secondary" value={currentNovel?.styleCategory?.secondary?.join(', ') || ''} onChange={handleInputChange} />
-              </div> */}
               <div>
                 <Label htmlFor="originalLanguage">Original Language</Label>
+                <Input
+                  id="originalLanguage"
+                  name="language.original"
+                  value={currentNovel?.language?.original || ''}
+                  onChange={(e) => {
+                    const { value } = e.target;
+                    setCurrentNovel(prev => ({
+                      ...prev!,
+                      language: {
+                        ...prev!.language,
+                        original: value
+                      }
+                    }));
+                  }}
+                  placeholder="Enter original language"
+                />
+              </div>
+              <div>
+                <Label htmlFor="publishersOriginal">Original Publisher</Label>
+                <Input
+                  id="publishersOriginal"
+                  name="publishers.original"
+                  value={currentNovel?.publishers?.original || ''}
+                  onChange={(e) => {
+                    const { value } = e.target;
+                    setCurrentNovel(prev => ({
+                      ...prev!,
+                      publishers: {
+                        ...prev!.publishers,
+                        original: value
+                      }
+                    }));
+                  }}
+                  placeholder="Enter original publisher"
+                />
+              </div>
+              <div>
+                <Label htmlFor="publishersEnglish">English Publisher</Label>
+                <Input
+                  id="publishersEnglish"
+                  name="publishers.english"
+                  value={currentNovel?.publishers?.english || ''}
+                  onChange={(e) => {
+                    const { value } = e.target;
+                    setCurrentNovel(prev => ({
+                      ...prev!,
+                      publishers: {
+                        ...prev!.publishers,
+                        english: value
+                      }
+                    }));
+                  }}
+                  placeholder="Enter English publisher"
+                />
                 <Input
                   id="originalLanguage"
                   name="language.original"
@@ -581,8 +662,49 @@ export default function AdminDashboard() {
                   }}
                   placeholder="Enter translated languages, separated by commas"
                 />
+                <Input
+                  id="translatedLanguages"
+                  name="language.translated"
+                  value={currentNovel?.language?.translated?.join(', ') || ''}
+                  onChange={(e) => {
+                    const languages = e.target.value.split(',').map(lang => lang.trim()).filter(Boolean);
+                    setCurrentNovel(prev => ({
+                      ...prev!,
+                      language: {
+                        ...prev!.language,
+                        translated: languages
+                      }
+                    }));
+                  }}
+                  placeholder="Enter translated languages, separated by commas"
+                />
               </div>
               <div>
+                <Label htmlFor="releaseFrequency">Release Frequency per Week</Label>
+                <Input id="releaseFrequency" name="releaseFrequency" type="number" min="0" value={currentNovel?.releaseFrequency || 0} onChange={handleInputChange} />
+              </div>
+              <div>
+                <Label htmlFor="alternativeNames">Alternative Names</Label>
+                <Input
+                  id="alternativeNames"
+                  name="alternativeNames"
+                  value={currentNovel?.alternativeNames || ''}
+                  onChange={handleInputChange}
+                  placeholder="Enter alternative names separated by commas"
+                />
+              </div>
+              <div>
+                <Label htmlFor="chapterType">Chapter Type</Label>
+                <Select name="chapterType" value={currentNovel?.chapterType || 'TEXT'} onValueChange={(value) => handleSelectChange('chapterType', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a chapter type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="TEXT">Text</SelectItem>
+                    <SelectItem value="MANGA">Manga</SelectItem>
+                    <SelectItem value="VIDEO">Video</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Label htmlFor="releaseFrequency">Release Frequency per Week</Label>
                 <Input id="releaseFrequency" name="releaseFrequency" type="number" min="0" value={currentNovel?.releaseFrequency || 0} onChange={handleInputChange} />
               </div>
@@ -626,10 +748,12 @@ export default function AdminDashboard() {
                     <SelectItem value="CANCELLED">Cancelled</SelectItem>
                     <SelectItem value="UPCOMING">Upcoming</SelectItem>
                     <SelectItem value="UNDER EDITING">Under Editing</SelectItem>
+                    <SelectItem value="UNDER EDITING">Under Editing</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
+                <Label htmlFor="availabilityType">Availability Criteria</Label>
                 <Label htmlFor="availabilityType">Availability Criteria</Label>
                 <Select name="availability.type" value={currentNovel?.availability?.type || 'FREE'} onValueChange={(value) => handleSelectChange('availability.type', value)}>
                   <SelectTrigger>
@@ -641,11 +765,7 @@ export default function AdminDashboard() {
                     <SelectItem value="PAID">Paid</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              {/* <div>
-                <Label htmlFor="price">Price</Label>
-                <Input id="price" name="availability.price" type="number" min="0" value={currentNovel?.availability?.price || 0} onChange={handleInputChange} />
-              </div> */}
+              </div>      
               <div>
                 <Label htmlFor="seriesNumber">Series/Volume Number</Label>
                 <Input
@@ -665,6 +785,244 @@ export default function AdminDashboard() {
                     }));
                   }}
                   placeholder="Enter series/volume number"
+                />
+              </div>
+              <div>
+                <Label htmlFor="seriesNumber">Series/Volume Number</Label>
+                <Input
+                  id="seriesNumber"
+                  name="seriesInfo.seriesNumber"
+                  type="number"
+                  min="0"
+                  value={currentNovel?.seriesInfo?.seriesNumber || 0}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 0;
+                    setCurrentNovel(prev => ({
+                      ...prev!,
+                      seriesInfo: {
+                        ...prev!.seriesInfo,
+                        seriesNumber: value
+                      }
+                    }));
+                  }}
+                  placeholder="Enter series/volume number"
+                />
+              </div>
+              <div className="space-y-4">
+                <Label>Series Release Year and Month</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="releaseYear" className="text-sm">Year</Label>
+                    <Select
+                      value={String(currentNovel?.seriesInfo?.releaseYear || currentYear)}
+                      onValueChange={(value) => {
+                        const year = parseInt(value);
+                        setCurrentNovel(prev => ({
+                          ...prev!,
+                          seriesInfo: {
+                            ...prev!.seriesInfo,
+                            releaseYear: year,
+                            firstReleaseDate: Timestamp.fromDate(new Date(
+                              year,
+                              (prev?.seriesInfo?.releaseMonth || 1) - 1
+                            ))
+                          }
+                        }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {years.map((year) => (
+                          <SelectItem key={year} value={year}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="releaseMonth" className="text-sm">Month</Label>
+                    <Select
+                      value={currentNovel?.seriesInfo?.releaseMonth 
+                        ? String(currentNovel.seriesInfo.releaseMonth) 
+                        : String(new Date().getMonth() + 1)}
+                      onValueChange={(value) => {
+                        const monthIndex = parseInt(value);
+                        setCurrentNovel(prev => ({
+                          ...prev!,
+                          seriesInfo: {
+                            ...prev!.seriesInfo,
+                            releaseMonth: monthIndex,
+                            firstReleaseDate: Timestamp.fromDate(new Date(
+                              prev?.seriesInfo?.releaseYear || currentYear,
+                              monthIndex - 1
+                            ))
+                          }
+                        }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select month" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {months.map((month, index) => (
+                          <SelectItem key={month} value={String(index + 1)}>
+                            {month}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <span>Selected: {currentNovel?.seriesInfo?.releaseMonth && currentNovel?.seriesInfo?.releaseYear ? 
+                    `${months[currentNovel.seriesInfo.releaseMonth - 1]} ${currentNovel.seriesInfo.releaseYear}` : 
+                    'No date selected'}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <Label>First Release Date</Label>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="firstReleaseYear" className="text-sm">Year</Label>
+                    <Select
+                      value={String(currentNovel?.seriesInfo?.firstReleaseDate?.toDate().getFullYear() || currentYear)}
+                      onValueChange={(value) => {
+                        const year = parseInt(value);
+                        const currentDate = currentNovel?.seriesInfo?.firstReleaseDate?.toDate() || new Date();
+                        const newDate = new Date(year, currentDate.getMonth(), currentDate.getDate());
+                        
+                        setCurrentNovel(prev => ({
+                          ...prev!,
+                          seriesInfo: {
+                            ...prev!.seriesInfo,
+                            firstReleaseDate: Timestamp.fromDate(newDate)
+                          }
+                        }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {years.map((year) => (
+                          <SelectItem key={year} value={year}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="firstReleaseMonth" className="text-sm">Month</Label>
+                    <Select
+                      value={String((currentNovel?.seriesInfo?.firstReleaseDate?.toDate().getMonth() || 0) + 1)}
+                      onValueChange={(value) => {
+                        const monthIndex = parseInt(value) - 1;
+                        const currentDate = currentNovel?.seriesInfo?.firstReleaseDate?.toDate() || new Date();
+                        const newDate = new Date(currentDate.getFullYear(), monthIndex, currentDate.getDate());
+                        
+                        setCurrentNovel(prev => ({
+                          ...prev!,
+                          seriesInfo: {
+                            ...prev!.seriesInfo,
+                            firstReleaseDate: Timestamp.fromDate(newDate)
+                          }
+                        }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select month" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {months.map((month, index) => (
+                          <SelectItem key={month} value={String(index + 1)}>
+                            {month}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="firstReleaseDay" className="text-sm">Day</Label>
+                    <Select
+                      value={String(currentNovel?.seriesInfo?.firstReleaseDate?.toDate().getDate() || 1)}
+                      onValueChange={(value) => {
+                        const day = parseInt(value);
+                        const currentDate = currentNovel?.seriesInfo?.firstReleaseDate?.toDate() || new Date();
+                        const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+                        
+                        setCurrentNovel(prev => ({
+                          ...prev!,
+                          seriesInfo: {
+                            ...prev!.seriesInfo,
+                            firstReleaseDate: Timestamp.fromDate(newDate)
+                          }
+                        }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select day" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from(
+                          { length: getDaysInMonth(
+                            currentNovel?.seriesInfo?.firstReleaseDate?.toDate().getFullYear() || currentYear,
+                            (currentNovel?.seriesInfo?.firstReleaseDate?.toDate().getMonth() || 0) + 1
+                          ) },
+                          (_, i) => String(i + 1)
+                        ).map((day) => (
+                          <SelectItem key={day} value={day}>
+                            {day}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <span>Selected: {currentNovel?.seriesInfo?.firstReleaseDate ? 
+                    currentNovel.seriesInfo.firstReleaseDate.toDate().toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    }) : 
+                    'No date selected'}
+                  </span>
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="genres">Genres</Label>
+                <Autocomplete
+                  suggestions={Object.keys(genreColors)}
+                  selectedItems={currentNovel?.genres?.map(g => g.name) || []}
+                  onSelect={(items) => {
+                    setCurrentNovel(prev => ({
+                      ...prev!,
+                      genres: items.map(name => ({ name }))
+                    }))
+                  }}
+                  placeholder="Select genres..."
+                />
+              </div>
+              <div>
+                <Label htmlFor="tags">Tags</Label>
+                <Autocomplete
+                  suggestions={tags}
+                  selectedItems={currentNovel?.tags || []}
+                  onSelect={(items) => {
+                    setCurrentNovel(prev => ({
+                      ...prev!,
+                      tags: items
+                    }))
+                  }}
+                  placeholder="Select tags..."
                 />
               </div>
               <div className="space-y-4">
@@ -904,6 +1262,300 @@ export default function AdminDashboard() {
                   </Select>
                 </div>
               )}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-4">Series Artists</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Translators */}
+                    <div>
+                      <Label htmlFor="translators">Translators</Label>
+                      <Input
+                        id="translators"
+                        name="credits.artists.translators"
+                        value={currentNovel?.credits?.artists?.translators?.join(', ') || ''}
+                        onChange={(e) => {
+                          const names = e.target.value.split(',').map(name => name.trim()).filter(Boolean);
+                          setCurrentNovel(prev => ({
+                            ...prev!,
+                            credits: {
+                              ...prev!.credits,
+                              artists: {
+                                ...prev!.credits?.artists,
+                                translators: names
+                              }
+                            }
+                          }));
+                        }}
+                        placeholder="Enter translators (comma-separated)"
+                      />
+                    </div>
+
+                    {/* Editors */}
+                    <div>
+                      <Label htmlFor="editors">Editors</Label>
+                      <Input
+                        id="editors"
+                        name="credits.artists.editors"
+                        value={currentNovel?.credits?.artists?.editors?.join(', ') || ''}
+                        onChange={(e) => {
+                          const names = e.target.value.split(',').map(name => name.trim()).filter(Boolean);
+                          setCurrentNovel(prev => ({
+                            ...prev!,
+                            credits: {
+                              ...prev!.credits,
+                              artists: {
+                                ...prev!.credits?.artists,
+                                editors: names
+                              }
+                            }
+                          }));
+                        }}
+                        placeholder="Enter editors (comma-separated)"
+                      />
+                    </div>
+
+                    {/* Proofreaders */}
+                    <div>
+                      <Label htmlFor="proofreaders">Proofreaders</Label>
+                      <Input
+                        id="proofreaders"
+                        name="credits.artists.proofreaders"
+                        value={currentNovel?.credits?.artists?.proofreaders?.join(', ') || ''}
+                        onChange={(e) => {
+                          const names = e.target.value.split(',').map(name => name.trim()).filter(Boolean);
+                          setCurrentNovel(prev => ({
+                            ...prev!,
+                            credits: {
+                              ...prev!.credits,
+                              artists: {
+                                ...prev!.credits?.artists,
+                                proofreaders: names
+                              }
+                            }
+                          }));
+                        }}
+                        placeholder="Enter proofreaders (comma-separated)"
+                      />
+                    </div>
+
+                    {/* Posters */}
+                    <div>
+                      <Label htmlFor="posters">Posters</Label>
+                      <Input
+                        id="posters"
+                        name="credits.artists.posters"
+                        value={currentNovel?.credits?.artists?.posters?.join(', ') || ''}
+                        onChange={(e) => {
+                          const names = e.target.value.split(',').map(name => name.trim()).filter(Boolean);
+                          setCurrentNovel(prev => ({
+                            ...prev!,
+                            credits: {
+                              ...prev!.credits,
+                              artists: {
+                                ...prev!.credits?.artists,
+                                posters: names
+                              }
+                            }
+                          }));
+                        }}
+                        placeholder="Enter posters (comma-separated)"
+                      />
+                    </div>
+
+                    {/* Raw Providers */}
+                    <div>
+                      <Label htmlFor="rawProviders">Raw Providers</Label>
+                      <Input
+                        id="rawProviders"
+                        name="credits.artists.rawProviders"
+                        value={currentNovel?.credits?.artists?.rawProviders?.join(', ') || ''}
+                        onChange={(e) => {
+                          const names = e.target.value.split(',').map(name => name.trim()).filter(Boolean);
+                          setCurrentNovel(prev => ({
+                            ...prev!,
+                            credits: {
+                              ...prev!.credits,
+                              artists: {
+                                ...prev!.credits?.artists,
+                                rawProviders: names
+                              }
+                            }
+                          }));
+                        }}
+                        placeholder="Enter raw providers (comma-separated)"
+                      />
+                    </div>
+
+                    {/* Art Directors */}
+                    <div>
+                      <Label htmlFor="artDirectors">Art Directors</Label>
+                      <Input
+                        id="artDirectors"
+                        name="credits.artists.artDirectors"
+                        value={currentNovel?.credits?.artists?.artDirectors?.join(', ') || ''}
+                        onChange={(e) => {
+                          const names = e.target.value.split(',').map(name => name.trim()).filter(Boolean);
+                          setCurrentNovel(prev => ({
+                            ...prev!,
+                            credits: {
+                              ...prev!.credits,
+                              artists: {
+                                ...prev!.credits?.artists,
+                                artDirectors: names
+                              }
+                            }
+                          }));
+                        }}
+                        placeholder="Enter art directors (comma-separated)"
+                      />
+                    </div>
+
+                    {/* Drafters */}
+                    <div>
+                      <Label htmlFor="drafters">Drafters</Label>
+                      <Input
+                        id="drafters"
+                        name="credits.artists.drafters"
+                        value={currentNovel?.credits?.artists?.drafters?.join(', ') || ''}
+                        onChange={(e) => {
+                          const names = e.target.value.split(',').map(name => name.trim()).filter(Boolean);
+                          setCurrentNovel(prev => ({
+                            ...prev!,
+                            credits: {
+                              ...prev!.credits,
+                              artists: {
+                                ...prev!.credits?.artists,
+                                drafters: names
+                              }
+                            }
+                          }));
+                        }}
+                        placeholder="Enter drafters (comma-separated)"
+                      />
+                    </div>
+
+                    {/* Line Artists */}
+                    <div>
+                      <Label htmlFor="lineArtists">Line Artists</Label>
+                      <Input
+                        id="lineArtists"
+                        name="credits.artists.lineArtists"
+                        value={currentNovel?.credits?.artists?.lineArtists?.join(', ') || ''}
+                        onChange={(e) => {
+                          const names = e.target.value.split(',').map(name => name.trim()).filter(Boolean);
+                          setCurrentNovel(prev => ({
+                            ...prev!,
+                            credits: {
+                              ...prev!.credits,
+                              artists: {
+                                ...prev!.credits?.artists,
+                                lineArtists: names
+                              }
+                            }
+                          }));
+                        }}
+                        placeholder="Enter line artists (comma-separated)"
+                      />
+                    </div>
+
+                    {/* Color Artists */}
+                    <div>
+                      <Label htmlFor="colorArtists">Color Artists</Label>
+                      <Input
+                        id="colorArtists"
+                        name="credits.artists.colorArtists"
+                        value={currentNovel?.credits?.artists?.colorArtists?.join(', ') || ''}
+                        onChange={(e) => {
+                          const names = e.target.value.split(',').map(name => name.trim()).filter(Boolean);
+                          setCurrentNovel(prev => ({
+                            ...prev!,
+                            credits: {
+                              ...prev!.credits,
+                              artists: {
+                                ...prev!.credits?.artists,
+                                colorArtists: names
+                              }
+                            }
+                          }));
+                        }}
+                        placeholder="Enter color artists (comma-separated)"
+                      />
+                    </div>
+
+                    {/* Compositors */}
+                    <div>
+                      <Label htmlFor="compositors">Compositors</Label>
+                      <Input
+                        id="compositors"
+                        name="credits.artists.compositors"
+                        value={currentNovel?.credits?.artists?.compositors?.join(', ') || ''}
+                        onChange={(e) => {
+                          const names = e.target.value.split(',').map(name => name.trim()).filter(Boolean);
+                          setCurrentNovel(prev => ({
+                            ...prev!,
+                            credits: {
+                              ...prev!.credits,
+                              artists: {
+                                ...prev!.credits?.artists,
+                                compositors: names
+                              }
+                            }
+                          }));
+                        }}
+                        placeholder="Enter compositors (comma-separated)"
+                      />
+                    </div>
+
+                    {/* Typesetters */}
+                    <div>
+                      <Label htmlFor="typesetters">Typesetters</Label>
+                      <Input
+                        id="typesetters"
+                        name="credits.artists.typesetters"
+                        value={currentNovel?.credits?.artists?.typesetters?.join(', ') || ''}
+                        onChange={(e) => {
+                          const names = e.target.value.split(',').map(name => name.trim()).filter(Boolean);
+                          setCurrentNovel(prev => ({
+                            ...prev!,
+                            credits: {
+                              ...prev!.credits,
+                              artists: {
+                                ...prev!.credits?.artists,
+                                typesetters: names
+                              }
+                            }
+                          }));
+                        }}
+                        placeholder="Enter typesetters (comma-separated)"
+                      />
+                    </div>
+
+                    {/* Project Managers */}
+                    <div>
+                      <Label htmlFor="projectManagers">Project Managers</Label>
+                      <Input
+                        id="projectManagers"
+                        name="credits.artists.projectManagers"
+                        value={currentNovel?.credits?.artists?.projectManagers?.join(', ') || ''}
+                        onChange={(e) => {
+                          const names = e.target.value.split(',').map(name => name.trim()).filter(Boolean);
+                          setCurrentNovel(prev => ({
+                            ...prev!,
+                            credits: {
+                              ...prev!.credits,
+                              artists: {
+                                ...prev!.credits?.artists,
+                                projectManagers: names
+                              }
+                            }
+                          }));
+                        }}
+                        placeholder="Enter project managers (comma-separated)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-medium mb-4">Series Artists</h3>
