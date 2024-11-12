@@ -69,6 +69,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
   const [isLiked, setIsLiked] = useState(false)
   const [activeTab, setActiveTab] = useState('chapters')
   const [uploaderUsername, setUploaderUsername] = useState<string>('')
+  const [viewIncremented, setViewIncremented] = useState(false)
 
   const variants = {
     enter: (direction: number) => {
@@ -120,9 +121,13 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
           setUploaderUsername(uploaderDoc.data().username || 'Unknown User')
         }
 
-        await updateDoc(doc(db, 'novels', params.novelId), {
-          views: increment(0.5)
-        })
+        if (!viewIncremented) {
+          const currentViews = Math.round(novelData.views || 0)
+          await updateDoc(doc(db, 'novels', params.novelId), {
+            views: currentViews + 1
+          })
+          setViewIncremented(true)
+        }
       } else {
         toast.error('Novel not found')
       }

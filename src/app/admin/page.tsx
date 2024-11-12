@@ -22,8 +22,6 @@ import { Novel } from '@/models/Novel'
 import { Autocomplete } from '@/components/ui/autocomplete'
 import { genreColors } from '@/app/genreColors'
 import { tags } from '../tags'
-// import { Calendar } from "@/components/ui/calendar"
-// import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 // import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -250,7 +248,6 @@ export default function AdminDashboard() {
         },
         releaseFrequency: currentNovel.releaseFrequency || '',
         alternativeNames: currentNovel.alternativeNames || '',
-        
         chapterType: currentNovel.chapterType || 'TEXT',
         totalChapters: currentNovel.totalChapters || 0,
         seriesStatus: currentNovel.seriesStatus || 'ONGOING',
@@ -325,6 +322,7 @@ export default function AdminDashboard() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+
     setCurrentNovel(prev => {
       if (!prev) return prev;
       return { ...prev, [name]: value };
@@ -470,10 +468,31 @@ export default function AdminDashboard() {
                   }}
                   placeholder="Enter brand name"
                 />
+                <Label htmlFor="brandName">Brand/Company/Group</Label>
+                <Input
+                  id="brandName"
+                  name="brand.name"
+                  value={currentNovel?.brand?.name || ''}
+                  onChange={(e) => {
+                    const { value } = e.target;
+                    setCurrentNovel(prev => ({
+                      ...prev!,
+                      brand: {
+                        ...prev!.brand,
+                        name: value
+                      }
+                    }));
+                  }}
+                  placeholder="Enter brand name"
+                />
               </div>
+              {/* {/* <div>
+                <Label htmlFor="brandLogo">Brand Logo URL</Label>
+                <Input id="brandLogo" name="brand.logo" value={currentNovel?.brand?.logo || ''} onChange={handleInputChange} />
+              </div> */}
               <div>
                 <Label htmlFor="seriesType">Series Type</Label>
-                  <Select name="seriesType" value={currentNovel?.seriesType || 'ORIGINAL'} onValueChange={(value) => handleSelectChange('seriesType', value as 'ORIGINAL' | 'TRANSLATED' | 'FAN_FIC')}>
+                <Select name="seriesType" value={currentNovel?.seriesType || 'ORIGINAL'} onValueChange={(value) => handleSelectChange('seriesType', value as 'ORIGINAL' | 'TRANSLATED' | 'FAN_FIC')}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a series type" />
                   </SelectTrigger>
@@ -487,20 +506,25 @@ export default function AdminDashboard() {
               <div>
                 <Label htmlFor="styleCategory">Style Category</Label>
                 <Autocomplete
-                  suggestions={styleCategories}
+                  suggestions={styleCategories} // Use the style categories array
                   selectedItems={currentNovel?.styleCategory?.primary ? [currentNovel.styleCategory.primary] : []}
                   onSelect={(items) => {
                     setCurrentNovel(prev => ({
                       ...prev!,
                       styleCategory: {
                         ...prev!.styleCategory,
-                        primary: items[0] || ''
+                        primary: items[0] || '' // Set the first selected item as the primary style category
                       }
                     }))
                   }}
                   placeholder="Select a style category..."
                 />
+                
               </div>
+              {/* {/* <div>
+                <Label htmlFor="secondaryStyles">Secondary Style Categories (comma-separated)</Label>
+                <Input id="secondaryStyles" name="styleCategory.secondary" value={currentNovel?.styleCategory?.secondary?.join(', ') || ''} onChange={handleInputChange} />
+              </div> */}
               <div>
                 <Label htmlFor="originalLanguage">Original Language</Label>
                 <Input
@@ -558,6 +582,8 @@ export default function AdminDashboard() {
                   placeholder="Enter English publisher"
                 />
               </div>
+              
+              
               <div>
                 <Label htmlFor="translatedLanguages">Translated Languages (comma-separated)</Label>
                 <Input
@@ -627,6 +653,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <Label htmlFor="availabilityType">Availability Criteria</Label>
+                <Label htmlFor="availabilityType">Availability Criteria</Label>
                 <Select name="availability.type" value={currentNovel?.availability?.type || 'FREE'} onValueChange={(value) => handleSelectChange('availability.type', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select availability type" />
@@ -637,7 +664,12 @@ export default function AdminDashboard() {
                     <SelectItem value="PAID">Paid</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>      
+              </div>
+              {/* {/* <div>
+                <Label htmlFor="price">Price</Label>
+                <Input id="price" name="availability.price" type="number" min="0" value={currentNovel?.availability?.price || 0} onChange={handleInputChange} />
+              </div> */}
+             
               <div>
                 <Label htmlFor="seriesNumber">Series/Volume Number</Label>
                 <Input
@@ -659,223 +691,7 @@ export default function AdminDashboard() {
                   placeholder="Enter series/volume number"
                 />
               </div>
-              <div className="space-y-4">
-                <Label>Series Release Year and Month</Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="releaseYear" className="text-sm">Year</Label>
-                    <Select
-                      value={String(currentNovel?.seriesInfo?.releaseYear || currentYear)}
-                      onValueChange={(value) => {
-                        const year = parseInt(value);
-                        setCurrentNovel(prev => ({
-                          ...prev!,
-                          seriesInfo: {
-                            ...prev!.seriesInfo,
-                            releaseYear: year,
-                            firstReleaseDate: Timestamp.fromDate(new Date(
-                              year,
-                              (prev?.seriesInfo?.releaseMonth || 1) - 1
-                            ))
-                          }
-                        }));
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select year" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {years.map((year) => (
-                          <SelectItem key={year} value={year}>
-                            {year}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="releaseMonth" className="text-sm">Month</Label>
-                    <Select
-                      value={currentNovel?.seriesInfo?.releaseMonth 
-                        ? String(currentNovel.seriesInfo.releaseMonth) 
-                        : String(new Date().getMonth() + 1)}
-                      onValueChange={(value) => {
-                        const monthIndex = parseInt(value);
-                        setCurrentNovel(prev => ({
-                          ...prev!,
-                          seriesInfo: {
-                            ...prev!.seriesInfo,
-                            releaseMonth: monthIndex,
-                            firstReleaseDate: Timestamp.fromDate(new Date(
-                              prev?.seriesInfo?.releaseYear || currentYear,
-                              monthIndex - 1
-                            ))
-                          }
-                        }));
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select month" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {months.map((month, index) => (
-                          <SelectItem key={month} value={String(index + 1)}>
-                            {month}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  <span>Selected: {currentNovel?.seriesInfo?.releaseMonth && currentNovel?.seriesInfo?.releaseYear ? 
-                    `${months[currentNovel.seriesInfo.releaseMonth - 1]} ${currentNovel.seriesInfo.releaseYear}` : 
-                    'No date selected'}
-                  </span>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <Label>First Release Date</Label>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="firstReleaseYear" className="text-sm">Year</Label>
-                    <Select
-                      value={String(currentNovel?.seriesInfo?.firstReleaseDate?.toDate().getFullYear() || currentYear)}
-                      onValueChange={(value) => {
-                        const year = parseInt(value);
-                        const currentDate = currentNovel?.seriesInfo?.firstReleaseDate?.toDate() || new Date();
-                        const newDate = new Date(year, currentDate.getMonth(), currentDate.getDate());
-                        
-                        setCurrentNovel(prev => ({
-                          ...prev!,
-                          seriesInfo: {
-                            ...prev!.seriesInfo,
-                            firstReleaseDate: Timestamp.fromDate(newDate)
-                          }
-                        }));
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select year" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {years.map((year) => (
-                          <SelectItem key={year} value={year}>
-                            {year}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="firstReleaseMonth" className="text-sm">Month</Label>
-                    <Select
-                      value={String((currentNovel?.seriesInfo?.firstReleaseDate?.toDate().getMonth() || 0) + 1)}
-                      onValueChange={(value) => {
-                        const monthIndex = parseInt(value) - 1;
-                        const currentDate = currentNovel?.seriesInfo?.firstReleaseDate?.toDate() || new Date();
-                        const newDate = new Date(currentDate.getFullYear(), monthIndex, currentDate.getDate());
-                        
-                        setCurrentNovel(prev => ({
-                          ...prev!,
-                          seriesInfo: {
-                            ...prev!.seriesInfo,
-                            firstReleaseDate: Timestamp.fromDate(newDate)
-                          }
-                        }));
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select month" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {months.map((month, index) => (
-                          <SelectItem key={month} value={String(index + 1)}>
-                            {month}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="firstReleaseDay" className="text-sm">Day</Label>
-                    <Select
-                      value={String(currentNovel?.seriesInfo?.firstReleaseDate?.toDate().getDate() || 1)}
-                      onValueChange={(value) => {
-                        const day = parseInt(value);
-                        const currentDate = currentNovel?.seriesInfo?.firstReleaseDate?.toDate() || new Date();
-                        const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-                        
-                        setCurrentNovel(prev => ({
-                          ...prev!,
-                          seriesInfo: {
-                            ...prev!.seriesInfo,
-                            firstReleaseDate: Timestamp.fromDate(newDate)
-                          }
-                        }));
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select day" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from(
-                          { length: getDaysInMonth(
-                            currentNovel?.seriesInfo?.firstReleaseDate?.toDate().getFullYear() || currentYear,
-                            (currentNovel?.seriesInfo?.firstReleaseDate?.toDate().getMonth() || 0) + 1
-                          ) },
-                          (_, i) => String(i + 1)
-                        ).map((day) => (
-                          <SelectItem key={day} value={day}>
-                            {day}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  <span>Selected: {currentNovel?.seriesInfo?.firstReleaseDate ? 
-                    currentNovel.seriesInfo.firstReleaseDate.toDate().toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    }) : 
-                    'No date selected'}
-                  </span>
-                </div>
-              </div>
               
-              <div>
-                <Label htmlFor="genres">Genres</Label>
-                <Autocomplete
-                  suggestions={Object.keys(genreColors)}
-                  selectedItems={currentNovel?.genres?.map(g => g.name) || []}
-                  onSelect={(items) => {
-                    setCurrentNovel(prev => ({
-                      ...prev!,
-                      genres: items.map(name => ({ name }))
-                    }))
-                  }}
-                  placeholder="Select genres..."
-                />
-              </div>
-              <div>
-                <Label htmlFor="tags">Tags</Label>
-                <Autocomplete
-                  suggestions={tags}
-                  selectedItems={currentNovel?.tags || []}
-                  onSelect={(items) => {
-                    setCurrentNovel(prev => ({
-                      ...prev!,
-                      tags: items
-                    }))
-                  }}
-                  placeholder="Select tags..."
-                />
-              </div>
               <div className="space-y-4">
                 <Label>Series Release Year and Month</Label>
                 <div className="grid grid-cols-2 gap-4">
@@ -1113,6 +929,8 @@ export default function AdminDashboard() {
                   </Select>
                 </div>
               )}
+              
+                
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-medium mb-4">Series Artists</h3>
@@ -1486,3 +1304,5 @@ export default function AdminDashboard() {
     </div>
   )
 }
+
+
