@@ -468,23 +468,6 @@ export default function AdminDashboard() {
                   }}
                   placeholder="Enter brand name"
                 />
-                <Label htmlFor="brandName">Brand/Company/Group</Label>
-                <Input
-                  id="brandName"
-                  name="brand.name"
-                  value={currentNovel?.brand?.name || ''}
-                  onChange={(e) => {
-                    const { value } = e.target;
-                    setCurrentNovel(prev => ({
-                      ...prev!,
-                      brand: {
-                        ...prev!.brand,
-                        name: value
-                      }
-                    }));
-                  }}
-                  placeholder="Enter brand name"
-                />
               </div>
               {/* {/* <div>
                 <Label htmlFor="brandLogo">Brand Logo URL</Label>
