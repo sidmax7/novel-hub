@@ -24,11 +24,8 @@ export interface Novel {
     english?: string;
   };
   releaseFrequency: string;
-  alternativeNames: {
-    abbreviations?: string[];
-    originalName?: string;
-    otherNames?: string[];
-  };
+  alternativeNames: string;
+  
   chapterType: 'TEXT' | 'MANGA' | 'VIDEO';
   totalChapters: number;
   seriesStatus: 'ONGOING' | 'COMPLETED' | 'ON HOLD' | 'CANCELLED' | 'UPCOMING';
