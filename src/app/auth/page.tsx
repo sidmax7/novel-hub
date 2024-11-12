@@ -93,7 +93,7 @@ useEffect(() => {
       >
         <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg px-8 py-6">
           <h2 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">
-            {isLogin ? 'Log In' : 'Sign Up'} to NovelHub
+            {isLogin ? 'Log In' : 'Sign Up'} to Novellize
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
