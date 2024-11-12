@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/app/authcontext'
 import { db } from '@/lib/firebaseConfig'
-import { collection, addDoc, query, orderBy, onSnapshot, Timestamp, DocumentData, collectionGroup } from 'firebase/firestore'
+import { collection, addDoc, query, orderBy, onSnapshot, Timestamp} from 'firebase/firestore'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"

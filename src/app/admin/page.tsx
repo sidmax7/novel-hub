@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/app/authcontext'
 import { db, storage } from '@/lib/firebaseConfig'
 import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, orderBy, getDoc } from 'firebase/firestore'
@@ -24,7 +24,7 @@ import { genreColors } from '@/app/genreColors'
 import { tags } from '../tags'
 // import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
+
 
 // Define the style categories
 const styleCategories = [
@@ -344,11 +344,6 @@ export default function AdminDashboard() {
       return { ...prev, [name]: value };
     });
   };
-
-  const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const tags = e.target.value.split(',').map(tag => tag.trim())
-    setCurrentNovel(prev => ({ ...prev!, tags }))
-  }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

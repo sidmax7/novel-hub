@@ -3,10 +3,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Menu, Moon, Sun, LogOut, User, ChevronsLeftRightIcon, MessageSquare } from "lucide-react"
+import { Search,Moon, Sun, LogOut, User, ChevronsLeftRightIcon, MessageSquare } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion} from 'framer-motion'
 import { useAuth } from './authcontext'
 import { signOut } from 'firebase/auth'
 import { auth, db } from '@/lib/firebaseConfig'

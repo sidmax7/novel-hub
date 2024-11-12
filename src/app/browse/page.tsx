@@ -3,12 +3,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Check, ChevronLeft, ChevronRight, BookOpen, X, Home, Sun, Moon } from "lucide-react"
+import { Search, Check, ChevronLeft, ChevronRight, X, Home} from "lucide-react"
 import Link from "next/link"
 import { motion } from 'framer-motion'
 import { useTheme } from 'next-themes'
 import { useAuth } from '../authcontext'
-import { collection, query, orderBy, getDocs, where } from 'firebase/firestore'
+import { collection, query, orderBy, getDocs} from 'firebase/firestore'
 import { db } from '@/lib/firebaseConfig'
 import { toast } from 'react-hot-toast'
 import Image from "next/image"
@@ -76,12 +76,6 @@ interface Novel {
   rank?: number
 }
 
-interface NovelIndex {
-  [key: string]: Set<string>
-}
-
-const CACHE_KEY = 'novelHubCache'
-const CACHE_EXPIRATION = 60 * 60 * 1000 // 1 hour in milliseconds
 const FILTER_STATE_KEY = 'novelHubFilterState'
 
 function BrowsePageContent() {
@@ -92,7 +86,6 @@ function BrowsePageContent() {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([])
   const [appliedGenres, setAppliedGenres] = useState<string[]>([])
   const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const { user } = useAuth()
   const router = useRouter()
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -144,7 +137,7 @@ function BrowsePageContent() {
       // If not in cache or invalid, fetch from Firebase
       console.log("Fetching from Firebase");
       let novelsRef = collection(db, 'novels');
-      let q = query(novelsRef, orderBy('title'));
+      const q = query(novelsRef, orderBy('title'));
 
       const querySnapshot = await getDocs(q);
       const fetchedNovels = querySnapshot.docs.map(doc => ({
@@ -311,21 +304,8 @@ function BrowsePageContent() {
     return key ? genreColors[key as keyof typeof genreColors] : genreColors.Horror;
   }
 
-  const changePage = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage)
-    }
-  }
 
-  const toggleSortOrder = () => {
-    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
-    setCurrentPage(1)
-  }
 
-  const changeSortCriteria = (criteria: 'releaseDate' | 'name') => {
-    setSortCriteria(criteria)
-    setCurrentPage(1)
-  }
 
   // Pagination logic
   const indexOfLastNovel = currentPage * itemsPerPage
@@ -334,38 +314,7 @@ function BrowsePageContent() {
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
 
-  const renderPageNumbers = () => {
-    const pageNumbers = []
-    const totalPagesToShow = 5
-    let startPage = Math.max(1, currentPage - Math.floor(totalPagesToShow / 2))
-    let endPage = Math.min(totalPages, startPage + totalPagesToShow - 1)
 
-    if (endPage - startPage + 1 < totalPagesToShow) {
-      startPage = Math.max(1, endPage - totalPagesToShow + 1)
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pageNumbers.push(
-        <Button
-          key={i}
-          onClick={() => changePage(i)}
-          variant={i === currentPage ? "default" : "outline"}
-          className={`px-3 py-2 rounded ${i === currentPage ? 'bg-[#F1592A] text-white' : ''}`}
-        >
-          {i}
-        </Button>
-      )
-    }
-
-    return pageNumbers
-  }
-
-  const resetFilters = () => {
-    setSelectedGenres([])
-    setSelectedTags([])
-    setSearchTerm('')
-    setCurrentPage(1)
-  }
 
   const handleSearch = () => {
     handleApplyFilters()

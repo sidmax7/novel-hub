@@ -3,14 +3,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Moon, Sun, LogOut, User, Plus, Home, MessageSquare, ChevronDown, ChevronUp, Image as ImageIcon } from "lucide-react"
+import { Search, Moon, Sun, LogOut, User, Plus, Home,Image as ImageIcon } from "lucide-react"
 import Link from "next/link"
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../authcontext'
 import { signOut } from 'firebase/auth'
 import { auth, db, storage } from '@/lib/firebaseConfig'
-import { collection, query, where, orderBy, getDocs, addDoc, serverTimestamp, updateDoc, arrayUnion, doc, Timestamp } from 'firebase/firestore'
+import { collection, query, where, orderBy, getDocs, addDoc, serverTimestamp,Timestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useRouter } from 'next/navigation'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -87,7 +87,6 @@ return (
 
 export default function ForumsPage() {
 const [mounted, setMounted] = useState(false)
-const { theme, setTheme } = useTheme()
 const [posts, setPosts] = useState<ForumPost[]>([])
 const [loading, setLoading] = useState(true)
 const { user } = useAuth()
@@ -174,7 +173,7 @@ const handleCreatePost = async (e: React.FormEvent) => {
       imageUrl = await getDownloadURL(imageRef)
     }
 
-    const newPost = await addDoc(collection(db, 'forumPosts'), {
+    await addDoc(collection(db, 'forumPosts'), {
       title: newPostTitle,
       content: newPostContent,
       author: userProfile?.username || 'Anonymous',

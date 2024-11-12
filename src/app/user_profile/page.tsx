@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import Image from 'next/image'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -9,15 +8,13 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { StarRating } from '@/components/ui/starrating'
 import { toast, Toaster } from 'react-hot-toast'
 import { useAuth } from '../authcontext'
-import { Edit, BookOpen, BookMarked, ThumbsUp, Upload, Moon, Sun, Home } from 'lucide-react'
+import { Edit, Upload, Moon, Sun, Home } from 'lucide-react'
 import { db } from '@/lib/firebaseConfig'
 import { Timestamp, doc, getDoc, collection, query, where, getDocs, updateDoc, limit, orderBy, arrayUnion, arrayRemove } from 'firebase/firestore'
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useTheme } from 'next-themes'
-import { Switch } from '@radix-ui/react-switch'
 import Link from 'next/link'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import ReactCrop, { Crop } from 'react-image-crop'
@@ -73,7 +70,6 @@ export default function UserProfilePage() {
   const { user } = useAuth()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
-  const [followedNovelIds, setFollowedNovelIds] = useState<string[]>([])
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false)
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [crop, setCrop] = useState<Crop>()
@@ -101,7 +97,6 @@ export default function UserProfilePage() {
           favoriteGenres: userData.favoriteGenres || [],
           readingGoal: userData.readingGoal || 0,
         })
-        setFollowedNovelIds(userData.followedNovels || [])
       }
       setLoading(false)
     } catch (error) {
@@ -265,12 +260,10 @@ export default function UserProfilePage() {
         await updateDoc(userRef, {
           followedNovels: arrayUnion(novelId)
         })
-        setFollowedNovelIds(prev => [...prev, novelId])
       } else {
         await updateDoc(userRef, {
           followedNovels: arrayRemove(novelId)
         })
-        setFollowedNovelIds(prev => prev.filter(id => id !== novelId))
       }
       await fetchFollowedNovels(user.uid)
     } catch (error) {

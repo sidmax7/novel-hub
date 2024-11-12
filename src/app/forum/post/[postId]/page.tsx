@@ -7,15 +7,14 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search, Moon, Sun, LogOut, User, Home, MessageSquare, ChevronDown, ChevronUp, MoreHorizontal, ChevronLeft } from "lucide-react"
+import { Search, Moon, Sun, LogOut, User, Home, MessageSquare, ChevronDown, ChevronUp, ChevronLeft } from "lucide-react"
 import Link from "next/link"
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/app/authcontext'
 import { signOut } from 'firebase/auth'
-import { auth, db, storage } from '@/lib/firebaseConfig'
-import { collection, query, where, orderBy, getDocs, addDoc, serverTimestamp, updateDoc, arrayUnion, doc, getDoc, Timestamp } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { auth, db} from '@/lib/firebaseConfig'
+import { collection, query, where, orderBy, getDocs, addDoc, serverTimestamp,doc, getDoc} from 'firebase/firestore'
 import { Toaster, toast } from 'react-hot-toast'
 import { useTheme } from 'next-themes'
 import {

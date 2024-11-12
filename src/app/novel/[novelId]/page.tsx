@@ -5,15 +5,14 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, increment, Timestamp, arrayRemove, arrayUnion } from 'firebase/firestore'
+import { doc, getDoc, collection, query, getDocs, orderBy, updateDoc, increment, Timestamp, arrayRemove, arrayUnion } from 'firebase/firestore'
 import { db } from '@/lib/firebaseConfig'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { StarRating } from '@/components/ui/starrating'
 import { BookMarked, ThumbsUp, Home, Moon, Sun, BookOpen, MessageSquare } from 'lucide-react'
-import { Switch } from "@/components/ui/switch"
 import { toast, Toaster } from 'react-hot-toast'
 import CommentSystem from '@/components/ui/commentsystem'
 import { motion, AnimatePresence } from 'framer-motion'
