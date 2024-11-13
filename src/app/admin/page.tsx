@@ -556,8 +556,9 @@ export default function AdminDashboard() {
                   placeholder="Enter English publisher"
                 />
               </div>
-              
-              
+              {/* <div>
+                <Label htmlFor="translatedLanguages">Translated Languages (comma-separated)</Label>
+              </div> */}
               <div>
                 <Label htmlFor="translatedLanguages">Translated Languages (comma-separated)</Label>
                 <Input
