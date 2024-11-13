@@ -434,7 +434,7 @@ export default function AdminDashboard() {
                 <Input id="title" name="title" value={currentNovel?.title || ''} onChange={handleInputChange} required />
               </div>
               <div>
-                <Label htmlFor="synopsis">Synopsis/Summary/Summary</Label>
+                <Label htmlFor="synopsis">Synopsis/Summary</Label>
                 <Textarea id="synopsis" name="synopsis" value={currentNovel?.synopsis || ''} onChange={handleInputChange} required />
               </div>
               <div>
@@ -464,10 +464,6 @@ export default function AdminDashboard() {
                   placeholder="Enter brand name"
                 />
               </div>
-              {/* {/* <div>
-                <Label htmlFor="brandLogo">Brand Logo URL</Label>
-                <Input id="brandLogo" name="brand.logo" value={currentNovel?.brand?.logo || ''} onChange={handleInputChange} />
-              </div> */}
               <div>
                 <Label htmlFor="seriesType">Series Type</Label>
                 <Select name="seriesType" value={currentNovel?.seriesType || 'ORIGINAL'} onValueChange={(value) => handleSelectChange('seriesType', value as 'ORIGINAL' | 'TRANSLATED' | 'FAN_FIC')}>
