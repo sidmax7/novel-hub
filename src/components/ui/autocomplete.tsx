@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, memo } from 'react'
 import { Input } from "./input"
 import { Button } from "./button"
 import { ScrollArea } from "./scroll-area"
@@ -12,13 +12,13 @@ interface AutocompleteProps {
   className?: string
 }
 
-export function Autocomplete({
+export const Autocomplete = memo(({
   suggestions,
   selectedItems = [],
   onSelect,
   placeholder = "Type to search...",
   className
-}: AutocompleteProps) {
+}: AutocompleteProps) => {
   const [inputValue, setInputValue] = useState('')
   const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([])
   const [isOpen, setIsOpen] = useState(false)
@@ -106,4 +106,4 @@ export function Autocomplete({
       )}
     </div>
   )
-} 
+})

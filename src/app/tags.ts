@@ -54,7 +54,7 @@ export const tags = [
     "Half-human Protagonist", "Handjob", "Handsome Male Lead", "Hard-Working Protagonist", "Harem-seeking Protagonist", 
     "Harsh Training", "Hated Protagonist", "Healers", "Heartwarming", "Heaven", "Heavenly Tribulation", "Hell", 
     "Helpful Protagonist", "Herbalist", "Heroes", "Heterochromia", "Hidden Abilities", "Hiding True Abilities", 
-    "Hiding True Identity", "Hikikomori", "Homunculus", "Honest Protagonist", "Hospital", "Hot-blooded Protagonist", 
+    "Hiding True Identity", "Hikikomori", "Homunculus", "Honest Protagonist", "Hospital", 
     "Hot-blooded Protagonist", "Human Experimentation", "Human Weapon", "Human-Nonhuman Relationship", 
     "Humanoid Protagonist", "Hunters", "Hypnotism", "Identity Crisis", "Imaginary Friend", "Immortals", 
     "Imperial Harem", "Incest", "Incubus", "Indecisive Protagonist", "Industrialization", "Inferiority Complex", 

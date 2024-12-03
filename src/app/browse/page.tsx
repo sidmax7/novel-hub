@@ -144,10 +144,25 @@ function BrowsePageContent() {
       try {
         cachedNovels = await redis.get('all_novels');
         if (cachedNovels) {
-          cachedNovels = JSON.parse(cachedNovels as string);
+          console.log('Raw Redis data:', cachedNovels);
+          try {
+            // Check if the data is already an object (some Redis clients auto-parse)
+            if (typeof cachedNovels === 'object') {
+              console.log('Data is already parsed');
+              cachedNovels = cachedNovels;
+            } else {
+              console.log('Attempting to parse string data');
+              cachedNovels = JSON.parse(cachedNovels as string);
+            }
+          } catch (parseError) {
+            console.error('JSON Parse Error:', parseError);
+            console.error('Invalid JSON data:', cachedNovels);
+            cachedNovels = null; // Reset on parse error
+          }
         }
       } catch (redisError) {
         console.error("Error fetching from Redis:", redisError);
+        cachedNovels = null;
       }
       
       if (cachedNovels && Array.isArray(cachedNovels) && cachedNovels.length > 0) {
@@ -173,19 +188,50 @@ function BrowsePageContent() {
         tags: doc.data().tags || [],
       } as Novel));
 
-      // Store in Redis cache
+      // Store in Redis cache with sanitization
       try {
-        await redis.set('all_novels', JSON.stringify(fetchedNovels), { ex: 3600 });
+        const sanitizeNovelForCache = (novel: Novel) => {
+          return {
+            novelId: novel.novelId,
+            title: novel.title || '',
+            publishers: {
+              original: novel.publishers?.original || '',
+              english: novel.publishers?.english || ''
+            },
+            genres: novel.genres || [],
+            rating: novel.rating || 0,
+            coverPhoto: novel.coverPhoto || '',
+            authorId: novel.authorId || '',
+            tags: novel.tags || [],
+            likes: novel.likes || 0,
+            synopsis: novel.synopsis || '',
+            releaseDate: novel.releaseDate || null
+          };
+        };
+
+        const sanitizedNovels = fetchedNovels.map(sanitizeNovelForCache);
+        const novelString = JSON.stringify(sanitizedNovels);
+        
+        // Verify the data is valid JSON before storing
+        JSON.parse(novelString); // This will throw if invalid
+        
+        await redis.set('all_novels', novelString, { ex: 3600 });
+        console.log('Successfully cached novels in Redis');
       } catch (cacheError) {
         console.error("Error storing in Redis:", cacheError);
+        if (cacheError instanceof Error) {
+          console.error("Error details:", cacheError.message);
+        }
       }
 
       setNovels(fetchedNovels);
       setFilteredNovels(fetchedNovels);
     } catch (error) {
       console.error("Error fetching novels:", error);
+      if (error instanceof Error) {
+        console.error("Error details:", error.message);
+      }
       toast.error("Failed to load novels. Please try again later.");
-      // Set empty arrays on error to prevent undefined
       setNovels([]);
       setFilteredNovels([]);
     } finally {
