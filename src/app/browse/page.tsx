@@ -87,7 +87,7 @@ function BrowsePageContent() {
   const [currentPage, setCurrentPage] = useState(1)
   const [sortCriteria, setSortCriteria] = useState<'releaseDate' | 'name'>('releaseDate')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const [itemsPerPage] = useState(2)
+  const [itemsPerPage] = useState(5)
   const [isLoading, setIsLoading] = useState(true)
 
   // Filter state variables
