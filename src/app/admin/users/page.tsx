@@ -94,7 +94,7 @@ export default function UserManagement() {
           <div className="flex justify-between items-center">
             <CardTitle className="text-3xl font-bold">User Management</CardTitle>
             <Link href="/admin">
-              <Button variant="outline" className="hover:bg-gray-100">
+              <Button variant="outline" className="">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Admin
               </Button>
