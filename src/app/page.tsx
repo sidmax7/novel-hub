@@ -435,37 +435,6 @@ export default function ModernLightNovelsHomepage() {
     <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Power Ranking */}
-          <div className="bg-white dark:bg-[#3E3F3E] rounded-lg p-8 shadow-md">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]">Power Ranking</h2>
-              <span className="bg-blue-500 text-white px-3 py-1.5 rounded text-base">Popular</span>
-            </div>
-            <div className="space-y-6">
-              {popularNovels.slice(0, 5).map((novel, index) => (
-                <Link href={`/novel/${novel.novelId}`} key={novel.novelId}>
-                  <div className="flex items-center space-x-4 hover:bg-gray-50 dark:hover:bg-[#232120] p-3 rounded-lg transition-colors h-[120px]">
-                    <span className="font-bold text-[#F1592A] w-8 text-lg">{(index + 1).toString().padStart(2, '0')}</span>
-                    <Image
-                      src={novel.coverPhoto || '/assets/cover.jpg'}
-                      alt={novel.title}
-                      width={60}
-                      height={90}
-                      className="object-cover rounded"
-                    />
-                    <div className="flex-1 min-w-0 h-full flex flex-col justify-center">
-                      <h3 className="font-medium text-base text-[#232120] dark:text-[#E7E7E8] line-clamp-2 mb-1">{novel.title}</h3>
-                      <div className="flex flex-col text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">{novel.genres[0]?.name || 'Fantasy'}</span>
-                        <span className="text-yellow-500">★ {novel.rating?.toFixed(1) || '0.0'}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-
           {/* New Releases */}
           <div className="bg-white dark:bg-[#3E3F3E] rounded-lg p-8 shadow-md">
             <div className="flex items-center justify-between mb-6">
@@ -496,12 +465,43 @@ export default function ModernLightNovelsHomepage() {
               ))}
             </div>
           </div>
+          {/* Power Ranking */}
+          <div className="bg-white dark:bg-[#3E3F3E] rounded-lg p-8 shadow-md">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]">Trending</h2>
+              <span className="bg-blue-500 text-white px-3 py-1.5 rounded text-base">Top 5</span>
+            </div>
+            <div className="space-y-6">
+              {popularNovels.slice(0, 5).map((novel, index) => (
+                <Link href={`/novel/${novel.novelId}`} key={novel.novelId}>
+                  <div className="flex items-center space-x-4 hover:bg-gray-50 dark:hover:bg-[#232120] p-3 rounded-lg transition-colors h-[120px]">
+                    <span className="font-bold text-[#F1592A] w-8 text-lg">{(index + 1).toString().padStart(2, '0')}</span>
+                    <Image
+                      src={novel.coverPhoto || '/assets/cover.jpg'}
+                      alt={novel.title}
+                      width={60}
+                      height={90}
+                      className="object-cover rounded"
+                    />
+                    <div className="flex-1 min-w-0 h-full flex flex-col justify-center">
+                      <h3 className="font-medium text-base text-[#232120] dark:text-[#E7E7E8] line-clamp-2 mb-1">{novel.title}</h3>
+                      <div className="flex flex-col text-sm">
+                        <span className="text-gray-500 dark:text-gray-400">{novel.genres[0]?.name || 'Fantasy'}</span>
+                        <span className="text-yellow-500">★ {novel.rating?.toFixed(1) || '0.0'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
 
           {/* Collection Ranking */}
           <div className="bg-white dark:bg-[#3E3F3E] rounded-lg p-8 shadow-md">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]">Collection Ranking</h2>
-              <span className="bg-purple-500 text-white px-3 py-1.5 rounded text-base">Top</span>
+              <h2 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]">Most Read</h2>
+              <span className="bg-purple-500 text-white px-3 py-1.5 rounded text-base">All Time</span>
             </div>
             <div className="space-y-6">
               {popularNovels.slice(0, 5).map((novel, index) => (
@@ -541,7 +541,7 @@ export default function ModernLightNovelsHomepage() {
             </div>
             {popularNovels.filter(novel => novel.coverPhoto && novel.title).slice(0, 5).length > 1 && (
               <div className="relative">
-                <div className="relative h-[400px] rounded-lg overflow-hidden">
+                <div className="relative h-[400px] rounded-md overflow-hidden">
                   {popularNovels
                     .filter(novel => novel.coverPhoto && novel.title)
                     .slice(0, 5)
