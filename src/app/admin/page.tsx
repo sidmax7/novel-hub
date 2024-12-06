@@ -382,6 +382,11 @@ export default function AdminDashboard() {
 
   return (
     <div className="container mx-auto p-4">
+      <div className="flex justify-between items-center mb-4">
+  <div className="text-sm text-muted-foreground">
+    Total Novels: {novels.length}
+  </div>
+</div>
       <Toaster />
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">{getPageTitle()}</h1>
