@@ -25,6 +25,10 @@ import {
 import { useTheme } from 'next-themes'
 import LoadingSpinner from '@/components/LoadingSpinner' // Add this import
 import { genreColors } from './genreColors'
+import WeeklyBookSection from '@/components/WeeklySection'
+import { NovelRankings } from '@/components/NovelRanking'
+import { LatestReleasesCarousel } from '@/components/CarouselList'
+import { NovelCarouselSection } from '@/components/NovelCarouselSection'
 
 
 interface Novel {
@@ -86,7 +90,7 @@ const fetchLatestNovels = async () => {
   if (cachedData) {
     const { data, timestamp } = JSON.parse(cachedData)
     if (Date.now() - timestamp < CACHE_EXPIRATION) {
-      return data.slice(0, 10)
+      return data.slice(0, 20)
     }
   }
 
@@ -94,7 +98,7 @@ const fetchLatestNovels = async () => {
   const q = query(
     collection(db, 'novels'), 
     orderBy('metadata.createdAt', 'desc'), 
-    limit(10)
+    limit(20)
   )
   const querySnapshot = await getDocs(q)
   const novels = querySnapshot.docs.map(doc => ({ 
@@ -432,245 +436,13 @@ export default function ModernLightNovelsHomepage() {
         </div>
       </section>
 
-    <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* New Releases */}
-          <div className="bg-white dark:bg-[#3E3F3E] rounded-lg p-8 shadow-md">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]">New</h2>
-              <span className="bg-green-500 text-white px-3 py-1.5 rounded text-base">Latest</span>
-            </div>
-            <div className="space-y-6">
-              {latestNovels.slice(0, 5).map((novel, index) => (
-                <Link href={`/novel/${novel.novelId}`} key={novel.novelId}>
-                  <div className="flex items-center space-x-4 hover:bg-gray-50 dark:hover:bg-[#232120] p-3 rounded-lg transition-colors h-[120px]">
-                    <span className="font-bold text-[#F1592A] w-8 text-lg">{(index + 1).toString().padStart(2, '0')}</span>
-                    <Image
-                      src={novel.coverPhoto || '/assets/cover.jpg'}
-                      alt={novel.title}
-                      width={60}
-                      height={90}
-                      className="object-cover rounded"
-                    />
-                    <div className="flex-1 min-w-0 h-full flex flex-col justify-center">
-                      <h3 className="font-medium text-base text-[#232120] dark:text-[#E7E7E8] line-clamp-2 mb-1">{novel.title}</h3>
-                      <div className="flex flex-col text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">{novel.genres[0]?.name || 'Fantasy'}</span>
-                        <span className="text-yellow-500">★ {novel.rating?.toFixed(1) || '0.0'}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-          {/* Power Ranking */}
-          <div className="bg-white dark:bg-[#3E3F3E] rounded-lg p-8 shadow-md">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]">Trending</h2>
-              <span className="bg-blue-500 text-white px-3 py-1.5 rounded text-base">Top 5</span>
-            </div>
-            <div className="space-y-6">
-              {popularNovels.slice(0, 5).map((novel, index) => (
-                <Link href={`/novel/${novel.novelId}`} key={novel.novelId}>
-                  <div className="flex items-center space-x-4 hover:bg-gray-50 dark:hover:bg-[#232120] p-3 rounded-lg transition-colors h-[120px]">
-                    <span className="font-bold text-[#F1592A] w-8 text-lg">{(index + 1).toString().padStart(2, '0')}</span>
-                    <Image
-                      src={novel.coverPhoto || '/assets/cover.jpg'}
-                      alt={novel.title}
-                      width={60}
-                      height={90}
-                      className="object-cover rounded"
-                    />
-                    <div className="flex-1 min-w-0 h-full flex flex-col justify-center">
-                      <h3 className="font-medium text-base text-[#232120] dark:text-[#E7E7E8] line-clamp-2 mb-1">{novel.title}</h3>
-                      <div className="flex flex-col text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">{novel.genres[0]?.name || 'Fantasy'}</span>
-                        <span className="text-yellow-500">★ {novel.rating?.toFixed(1) || '0.0'}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
+      <NovelRankings
+          newReleases={latestNovels}
+          trending={popularNovels}
+          popular={popularNovels}
+        />
 
-
-          {/* Collection Ranking */}
-          <div className="bg-white dark:bg-[#3E3F3E] rounded-lg p-8 shadow-md">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]">Most Read</h2>
-              <span className="bg-purple-500 text-white px-3 py-1.5 rounded text-base">All Time</span>
-            </div>
-            <div className="space-y-6">
-              {popularNovels.slice(0, 5).map((novel, index) => (
-                <Link href={`/novel/${novel.novelId}`} key={novel.novelId}>
-                  <div className="flex items-center space-x-4 hover:bg-gray-50 dark:hover:bg-[#232120] p-3 rounded-lg transition-colors h-[120px]">
-                    <span className="font-bold text-[#F1592A] w-8 text-lg">{(index + 1).toString().padStart(2, '0')}</span>
-                    <Image
-                      src={novel.coverPhoto || '/assets/cover.jpg'}
-                      alt={novel.title}
-                      width={60}
-                      height={90}
-                      className="object-cover rounded"
-                    />
-                    <div className="flex-1 min-w-0 h-full flex flex-col justify-center">
-                      <h3 className="font-medium text-base text-[#232120] dark:text-[#E7E7E8] line-clamp-2 mb-1">{novel.title}</h3>
-                      <div className="flex flex-col text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">{novel.genres[0]?.name || 'Fantasy'}</span>
-                        <span className="text-yellow-500">★ {novel.rating?.toFixed(1) || '0.0'}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Weekly Featured Novel */}
-          <div className="bg-white dark:bg-[#3E3F3E] rounded-lg p-8 shadow-md">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]">Weekly Book</h2>
-            </div>
-            {popularNovels.filter(novel => novel.coverPhoto && novel.title).slice(0, 5).length > 1 && (
-              <div className="relative">
-                <div className="relative h-[400px] rounded-md overflow-hidden">
-                  {popularNovels
-                    .filter(novel => novel.coverPhoto && novel.title)
-                    .slice(0, 5)
-                    .map((novel, index) => (
-                      <div
-                        key={novel.novelId}
-                        className={`absolute w-full h-full transition-all duration-500 transform ${
-                          index === currentSlide ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
-                        }`}
-                      >
-                        <div className="relative w-full h-full flex items-center">
-                          {/* Blurred background */}
-                          <div className="absolute inset-0 z-0">
-                            <Image
-                              src={novel.coverPhoto || '/assets/cover.jpg'}
-                              alt=""
-                              fill
-                              className="object-cover blur-md brightness-50"
-                            />
-                          </div>
-                          
-                          {/* Content container */}
-                          <div className="relative z-10 w-full h-full flex px-12">
-                            {/* Book cover */}
-                            <div className="w-1/3 h-full flex items-center justify-center">
-                              <div className="relative w-[200px] h-[300px] shadow-2xl">
-                                <Image
-                                  src={novel.coverPhoto || '/assets/cover.jpg'}
-                                  alt={novel.title}
-                                  fill
-                                  className="object-cover rounded-lg"
-                                />
-                              </div>
-                            </div>
-                            
-                            {/* Book info */}
-                            <div className="w-2/3 flex flex-col justify-center pl-8">
-                              <h3 className="text-2xl font-bold text-white mb-4">{novel.title}</h3>
-                              <p className="text-gray-200 text-lg mb-4 line-clamp-5">
-                                {novel.synopsis}
-                              </p>
-                              <div className="flex items-center space-x-2 text-lg text-yellow-500">
-                                <span>★</span>
-                                <span>{novel.rating?.toFixed(1) || '0.0'}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-                
-                {popularNovels.filter(novel => novel.coverPhoto && novel.title).slice(0, 5).length > 1 && (
-                  <>
-                    <button
-                      onClick={() => {
-                        if (autoSlideInterval) {
-                          clearInterval(autoSlideInterval);
-                        }
-                        setCurrentSlide(c => (c > 0 ? c - 1 : Math.min(4, popularNovels.filter(novel => novel.coverPhoto && novel.title).length - 1)));
-                      }}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/75 text-white p-2 rounded-full z-20"
-                    >
-                      <ChevronLeft className="w-6 h-6" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (autoSlideInterval) {
-                          clearInterval(autoSlideInterval);
-                        }
-                        setCurrentSlide(c => (c < Math.min(4, popularNovels.filter(novel => novel.coverPhoto && novel.title).length - 1) ? c + 1 : 0));
-                      }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/75 text-white p-2 rounded-full z-20"
-                    >
-                      <ChevronRight className="w-6 h-6" />
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Announcements */}
-          <div className="bg-white dark:bg-[#3E3F3E] rounded-lg p-8 shadow-md">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]">Announcements</h2>
-            </div>
-            <div className="space-y-4">
-              {announcements.slice(0, 3).map((announcement) => (
-                <Link 
-                  href={`/forum/post/${announcement.id}`} 
-                  key={announcement.id}
-                  className="block p-4 rounded-r-lg dark:bg-[#232120] hover:bg-gray-50 dark:hover:bg-[#232120] transition-colors
-                    border border-gray-200 dark:border-[#3E3F3E] 
-                    shadow-sm hover:shadow-md hover:border-[#F1592A] dark:hover:border-[#F1592A]
-                    relative overflow-hidden h-[120px]"
-                >
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#F1592A] opacity-100"></div>
-                  <div className="flex items-center space-x-4 h-full">
-                    <div className="flex-1 pl-3">
-                      <h3 className="font-medium text-[#232120] dark:text-[#E7E7E8] mb-2 line-clamp-1">
-                        {announcement.title}
-                      </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
-                        {announcement.content}
-                      </p>
-                      <span className="text-xs text-gray-400 dark:text-gray-500 mt-2 block">
-                        {new Date(announcement.createdAt?.toDate()).toLocaleDateString()}
-                      </span>
-                    </div>
-                    {announcement.image && (
-                      <div className="flex-shrink-0">
-                        <Image
-                          src={announcement.image}
-                          alt={announcement.title}
-                          width={80}
-                          height={80}
-                          className=" object-cover px-2"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <WeeklyBookSection popularNovels={popularNovels} announcements={announcements} />
 
     <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
       <div className="container mx-auto px-4">
@@ -714,6 +486,17 @@ export default function ModernLightNovelsHomepage() {
             </motion.div>
       </div>
     </section>
+    <LatestReleasesCarousel
+          novels={latestNovels}
+          loading={loading}
+          onFollowChange={handleFollowChange}
+        />
+
+<NovelCarouselSection 
+        novels={latestNovels}
+        sectionTitle="New Arrivals"
+        category="latest"
+      />
 
         {/* <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
           <div className="container mx-auto px-4">

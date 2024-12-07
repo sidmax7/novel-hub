@@ -26,6 +26,7 @@
     "@vercel/analytics": "^1.4.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "embla-carousel-react": "^8.5.1",
     "firebase": "^10.13.1",
     "framer-motion": "^11.5.5",
     "ioredis": "^5.4.1",
