@@ -28,7 +28,6 @@ import { genreColors } from './genreColors'
 import WeeklyBookSection from '@/components/WeeklySection'
 import { NovelRankings } from '@/components/NovelRanking'
 import { LatestReleasesCarousel } from '@/components/CarouselList'
-import { NovelCarouselSection } from '@/components/NovelCarouselSection'
 
 
 interface Novel {
@@ -486,19 +485,14 @@ export default function ModernLightNovelsHomepage() {
             </motion.div>
       </div>
     </section>
+    
     <LatestReleasesCarousel
           novels={latestNovels}
           loading={loading}
           onFollowChange={handleFollowChange}
         />
 
-<NovelCarouselSection 
-        novels={latestNovels}
-        sectionTitle="New Arrivals"
-        category="latest"
-      />
-
-        {/* <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
+        <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
           <div className="container mx-auto px-4">
             <motion.h2 
               className="text-2xl md:text-3xl font-bold mb-6 text-[#232120] dark:text-[#E7E7E8]"
@@ -539,9 +533,9 @@ export default function ModernLightNovelsHomepage() {
               </Link>
             </motion.div>
           </div>
-        </section> */}
+        </section>
 
-        <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
+        <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120] relative z-10">
           <div className={`container rounded-lg mx-auto px-6 md:px-12 py-8 md:py-12 ${
             mounted && theme === 'dark'
               ? 'bg-black dark:bg-[#3E3F3E]'
@@ -593,42 +587,6 @@ export default function ModernLightNovelsHomepage() {
           </div>
         </section>
 
-        {/* <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
-          <div className="container mx-auto px-4">
-            <motion.h2 
-              className="text-2xl md:text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100"
-              variants={fadeIn}
-            >
-              Upcoming Releases
-            </motion.h2>
-            <motion.div 
-              className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6"
-              variants={staggerChildren}
-            >
-              {[1, 2, 3].map((release) => (
-                <motion.div 
-                  key={release}
-                  className="flex flex-col md:flex-row items-center space-y-2 md:space-x-4 bg-gray-50 dark:bg-[#232120] p-4 rounded-lg"
-                  variants={fadeIn}
-                  whileHover={{ scale: 1.03 }}
-                >
-                  <Image
-                    src={`/assets/cover.jpg`}
-                    alt={`Upcoming Release ${release}`}
-                    width={100}
-                    height={150}
-                    className="w-full md:w-auto h-auto md:h-[150px] object-cover rounded"
-                  />
-                  <div className="flex flex-col justify-center">
-                    <h3 className="font-semibold text-lg mb-1">Novel Title {release}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Published by Publisher Name</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Release Date: Soon</p>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section> */}
       </main>
       <footer className="border-t py-6 md:py-8 bg-white dark:bg-[#232120] dark:border-[#3E3F3E]">
         <div className="container mx-auto px-4 md:flex md:items-center md:justify-between">

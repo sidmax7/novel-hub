@@ -49,6 +49,7 @@ interface Novel {
     name: string
   }[] // Update to an array of strings
   rating: number
+  synopsis: string
   coverPhoto: string
   publishers: {
     original: string

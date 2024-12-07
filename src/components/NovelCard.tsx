@@ -13,12 +13,53 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import { genreColors } from '@/app/genreColors'
 import { useTheme } from 'next-themes'
 
+// Custom scrollbar styles
+const scrollbarStyles = `
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(241, 89, 42, 0.5) transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    margin: 2px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(241, 89, 42, 0.8), rgba(241, 89, 42, 0.6));
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(241, 89, 42, 1), rgba(241, 89, 42, 0.8));
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+`
+
+// Add styles to head
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style')
+  style.textContent = scrollbarStyles
+  document.head.appendChild(style)
+}
+
 interface Novel {
   novelId: string
   title: string
   genres: {
     name: string
   }[] // Update to an array of strings
+  synopsis: string
   rating: number
   coverPhoto: string
   publishers: {
@@ -146,7 +187,7 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
     return key ? genreColors[key as keyof typeof genreColors] : genreColors.Horror;
   }
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden group relative">
       <Link href={`/novel/${novel.novelId}`} passHref legacyBehavior>
         <a className="block">
           <div className="relative w-full pt-[150%]">
@@ -158,7 +199,7 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
               className="object-cover"
             />
             <div className="absolute top-2 right-2">
-              <span className={`px-2 py-1 rounded-md text-xs font-semibold ${
+              <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${
                 theme === 'dark' 
                   ? 'bg-gray-800 text-white' 
                   : 'bg-white text-gray-800'
@@ -166,48 +207,73 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
                 {novel.availability?.type || 'Free'}
               </span>
             </div>
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 transform transition-all duration-300 group-hover:opacity-0">
+              <h3 className="font-semibold text-lg text-white">{novel.title}</h3>
+            </div>
+            <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col p-4">
+              <div className="mb-2 transform translate-y-8 group-hover:translate-y-0 transition-transform duration-300">
+                <h3 className="font-semibold text-base text-white mb-1">{novel.title}</h3>
+                <p className="text-xs text-gray-300">by {novel.publishers.original}</p>
+              </div>
+              
+              <div className="flex-grow overflow-y-auto mb-2 custom-scrollbar transform translate-y-8 group-hover:translate-y-0 transition-transform duration-300 delay-75">
+                <p className="text-sm text-gray-200 leading-tight p-1">{novel.synopsis}</p>
+              </div>
+              
+              <div className="flex flex-col gap-2 transform translate-y-8 group-hover:translate-y-0 transition-transform duration-300 delay-100">
+                <div>
+                  <div className="flex items-center mb-1 scale-75 origin-left">
+                    <StarRating rating={novel.rating} />
+                    <span className="text-xs text-gray-300 ml-1">({novel.rating})</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {novel.genres.slice(0, 2).map((g, i) => (
+                      <span 
+                        key={i}
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                          theme === 'dark'
+                            ? getColorScheme(g.name).dark
+                            : getColorScheme(g.name).light
+                        }`}
+                      >
+                        {g.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center gap-2">
+                  <Button
+                    variant={isFollowing ? "secondary" : "default"}
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleFollowNovel();
+                    }}
+                  >
+                    {isFollowing ? 'Unfollow' : 'Follow'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`h-7 text-xs flex items-center ${isLiked ? 'text-red-500' : 'text-white'}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleLikeNovel();
+                    }}
+                  >
+                    <ThumbsUp className="mr-1" size={14} />
+                    <span>{likes}</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
-          <CardContent className="p-4">
-            <h3 className="font-semibold text-lg mb-1 truncate">{novel.title}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Published by {novel.publishers.original}</p>
-            <div className="flex items-center justify-between mb-2">
-              <StarRating rating={novel.rating} />
-            </div>
-            <div className="flex flex-wrap gap-1">
-            {novel.genres.slice(0, 3).map((g, i) => (
-                        <span 
-                          key={i}
-                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            theme === 'dark'
-                              ? getColorScheme(g.name).dark
-                              : getColorScheme(g.name).light
-                          }`}
-                        >
-                          {g.name}
-                        </span>
-              ))}
-            </div>
-          </CardContent>
         </a>
       </Link>
-      <CardFooter className="p-4 pt-0 flex justify-between items-center">
-        <Button
-          variant={isFollowing ? "secondary" : "default"}
-          size="sm"
-          onClick={handleFollowNovel}
-        >
-          {isFollowing ? 'Unfollow' : 'Follow'}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleLikeNovel}
-          className={`flex items-center ${isLiked ? 'text-red-500' : ''}`}
-        >
-          <ThumbsUp className="mr-1" size={16} />
-          <span>{likes}</span>
-        </Button>
-      </CardFooter>
     </Card>
   )
 }
