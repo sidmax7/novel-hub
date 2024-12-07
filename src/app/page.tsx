@@ -28,6 +28,7 @@ import { genreColors } from './genreColors'
 import WeeklyBookSection from '@/components/WeeklySection'
 import { NovelRankings } from '@/components/NovelRanking'
 import { LatestReleasesCarousel } from '@/components/CarouselList'
+import { TopReleasesSection } from '@/components/TopReleasesSection'
 
 
 interface Novel {
@@ -115,6 +116,22 @@ const fetchLatestNovels = async () => {
   return novels
 }
 
+const fetchEditorsPicks = async () => {
+  // For now, just get the latest 6 novels
+  const q = query(
+    collection(db, 'novels'),
+    orderBy('metadata.createdAt', 'desc'),
+    limit(6)
+  )
+  const querySnapshot = await getDocs(q)
+  return querySnapshot.docs.map(doc => ({
+    novelId: doc.id,
+    ...doc.data(),
+    genres: doc.data().genres || [],
+    publishers: doc.data().publishers || { original: 'Unknown' }
+  } as Novel))
+}
+
 export default function ModernLightNovelsHomepage() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -130,6 +147,7 @@ export default function ModernLightNovelsHomepage() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [autoSlideInterval, setAutoSlideInterval] = useState<NodeJS.Timeout | null>(null);
+  const [editorsPicks, setEditorsPicks] = useState<Novel[]>([])
 
   const scrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -140,12 +158,16 @@ export default function ModernLightNovelsHomepage() {
     const loadNovels = async () => {
       setLoading(true)
       try {
-        const [popular, latest] = await Promise.all([
+        const [popular, latest, editors] = await Promise.all([
           fetchPopularNovels(),
-          fetchLatestNovels()
+          fetchLatestNovels(),
+          fetchEditorsPicks()
         ])
+        console.log('Latest Novels:', latest)
+        console.log('Editors Picks:', editors)
         setPopularNovels(popular)
         setLatestNovels(latest)
+        setEditorsPicks(editors)
       } catch (error) {
         console.error('Error fetching novels:', error)
       }
@@ -436,61 +458,67 @@ export default function ModernLightNovelsHomepage() {
       </section>
 
       <NovelRankings
-          newReleases={latestNovels}
-          trending={popularNovels}
-          popular={popularNovels}
-        />
+        newReleases={latestNovels}
+        trending={popularNovels}
+        popular={popularNovels}
+      />
 
-    <WeeklyBookSection popularNovels={popularNovels} announcements={announcements} />
+      <WeeklyBookSection popularNovels={popularNovels} announcements={announcements} />
 
-    <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
-      <div className="container mx-auto px-4">
-        <motion.h2 
-          className="text-2xl md:text-3xl font-bold mb-6 text-[#232120] dark:text-[#E7E7E8]"
-          variants={fadeIn}
-        >
-          Latest Releases
-        </motion.h2>
-        {loading ? (
-          <div className="flex justify-center items-center h-40">
-            <LoadingSpinner />
-          </div>
-        ) : (
-          <motion.div 
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6"
-            variants={staggerChildren}
+      <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
+        <div className="container mx-auto px-4">
+          <motion.h2 
+            className="text-2xl md:text-3xl font-bold mb-6 text-[#232120] dark:text-[#E7E7E8]"
+            variants={fadeIn}
           >
-            {latestNovels.map((novel) => (
-              <motion.div
-                key={novel.novelId}
-                variants={fadeIn}
-                whileHover={{ scale: 1.05 }}
-              >
-                <NovelCard novel={novel as any} onFollowChange={handleFollowChange} />
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
-        <motion.div 
-              className="mt-8 md:mt-12 text-center"
-              variants={fadeIn}
-              whileHover={{ scale: 1.05  }}
-              whileTap={{ scale: 0.95 }}
+            Latest Releases
+          </motion.h2>
+          {loading ? (
+            <div className="flex justify-center items-center h-40">
+              <LoadingSpinner />
+            </div>
+          ) : (
+            <motion.div 
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6"
+              variants={staggerChildren}
             >
-              <Link href="/browse">
-                <Button variant="outline" className="border-[#F1592A] text-[#F1592A] hover:bg-[#F1592A] hover:text-white dark:border-[#F1592A] dark:text-[#F1592A] dark:hover:bg-[#F1592A] dark:hover:text-[#E7E7E8]">
-                  Browse All Novels
-                </Button>
-              </Link>
+              {latestNovels.map((novel) => (
+                <motion.div
+                  key={novel.novelId}
+                  variants={fadeIn}
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <NovelCard novel={novel as any} onFollowChange={handleFollowChange} />
+                </motion.div>
+              ))}
             </motion.div>
-      </div>
-    </section>
-    
-    <LatestReleasesCarousel
-          novels={latestNovels}
-          loading={loading}
-          onFollowChange={handleFollowChange}
-        />
+          )}
+          <motion.div 
+                className="mt-8 md:mt-12 text-center"
+                variants={fadeIn}
+                whileHover={{ scale: 1.05  }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Link href="/browse">
+                  <Button variant="outline" className="border-[#F1592A] text-[#F1592A] hover:bg-[#F1592A] hover:text-white dark:border-[#F1592A] dark:text-[#F1592A] dark:hover:bg-[#F1592A] dark:hover:text-[#E7E7E8]">
+                    Browse All Novels
+                  </Button>
+                </Link>
+              </motion.div>
+        </div>
+      </section>
+      
+      <TopReleasesSection
+              latestNovels={latestNovels}
+              editorsPicks={editorsPicks}
+              loading={loading}
+            />
+
+      <LatestReleasesCarousel
+            novels={latestNovels}
+            loading={loading}
+            onFollowChange={handleFollowChange}
+          />
 
         <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
           <div className="container mx-auto px-4">
