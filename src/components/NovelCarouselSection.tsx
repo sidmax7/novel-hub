@@ -109,7 +109,7 @@ export function NovelCarouselSection({ novels, sectionTitle, category }: NovelCa
               key={novel.novelId}
               className={`flex-shrink-0 cursor-pointer transition-all duration-300 w-[calc((100%-28px)/8)] hover:scale-105 ${
                 selectedNovel?.novelId === novel.novelId
-                  ? 'border-2 border-[#F1592A]'
+                  ? 'border-2 border-[#232120]'
                   : ''
               }`}
               onClick={() => setSelectedNovel(novel)}
