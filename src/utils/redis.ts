@@ -12,3 +12,4 @@ const getRedisClient = () => {
 };
 
 export const redis = getRedisClient(); 
+//hash//
