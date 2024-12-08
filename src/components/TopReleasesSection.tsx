@@ -134,15 +134,15 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
   }
 
   return (
-    <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
+    <section className="py-6 md:py-8 bg-[#E7E7E8] dark:bg-[#232120]">
       <div className="container mx-auto">
-        <div className="max-w-[1440px] mx-auto px-6">
-          <div className="flex flex-col lg:flex-row gap-16">
-            {/* Latest Releases Section - 65% width */}
+        <div className="max-w-[1440px] mx-auto px-4">
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Latest Releases Section - Reduced width to 60% */}
             {latestNovels.length > 0 && (
-              <div className="lg:w-[80%]">
-                <div className="flex justify-between items-center mb-8">
-                  <h2 className="text-2xl md:text-3xl font-bold text-[#232120] dark:text-[#E7E7E8]">
+              <div className="lg:w-[60%]">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl md:text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]">
                     New Arrivals
                   </h2>
                   {/* Navigation Arrows */}
@@ -162,13 +162,13 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                   </div>
                 </div>
                 
-                {/* Horizontal Novel Covers */}
-                <div className="relative mb-6 mt-4">
+                {/* Horizontal Novel Covers - Reduced sizes and padding */}
+                <div className="relative mb-4 mt-2">
                   <div 
                     ref={scrollContainerRef} 
                     className="overflow-x-auto scrollbar-hide"
                   >
-                    <div className="flex gap-4 min-w-min pb-4 pt-4 px-1">
+                    <div className="flex gap-3 min-w-min pb-3 pt-2 px-1">
                       {/* First set */}
                       {novels.map((novel, index) => (
                         <motion.div
@@ -176,10 +176,10 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}
-                          className="relative cursor-pointer flex-shrink-0 pt-1.5"
+                          className="relative cursor-pointer flex-shrink-0 pt-1"
                           onClick={() => handleNovelSelect(novel)}
                         >
-                          <div className={`relative w-28 h-40 rounded-lg ${
+                          <div className={`relative w-24 h-36 rounded-lg ${
                             selectedNovel?.novelId === novel.novelId
                               ? 'ring-2 ring-[#F1592A]'
                               : ''
@@ -189,7 +189,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                               alt={novel.title}
                               fill
                               className="object-cover rounded-lg"
-                              sizes="112px"
+                              sizes="96px"
                               quality={75}
                             />
                           </div>
@@ -202,10 +202,10 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}
-                          className="relative cursor-pointer flex-shrink-0 pt-1.5"
+                          className="relative cursor-pointer flex-shrink-0 pt-1"
                           onClick={() => handleNovelSelect(novel)}
                         >
-                          <div className={`relative w-28 h-40 rounded-lg ${
+                          <div className={`relative w-24 h-36 rounded-lg ${
                             selectedNovel?.novelId === novel.novelId
                               ? 'ring-2 ring-[#F1592A]'
                               : ''
@@ -215,7 +215,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                               alt={novel.title}
                               fill
                               className="object-cover rounded-lg"
-                              sizes="112px"
+                              sizes="96px"
                               quality={75}
                             />
                           </div>
@@ -228,10 +228,10 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}
-                          className="relative cursor-pointer flex-shrink-0 pt-1.5"
+                          className="relative cursor-pointer flex-shrink-0 pt-1"
                           onClick={() => handleNovelSelect(novel)}
                         >
-                          <div className={`relative w-28 h-40 rounded-lg ${
+                          <div className={`relative w-24 h-36 rounded-lg ${
                             selectedNovel?.novelId === novel.novelId
                               ? 'ring-2 ring-[#F1592A]'
                               : ''
@@ -241,7 +241,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                               alt={novel.title}
                               fill
                               className="object-cover rounded-lg"
-                              sizes="112px"
+                              sizes="96px"
                               quality={75}
                             />
                           </div>
@@ -251,16 +251,16 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                   </div>
                 </div>
 
-                {/* Selected Novel Details */}
+                {/* Selected Novel Details - Reduced sizes */}
                 {selectedNovel && (
                   <motion.div
                     key={selectedNovel.novelId}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.3 }}
-                    className="flex gap-6"
+                    className="flex gap-4"
                   >
-                    <div className="relative w-40 h-56 flex-shrink-0">
+                    <div className="relative w-32 h-48 flex-shrink-0">
                       <Image
                         src={selectedNovel.coverPhoto}
                         alt={selectedNovel.title}
@@ -269,10 +269,10 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                       />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-[#232120] dark:text-[#E7E7E8] mb-2">
+                      <h3 className="text-lg font-bold text-[#232120] dark:text-[#E7E7E8] mb-1">
                         {selectedNovel.title}
                       </h3>
-                      <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center gap-2 mb-2">
                         <span className="text-sm text-[#464646] dark:text-[#C3C3C3]">
                           {selectedNovel.publishers.original}
                         </span>
@@ -283,10 +283,10 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                           </span>
                         </div>
                       </div>
-                      <p className="text-sm text-[#464646] dark:text-[#C3C3C3] mb-4 line-clamp-3">
+                      <p className="text-sm text-[#464646] dark:text-[#C3C3C3] mb-3 line-clamp-3">
                         {selectedNovel.synopsis}
                       </p>
-                      <div className="flex gap-3">
+                      <div className="flex gap-2">
                         <Link href={`/novel/${selectedNovel.novelId}`}>
                           <Button className="bg-[#F1592A] text-white hover:bg-[#F1592A]/90">
                             READ NOW
@@ -302,40 +302,52 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
               </div>
             )}
 
-            {/* Editors' Picks Section - 35% width */}
+            {/* Editors' Choice Section - Increased width to 40% */}
             {editorsPicks.length > 0 && (
-              <div className={`${latestNovels.length > 0 ? 'lg:w-[35%] flex items-center flex-col' : 'w-full'}`}>
-                <h2 className="text-2xl md:text-3xl font-bold mb-6 text-[#232120] dark:text-[#E7E7E8] pl-1">
-                  Editors' Picks
-                </h2>
-                <div className="grid grid-cols-2 gap-y-1 gap-x-20 max-w-[350px]">
+              <div className={`${latestNovels.length > 0 ? 'lg:w-[40%]' : 'w-full'} bg-[#1A1A1A] dark:bg-[#1A1A1A] p-6 rounded-lg`}>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-white">
+                    Editors' Choice
+                  </h2>
+                  
+                </div>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-5">
                   {editorsPicks.map((novel, index) => (
-                    <motion.div
-                      key={novel.novelId}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      whileHover={{ scale: 1.05 }}
-                      className="relative w-32 h-44 rounded-lg overflow-hidden"
-                    >
-                      <Link href={`/novel/${novel.novelId}`}>
-                        <div className="relative w-full h-full">
+                    <Link key={novel.novelId} href={`/novel/${novel.novelId}`}>
+                      <div className="flex gap-3 group cursor-pointer">
+                        <div className="relative w-[70px] h-[95px] flex-shrink-0">
                           <Image
                             src={novel.coverPhoto}
                             alt={novel.title}
                             fill
-                            className="object-cover"
-                            sizes="128px"
+                            className="object-cover rounded"
+                            sizes="70px"
                             quality={75}
                           />
-                          <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 via-black/50 to-transparent backdrop-blur-[2px]">
-                            <h3 className="text-xs font-medium text-white line-clamp-1">
-                              {novel.title}
-                            </h3>
+                        </div>
+                        <div className="flex flex-col justify-center flex-1 min-w-0">
+                          <h3 className="font-medium text-sm text-white truncate group-hover:text-[#4B6BFB] leading-tight mb-1">
+                            {novel.title}
+                          </h3>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs text-[#94A3B8] truncate">
+                              {novel.publishers.original}
+                            </span>
+                          </div>
+                          <span className="text-xs text-[#94A3B8] mb-1">
+                            {novel.genres[0]?.name || 'Fantasy'}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center">
+                              <Star className="w-3 h-3 text-[#F1592A] fill-[#F1592A]" />
+                              <span className="ml-1 text-xs text-[#94A3B8]">
+                                {novel.rating.toFixed(1)}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </Link>
-                    </motion.div>
+                      </div>
+                    </Link>
                   ))}
                 </div>
               </div>

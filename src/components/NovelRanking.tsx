@@ -18,17 +18,18 @@ interface NovelRankingsProps {
 
 export function NovelRankings({ newReleases, trending, popular }: NovelRankingsProps) {
   const renderNovelList = (novels: Novel[], title: string, subtitle: string) => (
-    <div className="bg-white dark:bg-[#232120] rounded-lg p-4 shadow-md">
+    <div className="bg-[#E7E7E8] dark:bg-[#232120] rounded-lg p-4 ">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-3xl font-bold text-[#F1592A]">{title}</h2>
         <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
           #{subtitle}
         </span>
       </div>
+      <div className="h-[1px] w-full bg-[#F1592A] mb-4"></div>
       <div className="space-y-6">
         {novels.slice(0, 5).map((novel, index) => (
           <Link href={`/novel/${novel.novelId}`} key={novel.novelId}>
-            <div className="flex items-center space-x-2 hover:bg-gray-50 dark:hover:bg-[#3E3F3E] p-1.5 rounded-lg transition-colors h-[90px] bg-white dark:bg-[#232120] mb-2">
+            <div className="flex items-center space-x-2 hover:bg-gray-50 dark:hover:bg-[#3E3F3E] p-1.5 rounded-lg transition-colors h-[90px] bg-opacity-100 dark:bg-[#232120] mb-2">
               <span className="font-bold text-[#F1592A] w-6 text-base">{(index + 1).toString().padStart(2, '0')}</span>
               <Image
                 src={novel.coverPhoto || '/assets/cover.jpg'}
