@@ -323,12 +323,12 @@ function BrowsePageContent() {
       // Genre filtering - Include genres
       let includeGenresLower: string[] = [];
       try {
-        includeGenresLower = selectedGenres && typeof selectedGenres === 'string'
-          ? String(selectedGenres)
-              .split(',')
-              .map(g => g.trim().toLowerCase())
-              .filter(Boolean)
-          : [];
+        // Ensure selectedGenres is a string before splitting
+        const genresStr = String(selectedGenres || '');
+        includeGenresLower = genresStr
+          .split(',')
+          .map(g => g.trim().toLowerCase())
+          .filter(Boolean);
       } catch (error) {
         console.warn('Error processing selected genres:', error);
       }
@@ -347,12 +347,12 @@ function BrowsePageContent() {
       // Genre filtering - Exclude genres
       let excludeGenresLower: string[] = [];
       try {
-        excludeGenresLower = excludedGenres && typeof excludedGenres === 'string'
-          ? String(excludedGenres)
-              .split(',')
-              .map(g => g.trim().toLowerCase())
-              .filter(Boolean)
-          : [];
+        // Ensure excludedGenres is a string before splitting
+        const excludeStr = String(excludedGenres || '');
+        excludeGenresLower = excludeStr
+          .split(',')
+          .map(g => g.trim().toLowerCase())
+          .filter(Boolean);
       } catch (error) {
         console.warn('Error processing excluded genres:', error);
       }
@@ -361,26 +361,25 @@ function BrowsePageContent() {
         novelGenres.some(novelGenre => novelGenre.includes(genre))
       );
 
-      // Tag filtering with proper type checking
+      // Tag filtering
       let includeTags: string[] = [];
       let excludeTags: string[] = [];
       
       try {
-        includeTags = tagSearchInclude && typeof tagSearchInclude === 'string'
-          ? String(tagSearchInclude)
-              .toLowerCase()
-              .split(',')
-              .map(t => t.trim())
-              .filter(Boolean)
-          : [];
+        // Ensure tag strings before splitting
+        const includeStr = String(tagSearchInclude || '');
+        includeTags = includeStr
+          .toLowerCase()
+          .split(',')
+          .map(t => t.trim())
+          .filter(Boolean);
               
-        excludeTags = tagSearchExclude && typeof tagSearchExclude === 'string'
-          ? String(tagSearchExclude)
-              .toLowerCase()
-              .split(',')
-              .map(t => t.trim())
-              .filter(Boolean)
-          : [];
+        const excludeStr = String(tagSearchExclude || '');
+        excludeTags = excludeStr
+          .toLowerCase()
+          .split(',')
+          .map(t => t.trim())
+          .filter(Boolean);
       } catch (error) {
         console.warn('Error processing tags:', error);
       }
