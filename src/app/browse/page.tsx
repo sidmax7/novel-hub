@@ -165,8 +165,8 @@ function BrowsePageContent() {
 
   // Filter state variables
   const [tagLogic, setTagLogic] = useState<'AND' | 'OR'>('OR')
-  const [tagSearchInclude, setTagSearchInclude] = useState('')
-  const [tagSearchExclude, setTagSearchExclude] = useState('')
+  const [tagSearchInclude, setTagSearchInclude] = useState<string>('')
+  const [tagSearchExclude, setTagSearchExclude] = useState<string>('')
   const [readingStatus, setReadingStatus] = useState('all')
   const [publisherSearch, setPublisherSearch] = useState('')
   const [genreLogic, setGenreLogic] = useState<'AND' | 'OR'>('OR')
@@ -182,15 +182,15 @@ function BrowsePageContent() {
     if (savedFilterState) {
       try {
         const parsedState = JSON.parse(savedFilterState);
-        setSelectedGenres(parsedState.selectedGenres || '');
-        setExcludedGenres(parsedState.excludedGenres || '');
+        setSelectedGenres(String(parsedState.selectedGenres || ''));
+        setExcludedGenres(String(parsedState.excludedGenres || ''));
         setGenreLogic(parsedState.genreLogic || 'OR');
         setTagLogic(parsedState.tagLogic || 'OR');
-        setTagSearchInclude(parsedState.tagSearchInclude || '');
-        setTagSearchExclude(parsedState.tagSearchExclude || '');
+        setTagSearchInclude(String(parsedState.tagSearchInclude || ''));
+        setTagSearchExclude(String(parsedState.tagSearchExclude || ''));
         setReadingStatus(parsedState.readingStatus || 'all');
-        setPublisherSearch(parsedState.publisherSearch || '');
-        setSearchTerm(parsedState.searchTerm || '');
+        setPublisherSearch(String(parsedState.publisherSearch || ''));
+        setSearchTerm(String(parsedState.searchTerm || ''));
       } catch (error) {
         console.error('Error parsing filter state:', error);
       }
@@ -198,7 +198,7 @@ function BrowsePageContent() {
 
     const genreFromUrl = searchParams.get('genre')
     if (genreFromUrl) {
-      setSelectedGenres(genreFromUrl);
+      setSelectedGenres(String(genreFromUrl));
     }
   }, [searchParams]);
 
@@ -295,7 +295,7 @@ function BrowsePageContent() {
         (novel.publishers?.original?.toLowerCase().includes(searchTermLower) ?? false);
 
       // Genre filtering - Include genres
-      const includeGenresLower = selectedGenres
+      const includeGenresLower = (typeof selectedGenres === 'string' ? selectedGenres : '')
         .split(',')
         .map(g => g.trim().toLowerCase())
         .filter(Boolean); // Remove empty strings
@@ -317,7 +317,7 @@ function BrowsePageContent() {
       }
 
       // Genre filtering - Exclude genres
-      const excludeGenresLower = excludedGenres
+      const excludeGenresLower = (typeof excludedGenres === 'string' ? excludedGenres : '')
         .split(',')
         .map(g => g.trim().toLowerCase())
         .filter(Boolean); // Remove empty strings
@@ -327,11 +327,13 @@ function BrowsePageContent() {
       );
 
       // Tag filtering with null checks
-      const includeTags = (tagSearchInclude || '').toLowerCase().split(',')
+      const includeTags = (typeof tagSearchInclude === 'string' ? tagSearchInclude : '').toLowerCase()
+        .split(',')
         .map(t => t.trim())
         .filter(Boolean);
       
-      const excludeTags = (tagSearchExclude || '').toLowerCase().split(',')
+      const excludeTags = (typeof tagSearchExclude === 'string' ? tagSearchExclude : '').toLowerCase()
+        .split(',')
         .map(t => t.trim())
         .filter(Boolean);
       
