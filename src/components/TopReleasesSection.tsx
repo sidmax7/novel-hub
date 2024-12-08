@@ -104,13 +104,30 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
     <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
       <div className="container mx-auto">
         <div className="max-w-[1440px] mx-auto px-6">
-          <div className="flex flex-col lg:flex-row gap-12">
+          <div className="flex flex-col lg:flex-row gap-16">
             {/* Latest Releases Section - 65% width */}
             {latestNovels.length > 0 && (
-              <div className="lg:w-[65%]">
-                <h2 className="text-2xl md:text-3xl font-bold mb-8 text-[#232120] dark:text-[#E7E7E8]">
-                  New Arrivals
-                </h2>
+              <div className="lg:w-[80%]">
+                <div className="flex justify-between items-center mb-8">
+                  <h2 className="text-2xl md:text-3xl font-bold text-[#232120] dark:text-[#E7E7E8]">
+                    New Arrivals
+                  </h2>
+                  {/* Navigation Arrows */}
+                  <div className="flex gap-2">
+                    <div 
+                      onClick={() => scrollCarousel('left')}
+                      className="w-8 h-8 bg-white/80 dark:bg-black/80 rounded-full flex items-center justify-center cursor-pointer shadow-md backdrop-blur-sm hover:bg-white dark:hover:bg-black transition-colors"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-[#232120] dark:text-[#E7E7E8]" />
+                    </div>
+                    <div 
+                      onClick={() => scrollCarousel('right')}
+                      className="w-8 h-8 bg-white/80 dark:bg-black/80 rounded-full flex items-center justify-center cursor-pointer shadow-md backdrop-blur-sm hover:bg-white dark:hover:bg-black transition-colors"
+                    >
+                      <ChevronRight className="w-5 h-5 text-[#232120] dark:text-[#E7E7E8]" />
+                    </div>
+                  </div>
+                </div>
                 
                 {/* Horizontal Novel Covers */}
                 <div className="relative mb-6 mt-4">
@@ -119,7 +136,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                     className="overflow-x-auto scrollbar-hide"
                   >
                     <div className="flex gap-4 min-w-min pb-4 pt-4 px-1">
-                      {/* First set (for infinite scroll) */}
+                      {/* First set */}
                       {novels.map((novel, index) => (
                         <motion.div
                           key={`pre-${novel.novelId}`}
@@ -129,7 +146,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                           className="relative cursor-pointer flex-shrink-0 pt-1.5"
                           onClick={() => setSelectedNovel(novel)}
                         >
-                          <div className={`relative w-24 h-36 rounded-lg ${
+                          <div className={`relative w-28 h-40 rounded-lg ${
                             selectedNovel?.novelId === novel.novelId
                               ? 'ring-2 ring-[#F1592A]'
                               : ''
@@ -139,7 +156,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                               alt={novel.title}
                               fill
                               className="object-cover rounded-lg"
-                              sizes="96px"
+                              sizes="112px"
                               quality={75}
                             />
                           </div>
@@ -155,7 +172,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                           className="relative cursor-pointer flex-shrink-0 pt-1.5"
                           onClick={() => setSelectedNovel(novel)}
                         >
-                          <div className={`relative w-24 h-36 rounded-lg ${
+                          <div className={`relative w-28 h-40 rounded-lg ${
                             selectedNovel?.novelId === novel.novelId
                               ? 'ring-2 ring-[#F1592A]'
                               : ''
@@ -165,13 +182,13 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                               alt={novel.title}
                               fill
                               className="object-cover rounded-lg"
-                              sizes="96px"
+                              sizes="112px"
                               quality={75}
                             />
                           </div>
                         </motion.div>
                       ))}
-                      {/* Last set (for infinite scroll) */}
+                      {/* Last set */}
                       {novels.map((novel, index) => (
                         <motion.div
                           key={`post-${novel.novelId}`}
@@ -181,7 +198,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                           className="relative cursor-pointer flex-shrink-0 pt-1.5"
                           onClick={() => setSelectedNovel(novel)}
                         >
-                          <div className={`relative w-24 h-36 rounded-lg ${
+                          <div className={`relative w-28 h-40 rounded-lg ${
                             selectedNovel?.novelId === novel.novelId
                               ? 'ring-2 ring-[#F1592A]'
                               : ''
@@ -191,25 +208,13 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                               alt={novel.title}
                               fill
                               className="object-cover rounded-lg"
-                              sizes="96px"
+                              sizes="112px"
                               quality={75}
                             />
                           </div>
                         </motion.div>
                       ))}
                     </div>
-                  </div>
-                  <div 
-                    onClick={() => scrollCarousel('left')}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 dark:bg-black/80 rounded-full flex items-center justify-center cursor-pointer shadow-md backdrop-blur-sm -ml-4 hover:bg-white dark:hover:bg-black transition-colors"
-                  >
-                    <ChevronLeft className="w-5 h-5 text-[#232120] dark:text-[#E7E7E8]" />
-                  </div>
-                  <div 
-                    onClick={() => scrollCarousel('right')}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 dark:bg-black/80 rounded-full flex items-center justify-center cursor-pointer shadow-md backdrop-blur-sm -mr-4 hover:bg-white dark:hover:bg-black transition-colors"
-                  >
-                    <ChevronRight className="w-5 h-5 text-[#232120] dark:text-[#E7E7E8]" />
                   </div>
                 </div>
 
@@ -266,11 +271,11 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
 
             {/* Editors' Picks Section - 35% width */}
             {editorsPicks.length > 0 && (
-              <div className={`${latestNovels.length > 0 ? 'lg:w-[35%]' : 'w-full'}`}>
+              <div className={`${latestNovels.length > 0 ? 'lg:w-[35%] flex items-center flex-col' : 'w-full'}`}>
                 <h2 className="text-2xl md:text-3xl font-bold mb-6 text-[#232120] dark:text-[#E7E7E8] pl-1">
                   Editors' Picks
                 </h2>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-y-2 gap-x-5 max-w-[350px]">
                   {editorsPicks.map((novel, index) => (
                     <motion.div
                       key={novel.novelId}
@@ -278,7 +283,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
                       whileHover={{ scale: 1.05 }}
-                      className="relative w-24 h-36 rounded-lg overflow-hidden"
+                      className="relative w-32 h-44 rounded-lg overflow-hidden"
                     >
                       <Link href={`/novel/${novel.novelId}`}>
                         <div className="relative w-full h-full">
