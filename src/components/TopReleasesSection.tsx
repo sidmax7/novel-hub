@@ -34,12 +34,35 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isScrolling, setIsScrolling] = useState(false);
   const novels = latestNovels.slice(0, 10);
+  const [isAutoSlidePaused, setIsAutoSlidePaused] = useState(false);
 
   useEffect(() => {
     if (novels.length > 0 && !selectedNovel) {
       setSelectedNovel(novels[0]);
     }
-  }, [novels, selectedNovel]);
+  }, [novels]);
+
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+
+    if (!isAutoSlidePaused && novels.length > 0) {
+      intervalId = setInterval(() => {
+        setSelectedNovel((currentNovel) => {
+          const currentIndex = currentNovel 
+            ? novels.findIndex(novel => novel.novelId === currentNovel.novelId)
+            : -1;
+          const nextIndex = (currentIndex + 1) % novels.length;
+          return novels[nextIndex];
+        });
+      }, 8000);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [novels.length, isAutoSlidePaused]);
 
   const handleScroll = useCallback(() => {
     if (!scrollContainerRef.current || isScrolling) return;
@@ -83,6 +106,16 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
       });
     }
   };
+
+  const handleNovelSelect = useCallback((novel: Novel) => {
+    setSelectedNovel(novel);
+    setIsAutoSlidePaused(true);
+    
+    // Resume auto-sliding after 8 seconds of inactivity
+    setTimeout(() => {
+      setIsAutoSlidePaused(false);
+    }, 8000);
+  }, []);
 
   if (loading) {
     return (
@@ -144,7 +177,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}
                           className="relative cursor-pointer flex-shrink-0 pt-1.5"
-                          onClick={() => setSelectedNovel(novel)}
+                          onClick={() => handleNovelSelect(novel)}
                         >
                           <div className={`relative w-28 h-40 rounded-lg ${
                             selectedNovel?.novelId === novel.novelId
@@ -170,7 +203,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}
                           className="relative cursor-pointer flex-shrink-0 pt-1.5"
-                          onClick={() => setSelectedNovel(novel)}
+                          onClick={() => handleNovelSelect(novel)}
                         >
                           <div className={`relative w-28 h-40 rounded-lg ${
                             selectedNovel?.novelId === novel.novelId
@@ -196,7 +229,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}
                           className="relative cursor-pointer flex-shrink-0 pt-1.5"
-                          onClick={() => setSelectedNovel(novel)}
+                          onClick={() => handleNovelSelect(novel)}
                         >
                           <div className={`relative w-28 h-40 rounded-lg ${
                             selectedNovel?.novelId === novel.novelId
@@ -275,7 +308,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                 <h2 className="text-2xl md:text-3xl font-bold mb-6 text-[#232120] dark:text-[#E7E7E8] pl-1">
                   Editors' Picks
                 </h2>
-                <div className="grid grid-cols-2 gap-y-2 gap-x-5 max-w-[350px]">
+                <div className="grid grid-cols-2 gap-y-1 gap-x-20 max-w-[350px]">
                   {editorsPicks.map((novel, index) => (
                     <motion.div
                       key={novel.novelId}
@@ -292,7 +325,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                             alt={novel.title}
                             fill
                             className="object-cover"
-                            sizes="96px"
+                            sizes="128px"
                             quality={75}
                           />
                           <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 via-black/50 to-transparent backdrop-blur-[2px]">
