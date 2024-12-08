@@ -23,6 +23,7 @@ import { genreColors } from '../genreColors'
 import { Suspense } from 'react'
 import FilterSection from '@/components/FilterSection'
 import { ImageProps } from 'next/image'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 interface IconProps extends LucideProps {
   name: keyof typeof dynamicIconImports
@@ -213,7 +214,6 @@ function BrowsePageContent() {
       const CACHE_KEY = 'all_novels_v1';
       const CACHE_TTL = 3600;
 
-      // Try Redis first
       if (redis) {
         try {
           console.log('🔍 Checking Redis cache...');
@@ -222,71 +222,61 @@ function BrowsePageContent() {
             console.log('✨ Successfully retrieved data from Redis cache');
             let parsedData;
             
-            // Handle different types of cached data
             try {
-              // If it's a string, parse it
               parsedData = typeof cachedData === 'string' 
                 ? JSON.parse(cachedData)
-                : // If it's already an object, ensure it's an array
-                  Array.isArray(cachedData) ? cachedData : [];
+                : Array.isArray(cachedData) ? cachedData : [];
                 
-              // Validate the parsed data structure
               if (!Array.isArray(parsedData)) {
-                console.warn('❌ Cached data is not an array, falling back to Firebase');
                 throw new Error('Invalid cache format');
               }
               
-              console.log(`📚 Found ${parsedData.length} novels in cache`);
               setNovels(parsedData);
               setFilteredNovels(parsedData);
               return;
             } catch (parseError) {
-              console.warn('⚠️ Error parsing cached data:', parseError);
-              // Continue to Firebase fetch on parse error
+              const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown error occurred';
+              throw new Error(`Failed to parse cached data: ${errorMessage}`);
             }
           }
-          console.log('❌ No cached data found in Redis');
         } catch (redisError) {
-          console.warn('⚠️ Redis read failed, falling back to Firebase:', redisError);
+          console.error('Redis error:', redisError);
+          // Continue to Firebase fetch on Redis error
         }
       }
 
-      // Fetch from Firebase if no cache or cache failed
-      console.log('🔥 Fetching from Firebase...');
+      // Fetch from Firebase
       const novelsRef = collection(db, 'novels');
-      const q = query(
-        novelsRef,
-        orderBy('title')
-      );
-
+      const q = query(novelsRef, orderBy('title'));
+      
       const querySnapshot = await getDocs(q);
+      if (querySnapshot.empty) {
+        throw new Error('No novels found in the database');
+      }
+
       const fetchedNovels = querySnapshot.docs.map(doc => ({
         novelId: doc.id,
         ...doc.data()
       } as Novel));
 
-      console.log(`📚 Fetched ${fetchedNovels.length} novels from Firebase`);
-
-      // Update state
       setNovels(fetchedNovels);
       setFilteredNovels(fetchedNovels);
 
-      // Try to cache the new data
+      // Cache the data
       if (redis) {
         try {
-          console.log('💾 Caching data in Redis...');
           await redis.set(CACHE_KEY, JSON.stringify(fetchedNovels), {
             ex: CACHE_TTL
           });
-          console.log('✅ Successfully cached in Redis');
         } catch (cacheError) {
-          console.warn('⚠️ Failed to cache in Redis:', cacheError);
+          console.error('Failed to cache data:', cacheError);
         }
       }
 
     } catch (error) {
-      console.error("❌ Error fetching novels:", error);
-      toast.error("Failed to load novels. Please try again later.");
+      console.error("Error fetching novels:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to load novels");
+      throw error; // This will be caught by the ErrorBoundary
     } finally {
       setIsLoading(false);
     }
@@ -441,23 +431,26 @@ function BrowsePageContent() {
 
   // Handle apply filters button click
   const handleApplyFilters = useCallback(() => {
-    // Save filter state
-    const filterState = {
-      selectedGenres,
-      excludedGenres,
-      genreLogic,
-      tagLogic,
-      tagSearchInclude,
-      tagSearchExclude,
-      readingStatus,
-      publisherSearch,
-      searchTerm
-    };
-    
-    localStorage.setItem(FILTER_STATE_KEY, JSON.stringify(filterState));
-    
-    // Now actually apply the filters
-    applyFilters(novels);
+    try {
+      const filterState = {
+        selectedGenres,
+        excludedGenres,
+        genreLogic,
+        tagLogic,
+        tagSearchInclude,
+        tagSearchExclude,
+        readingStatus,
+        publisherSearch,
+        searchTerm
+      };
+      
+      localStorage.setItem(FILTER_STATE_KEY, JSON.stringify(filterState));
+      applyFilters(novels);
+    } catch (error) {
+      console.error("Error applying filters:", error);
+      toast.error("Failed to apply filters. Please try again.");
+      throw error; // This will be caught by the ErrorBoundary
+    }
   }, [
     novels,
     selectedGenres,
@@ -824,8 +817,10 @@ function BrowsePageContent() {
 
 export default function BrowsePage() {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
-      <BrowsePageContent />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<LoadingSpinner />}>
+        <BrowsePageContent />
+      </Suspense>
+    </ErrorBoundary>
   )
 }
