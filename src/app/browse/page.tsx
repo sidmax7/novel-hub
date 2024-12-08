@@ -22,7 +22,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import { genreColors } from '../genreColors'
 import { Suspense } from 'react'
 import FilterSection from '@/components/FilterSection'
-import { ImageProps } from 'next/image'
+
 
 interface IconProps extends LucideProps {
   name: keyof typeof dynamicIconImports
