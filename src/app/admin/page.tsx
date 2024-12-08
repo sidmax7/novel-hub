@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast, Toaster } from 'react-hot-toast'
-import { PlusIcon, Pencil, Trash, AlertTriangle, BookOpen, Home, User } from 'lucide-react'
+import { PlusIcon, Pencil, Trash, AlertTriangle, BookOpen, Home, User, Eye, Star } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Timestamp } from 'firebase/firestore'
@@ -54,6 +54,17 @@ const months = [
 const getDaysInMonth = (year: number, month: number) => {
   return new Date(year, month, 0).getDate();
 };
+
+// Add these stats-related components near the top of the file
+const StatsCard = ({ title, value, icon: Icon }: { title: string, value: string | number, icon: any }) => (
+  <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-4">
+    <div className="flex items-center gap-2">
+      <Icon className="h-4 w-4 text-muted-foreground" />
+      <p className="text-sm font-medium text-muted-foreground">{title}</p>
+    </div>
+    <p className="text-2xl font-bold">{value}</p>
+  </div>
+);
 
 export default function AdminDashboard() {
   const [novels, setNovels] = useState<Novel[]>([])
@@ -131,6 +142,12 @@ export default function AdminDashboard() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [authorsList, setAuthorsList] = useState<{ id: string; name: string; username: string; }[]>([]);
 
+  // Add these new state variables for stats
+  const [stats, setStats] = useState({
+    totalViews: 0,
+    totalLikes: 0,
+  });
+
   // Define fetchNovels as a callback
   const fetchNovels = useCallback(async () => {
     if (!user) return;
@@ -139,12 +156,15 @@ export default function AdminDashboard() {
       setLoading(true);
       let q;
       if (isAdmin) {
-        q = query(collection(db, 'novels'), orderBy('title'));
+        q = query(
+          collection(db, 'novels'), 
+          orderBy('metadata.createdAt', 'desc')
+        );
       } else {
         q = query(
           collection(db, 'novels'),
           where('uploader', '==', user.uid),
-          orderBy('title')
+          orderBy('metadata.createdAt', 'desc')
         );
       }
       const querySnapshot = await getDocs(q);
@@ -218,6 +238,24 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchNovels();
   }, [fetchNovels]);
+
+  // Add this function to calculate stats
+  const calculateStats = useCallback(() => {
+    const newStats = novels.reduce((acc, novel) => ({
+      totalViews: acc.totalViews + (novel.views || 0),
+      totalLikes: acc.totalLikes + (novel.likes || 0),
+    }), {
+      totalViews: 0,
+      totalLikes: 0,
+    });
+
+    setStats(newStats);
+  }, [novels]);
+
+  // Add this effect to update stats when novels change
+  useEffect(() => {
+    calculateStats();
+  }, [calculateStats]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -382,14 +420,81 @@ export default function AdminDashboard() {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-4">
-  <div className="text-sm text-muted-foreground">
-    Total Novels: {novels.length}
-  </div>
-</div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold mb-6">{getPageTitle()}</h1>
+        
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <StatsCard
+            title="Total Novels"
+            value={novels.length}
+            icon={BookOpen}
+          />
+          <StatsCard
+            title="Total Views"
+            value={stats.totalViews.toLocaleString()}
+            icon={Eye}
+          />
+          <StatsCard
+            title="Total Likes"
+            value={stats.totalLikes.toLocaleString()}
+            icon={Star}
+          />
+        </div>
+
+        {/* Status Distribution */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          <div className="rounded-lg border p-4">
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">Series Status Distribution</h3>
+            <div className="space-y-2">
+              {Object.entries(novels.reduce((acc, novel) => ({
+                ...acc,
+                [novel.seriesStatus]: (acc[novel.seriesStatus] || 0) + 1
+              }), {} as Record<string, number>)).map(([status, count]) => (
+                <div key={status} className="flex justify-between items-center">
+                  <span className="text-sm">{status}</span>
+                  <span className="text-sm font-medium">{count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border p-4">
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">Style Categories</h3>
+            <div className="space-y-2">
+              {Object.entries(novels.reduce((acc, novel) => ({
+                ...acc,
+                [novel.styleCategory.primary]: (acc[novel.styleCategory.primary] || 0) + 1
+              }), {} as Record<string, number>)).map(([style, count]) => (
+                <div key={style} className="flex justify-between items-center">
+                  <span className="text-sm">{style || 'Uncategorized'}</span>
+                  <span className="text-sm font-medium">{count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border p-4">
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">Recent Activity</h3>
+            <div className="space-y-2">
+              {novels
+                .sort((a, b) => b.metadata.updatedAt.toMillis() - a.metadata.updatedAt.toMillis())
+                .slice(0, 5)
+                .map(novel => (
+                  <div key={novel.novelId} className="flex justify-between items-center">
+                    <span className="text-sm truncate">{novel.title}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {new Date(novel.metadata.updatedAt.toMillis()).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <Toaster />
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">{getPageTitle()}</h1>
         <div className="flex gap-2">
           {isAdmin && (
             <Link href="/admin/users" passHref>
@@ -1228,6 +1333,9 @@ export default function AdminDashboard() {
               <TableHead>Status</TableHead>
               <TableHead>Series Type</TableHead>
               <TableHead>Primary Style</TableHead>
+              <TableHead>Chapters</TableHead>
+              <TableHead>Rating</TableHead>
+              <TableHead>Views</TableHead>
               {isAdmin && <TableHead>Uploader</TableHead>}
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -1252,12 +1360,14 @@ export default function AdminDashboard() {
                 <TableCell>{novel.seriesStatus}</TableCell>
                 <TableCell>{novel.seriesType}</TableCell>
                 <TableCell>{novel.styleCategory.primary}</TableCell>
+                <TableCell>{novel.totalChapters || 0}</TableCell>
+                <TableCell>{novel.rating ? `${novel.rating.toFixed(1)}/5` : 'N/A'}</TableCell>
+                <TableCell>{novel.views?.toLocaleString() || 0}</TableCell>
                 {isAdmin && <TableCell>{authorsList.find(author => author.id === novel.uploader)?.username || 'Unknown'}</TableCell>}
                 <TableCell>
                   <Button variant="outline" size="sm" className="mr-2" onClick={() => { setCurrentNovel(novel); setIsDialogOpen(true); }}>
                     <Pencil className="h-4 w-4"/>
                   </Button>
-                  {/* Add condition to check for both admin and author access */}
                   {(isAdmin || isAuthor) && (
                     <Link href={`/admin/novel/${novel.novelId}/chapters`} passHref>
                       <Button variant="outline" size="sm" className="mr-2">
