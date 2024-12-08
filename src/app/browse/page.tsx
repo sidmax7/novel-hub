@@ -7,7 +7,7 @@ import { Search, Check, ChevronLeft, ChevronRight, X, Home} from "lucide-react"
 import Link from "next/link"
 import { motion } from 'framer-motion'
 import { useTheme } from 'next-themes'
-import { collection, query, orderBy, getDocs} from 'firebase/firestore'
+import { collection, query, orderBy, getDocs, limit} from 'firebase/firestore'
 import { db } from '@/lib/firebaseConfig'
 import { toast } from 'react-hot-toast'
 import Image from "next/image"
@@ -89,6 +89,7 @@ function BrowsePageContent() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [itemsPerPage] = useState(5)
   const [isLoading, setIsLoading] = useState(true)
+  const [hasMore, setHasMore] = useState(false)
 
   // Filter state variables
   const [tagLogic, setTagLogic] = useState<'AND' | 'OR'>('OR')
@@ -138,106 +139,48 @@ function BrowsePageContent() {
 
   const fetchNovels = useCallback(async () => {
     try {
-      setIsLoading(true)
-      // Try to get data from Redis cache first
-      let cachedNovels;
-      try {
-        cachedNovels = await redis.get('all_novels');
-        if (cachedNovels) {
-          console.log('Raw Redis data:', cachedNovels);
-          try {
-            // Check if the data is already an object (some Redis clients auto-parse)
-            if (typeof cachedNovels === 'object') {
-              console.log('Data is already parsed');
-              cachedNovels = cachedNovels;
-            } else {
-              console.log('Attempting to parse string data');
-              cachedNovels = JSON.parse(cachedNovels as string);
-            }
-          } catch (parseError) {
-            console.error('JSON Parse Error:', parseError);
-            console.error('Invalid JSON data:', cachedNovels);
-            cachedNovels = null; // Reset on parse error
-          }
-        }
-      } catch (redisError) {
-        console.error("Error fetching from Redis:", redisError);
-        cachedNovels = null;
-      }
+      setIsLoading(true);
+      const ITEMS_PER_PAGE = 10;
       
-      if (cachedNovels && Array.isArray(cachedNovels) && cachedNovels.length > 0) {
-        console.log("Using cached data from Redis");
-        setNovels(cachedNovels);
-        setFilteredNovels(cachedNovels);
+      // Try Redis cache first
+      const cacheKey = `novels_page_${currentPage}`;
+      let cachedNovels = await redis.get(cacheKey);
+      
+      if (cachedNovels) {
+        const parsed = typeof cachedNovels === 'object' ? cachedNovels : JSON.parse(cachedNovels as string);
+        setNovels(prev => [...prev, ...parsed]);
+        setFilteredNovels(prev => [...prev, ...parsed]);
         return;
       }
 
-      // If not in cache or invalid, fetch from Firebase
-      console.log("Fetching from Firebase");
+      // If not in cache, fetch from Firebase with pagination
       const novelsRef = collection(db, 'novels');
-      const q = query(novelsRef, orderBy('title'));
+      const q = query(
+        novelsRef,
+        orderBy('title'),
+        limit(ITEMS_PER_PAGE)
+      );
 
       const querySnapshot = await getDocs(q);
       const fetchedNovels = querySnapshot.docs.map(doc => ({
         novelId: doc.id,
-        ...doc.data(),
-        genres: doc.data().genres || [], 
-        likes: doc.data().likes || 0,
-        synopsis: doc.data().synopsis || 'No synopsis available.',
-        rating: doc.data().rating || 0,
-        tags: doc.data().tags || [],
+        ...doc.data()
       } as Novel));
 
-      // Store in Redis cache with sanitization
-      try {
-        const sanitizeNovelForCache = (novel: Novel) => {
-          return {
-            novelId: novel.novelId,
-            title: novel.title || '',
-            publishers: {
-              original: novel.publishers?.original || '',
-              english: novel.publishers?.english || ''
-            },
-            genres: novel.genres || [],
-            rating: novel.rating || 0,
-            coverPhoto: novel.coverPhoto || '',
-            authorId: novel.authorId || '',
-            tags: novel.tags || [],
-            likes: novel.likes || 0,
-            synopsis: novel.synopsis || '',
-            releaseDate: novel.releaseDate || null
-          };
-        };
+      // Cache results
+      await redis.set(cacheKey, JSON.stringify(fetchedNovels), { ex: 3600 });
 
-        const sanitizedNovels = fetchedNovels.map(sanitizeNovelForCache);
-        const novelString = JSON.stringify(sanitizedNovels);
-        
-        // Verify the data is valid JSON before storing
-        JSON.parse(novelString); // This will throw if invalid
-        
-        await redis.set('all_novels', novelString, { ex: 3600 });
-        console.log('Successfully cached novels in Redis');
-      } catch (cacheError) {
-        console.error("Error storing in Redis:", cacheError);
-        if (cacheError instanceof Error) {
-          console.error("Error details:", cacheError.message);
-        }
-      }
+      setNovels(prev => [...prev, ...fetchedNovels]);
+      setFilteredNovels(prev => [...prev, ...fetchedNovels]);
+      setHasMore(fetchedNovels.length === ITEMS_PER_PAGE);
 
-      setNovels(fetchedNovels);
-      setFilteredNovels(fetchedNovels);
     } catch (error) {
       console.error("Error fetching novels:", error);
-      if (error instanceof Error) {
-        console.error("Error details:", error.message);
-      }
-      toast.error("Failed to load novels. Please try again later.");
-      setNovels([]);
-      setFilteredNovels([]);
+      toast.error("Failed to load novels");
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentPage]);
 
   // Load data on mount
   useEffect(() => {
@@ -483,6 +426,28 @@ function BrowsePageContent() {
     setMounted(true)
   }, [])
 
+  // Add pagination controls
+  const Pagination = () => (
+    <div className="flex justify-center mt-8 space-x-2">
+      <Button
+        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+        disabled={currentPage === 1 || isLoading}
+        variant="outline"
+      >
+        <ChevronLeft size={16} />
+        Previous
+      </Button>
+      <Button
+        onClick={() => setCurrentPage(prev => prev + 1)}
+        disabled={!hasMore || isLoading}
+        variant="outline"
+      >
+        Next
+        <ChevronRight size={16} />
+      </Button>
+    </div>
+  );
+
   return (
     <div className={`min-h-screen bg-[#E7E7E8] dark:bg-[#232120] ${mounted && theme === 'dark' ? 'dark' : ''}`}>
       <header className="bg-white dark:bg-[#232120] shadow">
@@ -717,36 +682,8 @@ function BrowsePageContent() {
                 ))}
               </motion.div>
 
-              {/* Pagination */}
-              {filteredNovels.length > itemsPerPage && (
-                <div className="flex justify-center mt-8 space-x-2">
-                  <Button
-                    onClick={() => paginate(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    variant="outline"
-                  >
-                    <ChevronLeft size={16} />
-                    Previous
-                  </Button>
-                  {Array.from({ length: Math.ceil(filteredNovels.length / itemsPerPage) }, (_, i) => (
-                    <Button
-                      key={i + 1}
-                      onClick={() => paginate(i + 1)}
-                      variant={currentPage === i + 1 ? "default" : "outline"}
-                    >
-                      {i + 1}
-                    </Button>
-                  ))}
-                  <Button
-                    onClick={() => paginate(currentPage + 1)}
-                    disabled={currentPage === Math.ceil(filteredNovels.length / itemsPerPage)}
-                    variant="outline"
-                  >
-                    Next
-                    <ChevronRight size={16} />
-                  </Button>
-                </div>
-              )}
+              {/* Add after novels grid */}
+              {filteredNovels.length > 0 && <Pagination />}
 
               {filteredNovels.length === 0 && (
                 <p className="text-center text-[#232120] dark:text-[#E7E7E8] mt-8">
