@@ -146,7 +146,6 @@ const NovelCoverImage = ({ src, alt, priority }: { src: string, alt: string, pri
       className="rounded object-cover"
       // Add blur placeholder for better loading experience
       placeholder="blur"
-      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx0fHRsdHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR3/2wBDAR0XFyAeIRshGxsdIR0hHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR3/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
       onError={(e) => {
         // Fallback to placeholder on error
         const img = e.target as HTMLImageElement;
@@ -221,14 +220,30 @@ function BrowsePageContent() {
           const cachedData = await redis.get(CACHE_KEY);
           if (cachedData) {
             console.log('✨ Successfully retrieved data from Redis cache');
-            const parsedData = typeof cachedData === 'string' 
-              ? JSON.parse(cachedData) 
-              : cachedData;
+            let parsedData;
             
-            console.log(`📚 Found ${parsedData.length} novels in cache`);
-            setNovels(parsedData);
-            setFilteredNovels(parsedData);
-            return;
+            // Handle different types of cached data
+            try {
+              // If it's a string, parse it
+              parsedData = typeof cachedData === 'string' 
+                ? JSON.parse(cachedData)
+                : // If it's already an object, ensure it's an array
+                  Array.isArray(cachedData) ? cachedData : [];
+                
+              // Validate the parsed data structure
+              if (!Array.isArray(parsedData)) {
+                console.warn('❌ Cached data is not an array, falling back to Firebase');
+                throw new Error('Invalid cache format');
+              }
+              
+              console.log(`📚 Found ${parsedData.length} novels in cache`);
+              setNovels(parsedData);
+              setFilteredNovels(parsedData);
+              return;
+            } catch (parseError) {
+              console.warn('⚠️ Error parsing cached data:', parseError);
+              // Continue to Firebase fetch on parse error
+            }
           }
           console.log('❌ No cached data found in Redis');
         } catch (redisError) {
