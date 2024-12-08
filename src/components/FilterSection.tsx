@@ -47,6 +47,10 @@ const FilterSection = memo(function FilterSection({
   handleApplyFilters: () => void
   handleResetFilters: () => void
 }) {
+  const safeSplit = (value: string | null | undefined) => {
+    if (!value) return [];
+    return value.split(',').filter(item => item.trim());
+  };
 
   return (
     <Card className="w-full max-w-sm">
@@ -73,7 +77,7 @@ const FilterSection = memo(function FilterSection({
             <Label htmlFor="include-genres">Include genres</Label>
             <Autocomplete
               suggestions={genres}
-              selectedItems={selectedGenres.split(',').filter(genre => genre.trim())}
+              selectedItems={safeSplit(selectedGenres)}
               onSelect={(items) => setSelectedGenres(items.join(', '))}
               placeholder="Select genres to include..."
             />
@@ -82,7 +86,7 @@ const FilterSection = memo(function FilterSection({
             <Label htmlFor="exclude-genres">Exclude genres</Label>
             <Autocomplete
               suggestions={genres}
-              selectedItems={excludedGenres.split(',').filter(genre => genre.trim())}
+              selectedItems={safeSplit(excludedGenres)}
               onSelect={(items) => setExcludedGenres(items.join(', '))}
               placeholder="Select genres to exclude..."
             />
@@ -108,7 +112,7 @@ const FilterSection = memo(function FilterSection({
             <Label htmlFor="include-tags">Include tags</Label>
             <Autocomplete
               suggestions={tags}
-              selectedItems={tagSearchInclude.split(',').filter(tag => tag.trim())}
+              selectedItems={safeSplit(tagSearchInclude)}
               onSelect={(items) => setTagSearchInclude(items.join(', '))}
               placeholder="Select tags to include..."
             />
@@ -117,7 +121,7 @@ const FilterSection = memo(function FilterSection({
             <Label htmlFor="exclude-tags">Exclude tags</Label>
             <Autocomplete
               suggestions={tags}
-              selectedItems={tagSearchExclude.split(',').filter(tag => tag.trim())}
+              selectedItems={safeSplit(tagSearchExclude)}
               onSelect={(items) => setTagSearchExclude(items.join(', '))}
               placeholder="Select tags to exclude..."
             />
