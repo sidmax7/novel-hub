@@ -7,6 +7,7 @@ interface Novel {
   coverPhoto: string
   genres: { name: string }[]
   rating: number
+  author: string
 }
 
 interface NovelRankingsProps {
@@ -20,8 +21,8 @@ export function NovelRankings({ newReleases, trending, popular }: NovelRankingsP
     <div className="bg-white dark:bg-[#232120] rounded-lg p-4 shadow-md">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-3xl font-bold text-[#F1592A]">{title}</h2>
-        <span className="bg-gradient-to-r from-[#F1592A] to-[#FF7F50] text-white px-4 py-2 rounded-full text-base font-semibold shadow-md hover:shadow-lg transition-shadow">
-          {subtitle}
+        <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+          #{subtitle}
         </span>
       </div>
       <div className="space-y-6">
@@ -36,12 +37,14 @@ export function NovelRankings({ newReleases, trending, popular }: NovelRankingsP
                 height={80}
                 className="object-cover rounded"
               />
-              <div className="flex-1 min-w-0 h-full flex flex-col justify-center">
-                <h3 className="font-medium text-sm text-[#232120] dark:text-[#E7E7E8] line-clamp-2 mb-0.5">{novel.title}</h3>
-                <div className="flex flex-col text-xs">
-                  <span className="text-gray-500 dark:text-gray-400">{novel.genres[0]?.name || 'Fantasy'}</span>
-                  <span className="text-yellow-500">★ {novel.rating?.toFixed(1) || '0.0'}</span>
+              <div className="flex-1 min-w-0 h-full flex flex-col justify-between">
+                <div>
+                  <h3 className="font-medium text-sm text-[#232120] dark:text-[#E7E7E8] line-clamp-2 mb-0.5">{novel.title}</h3>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {novel.genres[0]?.name || 'Fantasy'} • {novel.author || 'Unknown'}
+                  </span>
                 </div>
+                <span className="text-xs text-yellow-500">★ {novel.rating?.toFixed(1) || '0.0'}</span>
               </div>
             </div>
           </Link>

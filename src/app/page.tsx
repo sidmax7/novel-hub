@@ -10,7 +10,7 @@ import { motion} from 'framer-motion'
 import { useAuth } from './authcontext'
 import { signOut } from 'firebase/auth'
 import { auth, db } from '@/lib/firebaseConfig'
-import { collection, query, orderBy, limit, getDocs, doc, getDoc, where } from 'firebase/firestore'
+import { collection, query, orderBy, limit, getDocs, doc, getDoc, where, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { NovelCard } from '@/components/NovelCard'
@@ -29,6 +29,7 @@ import WeeklyBookSection from '@/components/WeeklySection'
 import { NovelRankings } from '@/components/NovelRanking'
 import { LatestReleasesCarousel } from '@/components/CarouselList'
 import { TopReleasesSection } from '@/components/TopReleasesSection'
+import { YouMayAlsoLikeSection } from '@/components/YouMayAlsoLikeSection'
 
 
 interface Novel {
@@ -47,6 +48,10 @@ interface Novel {
     createdAt: any;
     updatedAt: any;
   }
+  views?: number;
+  totalChapters?: number;
+  lastUpdated?: string;
+  author: string;
 }
 
 interface Announcement {
@@ -55,6 +60,20 @@ interface Announcement {
   content: string
   createdAt: any
   image?: string
+}
+
+interface RecommendedNovel {
+  id: string;
+  title: string;
+  coverImage: string;
+  category: string;
+  author: {
+    name: string;
+  };
+  tags: string[];
+  rating: number;
+  chaptersCount: number;
+  synopsis: string;
 }
 
 const CACHE_KEY = 'popularNovels'
@@ -76,7 +95,8 @@ const fetchPopularNovels = async () => {
   const novels = querySnapshot.docs.map(doc => ({ 
     novelId: doc.id, 
     ...doc.data(),
-    genres: doc.data().genres || []
+    genres: doc.data().genres || [],
+    author: doc.data().publishers?.original || 'Unknown'
   } as Novel)).slice(0, 10)
 
   // Cache the fetched data
@@ -104,7 +124,8 @@ const fetchLatestNovels = async () => {
   const novels = querySnapshot.docs.map(doc => ({ 
     novelId: doc.id, 
     ...doc.data(),
-    genres: doc.data().genres || []
+    genres: doc.data().genres || [],
+    author: doc.data().publishers?.original || 'Unknown'
   } as Novel)).slice(0, 10)
 
   // Cache the fetched data
@@ -132,6 +153,31 @@ const fetchEditorsPicks = async () => {
   } as Novel))
 }
 
+const fetchRecommendedNovels = async () => {
+  const q = query(
+    collection(db, 'novels'),
+    orderBy('rating', 'desc'),
+    limit(8)
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      title: data.title,
+      coverImage: data.coverPhoto,
+      category: data.genres?.[0]?.name || 'Fantasy',
+      author: {
+        name: data.publishers?.original || 'Unknown'
+      },
+      tags: data.genres?.map((g: { name: string }) => g.name) || [],
+      rating: data.rating || 0,
+      chaptersCount: data.chapters?.length || 0,
+      synopsis: data.synopsis || ''
+    };
+  });
+};
+
 export default function ModernLightNovelsHomepage() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -148,6 +194,7 @@ export default function ModernLightNovelsHomepage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [autoSlideInterval, setAutoSlideInterval] = useState<NodeJS.Timeout | null>(null);
   const [editorsPicks, setEditorsPicks] = useState<Novel[]>([])
+  const [recommendedNovels, setRecommendedNovels] = useState<Array<any>>([]);
 
   const scrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -158,16 +205,18 @@ export default function ModernLightNovelsHomepage() {
     const loadNovels = async () => {
       setLoading(true)
       try {
-        const [popular, latest, editors] = await Promise.all([
+        const [popular, latest, editors, recommended] = await Promise.all([
           fetchPopularNovels(),
           fetchLatestNovels(),
-          fetchEditorsPicks()
+          fetchEditorsPicks(),
+          fetchRecommendedNovels()
         ])
         console.log('Latest Novels:', latest)
         console.log('Editors Picks:', editors)
         setPopularNovels(popular)
         setLatestNovels(latest)
         setEditorsPicks(editors)
+        setRecommendedNovels(recommended)
       } catch (error) {
         console.error('Error fetching novels:', error)
       }
@@ -319,6 +368,32 @@ export default function ModernLightNovelsHomepage() {
     } as Announcement))
   }
 
+  const handleFollowNovel = async (novelId: string) => {
+    if (!user) {
+      router.push('/auth');
+      return;
+    }
+
+    const userRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userRef);
+    const currentFollowed = userDoc.data()?.followedNovels || [];
+    
+    if (currentFollowed.includes(novelId)) {
+      // Unfollow
+      await updateDoc(userRef, {
+        followedNovels: arrayRemove(novelId)
+      });
+    } else {
+      // Follow
+      await updateDoc(userRef, {
+        followedNovels: arrayUnion(novelId)
+      });
+    }
+    
+    // Update local state
+    await fetchFollowedNovels();
+  };
+
   return (
     <motion.div 
       className={`flex flex-col min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-[#E7E7E8] dark:bg-[#232120]`}
@@ -465,7 +540,7 @@ export default function ModernLightNovelsHomepage() {
 
       <WeeklyBookSection popularNovels={popularNovels} announcements={announcements} />
 
-      <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
+      {/* <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
         <div className="container mx-auto px-4">
           <motion.h2 
             className="text-2xl md:text-3xl font-bold mb-6 text-[#232120] dark:text-[#E7E7E8]"
@@ -507,14 +582,21 @@ export default function ModernLightNovelsHomepage() {
               </motion.div>
         </div>
       </section>
-      
+       */}
       <TopReleasesSection
               latestNovels={latestNovels}
               editorsPicks={editorsPicks}
               loading={loading}
             />
 
+     
+
       <LatestReleasesCarousel
+            novels={latestNovels}
+            loading={loading}
+            onFollowChange={handleFollowChange}
+          />
+           <LatestReleasesCarousel
             novels={latestNovels}
             loading={loading}
             onFollowChange={handleFollowChange}
@@ -614,6 +696,11 @@ export default function ModernLightNovelsHomepage() {
             </motion.div>
           </div>
         </section>
+        <YouMayAlsoLikeSection 
+        novels={recommendedNovels as RecommendedNovel[]}
+        onFollowNovel={handleFollowNovel}
+        userFollowedNovels={followedNovels}
+      />
 
       </main>
       <footer className="border-t py-6 md:py-8 bg-white dark:bg-[#232120] dark:border-[#3E3F3E]">
