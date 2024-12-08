@@ -306,23 +306,23 @@ function BrowsePageContent() {
     let filtered = novelsList.filter(novel => {
       if (!novel) return false;
 
-      // Ensure all string operations have fallbacks
-      const searchTermLower = (searchTerm || '').toLowerCase();
-      const novelTitle = (novel.title || '').toLowerCase();
-      const publisherOriginal = (novel.publishers?.original || '').toLowerCase();
+      // Basic search with null checks
+      const searchTermLower = String(searchTerm || '').toLowerCase();
+      const novelTitle = String(novel.title || '').toLowerCase();
+      const publisherOriginal = String(novel.publishers?.original || '').toLowerCase();
       
       // Safely handle genre arrays
       const novelGenres = Array.isArray(novel.genres) 
         ? novel.genres
             .filter(g => g && typeof g === 'object' && g.name)
-            .map(g => g.name.toLowerCase())
+            .map(g => String(g.name).toLowerCase())
         : [];
       
       // Safely handle tags array
       const tagsLower = Array.isArray(novel.tags)
         ? novel.tags
             .filter(tag => tag && typeof tag === 'string')
-            .map(tag => tag.toLowerCase())
+            .map(tag => String(tag).toLowerCase())
         : [];
       
       // Basic search
@@ -333,8 +333,8 @@ function BrowsePageContent() {
       // Genre filtering - Include genres
       let includeGenresLower: string[] = [];
       try {
-        includeGenresLower = typeof selectedGenres === 'string'
-          ? selectedGenres
+        includeGenresLower = selectedGenres && typeof selectedGenres === 'string'
+          ? String(selectedGenres)
               .split(',')
               .map(g => g.trim().toLowerCase())
               .filter(Boolean)
@@ -357,8 +357,8 @@ function BrowsePageContent() {
       // Genre filtering - Exclude genres
       let excludeGenresLower: string[] = [];
       try {
-        excludeGenresLower = typeof excludedGenres === 'string'
-          ? excludedGenres
+        excludeGenresLower = excludedGenres && typeof excludedGenres === 'string'
+          ? String(excludedGenres)
               .split(',')
               .map(g => g.trim().toLowerCase())
               .filter(Boolean)
@@ -371,21 +371,21 @@ function BrowsePageContent() {
         novelGenres.some(novelGenre => novelGenre.includes(genre))
       );
 
-      // Tag filtering
+      // Tag filtering with proper type checking
       let includeTags: string[] = [];
       let excludeTags: string[] = [];
       
       try {
-        includeTags = typeof tagSearchInclude === 'string'
-          ? tagSearchInclude
+        includeTags = tagSearchInclude && typeof tagSearchInclude === 'string'
+          ? String(tagSearchInclude)
               .toLowerCase()
               .split(',')
               .map(t => t.trim())
               .filter(Boolean)
           : [];
               
-        excludeTags = typeof tagSearchExclude === 'string'
-          ? tagSearchExclude
+        excludeTags = tagSearchExclude && typeof tagSearchExclude === 'string'
+          ? String(tagSearchExclude)
               .toLowerCase()
               .split(',')
               .map(t => t.trim())
