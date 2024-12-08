@@ -15,7 +15,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { ArrowUpDown } from "lucide-react"
-import { Redis } from '@upstash/redis'
 import dynamic from 'next/dynamic'
 import { LucideProps } from 'lucide-react'
 import dynamicIconImports from 'lucide-react/dynamicIconImports'
@@ -23,6 +22,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import { genreColors } from '../genreColors'
 import { Suspense } from 'react'
 import FilterSection from '@/components/FilterSection'
+import { ImageProps } from 'next/image'
 
 interface IconProps extends LucideProps {
   name: keyof typeof dynamicIconImports
@@ -46,13 +46,6 @@ const ClientSideIcon = ({ name, ...props }: IconProps) => {
 
   return <Icon name={name} {...props} />
 }
-
-
-// Initialize Redis client
-const redis = new Redis({
-  url: process.env.NEXT_PUBLIC_REDIS_URL,
-  token: process.env.NEXT_PUBLIC_REDIS_TOKEN,
-})
 
 interface Novel {
   novelId: string
@@ -78,6 +71,86 @@ interface Novel {
 
 const FILTER_STATE_KEY = 'novelHubFilterState'
 
+interface FilterState {
+  selectedGenres: string;
+  excludedGenres: string;
+  genreLogic: 'AND' | 'OR';
+  // ... other filter state properties
+}
+
+// Update Redis initialization
+const initializeRedis = () => {
+  return {
+    async get(key: string) {
+      try {
+        const response = await fetch(`/api/redis?key=${encodeURIComponent(key)}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Redis GET failed:', errorData);
+          return null;
+        }
+        const { data } = await response.json();
+        console.log('Redis GET response:', data ? 'Data found' : 'No data');
+        return data;
+      } catch (error) {
+        console.error('Redis get error:', error);
+        return null;
+      }
+    },
+    async set(key: string, value: string, options?: { ex: number }) {
+      try {
+        const response = await fetch('/api/redis', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            key,
+            value,
+            ttl: options?.ex
+          })
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Redis SET failed:', errorData);
+          return false;
+        }
+        const data = await response.json();
+        console.log('Redis SET response:', data);
+        return data.success;
+      } catch (error) {
+        console.error('Redis set error:', error);
+        return false;
+      }
+    }
+  };
+};
+
+const redis = initializeRedis();
+console.log('Redis initialized:', !!redis);
+
+// Add a new component for optimized novel cover images
+const NovelCoverImage = ({ src, alt, priority }: { src: string, alt: string, priority?: boolean }) => {
+  return (
+    <Image
+      src={src || '/placeholder.svg'}
+      alt={alt}
+      fill
+      sizes="(max-width: 768px) 96px, 96px"
+      priority={priority}
+      className="rounded object-cover"
+      // Add blur placeholder for better loading experience
+      placeholder="blur"
+      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx0fHRsdHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR3/2wBDAR0XFyAeIRshGxsdIR0hHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR3/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+      onError={(e) => {
+        // Fallback to placeholder on error
+        const img = e.target as HTMLImageElement;
+        img.src = '/placeholder.svg';
+      }}
+    />
+  );
+};
+
 function BrowsePageContent() {
   const { theme, setTheme } = useTheme()
   const [novels, setNovels] = useState<Novel[]>([])
@@ -87,9 +160,8 @@ function BrowsePageContent() {
   const [currentPage, setCurrentPage] = useState(1)
   const [sortCriteria, setSortCriteria] = useState<'releaseDate' | 'name'>('releaseDate')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const [itemsPerPage] = useState(5)
+  const [itemsPerPage] = useState(10)
   const [isLoading, setIsLoading] = useState(true)
-  const [hasMore, setHasMore] = useState(false)
 
   // Filter state variables
   const [tagLogic, setTagLogic] = useState<'AND' | 'OR'>('OR')
@@ -98,8 +170,8 @@ function BrowsePageContent() {
   const [readingStatus, setReadingStatus] = useState('all')
   const [publisherSearch, setPublisherSearch] = useState('')
   const [genreLogic, setGenreLogic] = useState<'AND' | 'OR'>('OR')
-  const [selectedGenres, setSelectedGenres] = useState<string[]>([])
-  const [excludedGenres, setExcludedGenres] = useState<string[]>([])
+  const [selectedGenres, setSelectedGenres] = useState<string>('')
+  const [excludedGenres, setExcludedGenres] = useState<string>('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
 
   const searchParams = useSearchParams()
@@ -108,57 +180,63 @@ function BrowsePageContent() {
   useEffect(() => {
     const savedFilterState = localStorage.getItem(FILTER_STATE_KEY)
     if (savedFilterState) {
-      const { 
-        selectedGenres, 
-        excludedGenres,
-        genreLogic,
-        tagLogic,
-        tagSearchInclude,
-        tagSearchExclude,
-        readingStatus,
-        publisherSearch,
-        searchTerm
-      } = JSON.parse(savedFilterState)
-      
-      setSelectedGenres(selectedGenres || [])
-      setExcludedGenres(excludedGenres || [])
-      setGenreLogic(genreLogic || 'OR')
-      setTagLogic(tagLogic || 'OR')
-      setTagSearchInclude(tagSearchInclude || '')
-      setTagSearchExclude(tagSearchExclude || '')
-      setReadingStatus(readingStatus || 'all')
-      setPublisherSearch(publisherSearch || '')
-      setSearchTerm(searchTerm || '')
+      try {
+        const parsedState = JSON.parse(savedFilterState);
+        setSelectedGenres(parsedState.selectedGenres || '');
+        setExcludedGenres(parsedState.excludedGenres || '');
+        setGenreLogic(parsedState.genreLogic || 'OR');
+        setTagLogic(parsedState.tagLogic || 'OR');
+        setTagSearchInclude(parsedState.tagSearchInclude || '');
+        setTagSearchExclude(parsedState.tagSearchExclude || '');
+        setReadingStatus(parsedState.readingStatus || 'all');
+        setPublisherSearch(parsedState.publisherSearch || '');
+        setSearchTerm(parsedState.searchTerm || '');
+      } catch (error) {
+        console.error('Error parsing filter state:', error);
+      }
     }
 
     const genreFromUrl = searchParams.get('genre')
     if (genreFromUrl) {
-      setSelectedGenres([genreFromUrl])
+      setSelectedGenres(genreFromUrl);
     }
-  }, [searchParams])
+  }, [searchParams]);
 
+  // Update fetchNovels function
   const fetchNovels = useCallback(async () => {
     try {
       setIsLoading(true);
-      const ITEMS_PER_PAGE = 10;
-      
-      // Try Redis cache first
-      const cacheKey = `novels_page_${currentPage}`;
-      let cachedNovels = await redis.get(cacheKey);
-      
-      if (cachedNovels) {
-        const parsed = typeof cachedNovels === 'object' ? cachedNovels : JSON.parse(cachedNovels as string);
-        setNovels(prev => [...prev, ...parsed]);
-        setFilteredNovels(prev => [...prev, ...parsed]);
-        return;
+      const CACHE_KEY = 'all_novels_v1';
+      const CACHE_TTL = 3600;
+
+      // Try Redis first
+      if (redis) {
+        try {
+          console.log('🔍 Checking Redis cache...');
+          const cachedData = await redis.get(CACHE_KEY);
+          if (cachedData) {
+            console.log('✨ Successfully retrieved data from Redis cache');
+            const parsedData = typeof cachedData === 'string' 
+              ? JSON.parse(cachedData) 
+              : cachedData;
+            
+            console.log(`📚 Found ${parsedData.length} novels in cache`);
+            setNovels(parsedData);
+            setFilteredNovels(parsedData);
+            return;
+          }
+          console.log('❌ No cached data found in Redis');
+        } catch (redisError) {
+          console.warn('⚠️ Redis read failed, falling back to Firebase:', redisError);
+        }
       }
 
-      // If not in cache, fetch from Firebase with pagination
+      // Fetch from Firebase if no cache or cache failed
+      console.log('🔥 Fetching from Firebase...');
       const novelsRef = collection(db, 'novels');
       const q = query(
         novelsRef,
-        orderBy('title'),
-        limit(ITEMS_PER_PAGE)
+        orderBy('title')
       );
 
       const querySnapshot = await getDocs(q);
@@ -167,20 +245,32 @@ function BrowsePageContent() {
         ...doc.data()
       } as Novel));
 
-      // Cache results
-      await redis.set(cacheKey, JSON.stringify(fetchedNovels), { ex: 3600 });
+      console.log(`📚 Fetched ${fetchedNovels.length} novels from Firebase`);
 
-      setNovels(prev => [...prev, ...fetchedNovels]);
-      setFilteredNovels(prev => [...prev, ...fetchedNovels]);
-      setHasMore(fetchedNovels.length === ITEMS_PER_PAGE);
+      // Update state
+      setNovels(fetchedNovels);
+      setFilteredNovels(fetchedNovels);
+
+      // Try to cache the new data
+      if (redis) {
+        try {
+          console.log('💾 Caching data in Redis...');
+          await redis.set(CACHE_KEY, JSON.stringify(fetchedNovels), {
+            ex: CACHE_TTL
+          });
+          console.log('✅ Successfully cached in Redis');
+        } catch (cacheError) {
+          console.warn('⚠️ Failed to cache in Redis:', cacheError);
+        }
+      }
 
     } catch (error) {
-      console.error("Error fetching novels:", error);
-      toast.error("Failed to load novels");
+      console.error("❌ Error fetching novels:", error);
+      toast.error("Failed to load novels. Please try again later.");
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage]);
+  }, []);
 
   // Load data on mount
   useEffect(() => {
@@ -194,7 +284,9 @@ function BrowsePageContent() {
       if (!novel) return false;
 
       const searchTermLower = searchTerm?.toLowerCase() || '';
-      const genresLower = novel.genres?.map(g => g.name.toLowerCase()) || [];
+      
+      // Convert genre names to lowercase for case-insensitive comparison
+      const novelGenres = novel.genres?.map(g => g.name.toLowerCase()) || [];
       const tagsLower = novel.tags?.map(tag => tag.toLowerCase()) || [];
       
       // Basic search with null checks
@@ -202,22 +294,46 @@ function BrowsePageContent() {
         (novel.title?.toLowerCase().includes(searchTermLower) ?? false) ||
         (novel.publishers?.original?.toLowerCase().includes(searchTermLower) ?? false);
 
-      // Genre filter with null checks
-      const includeGenres = selectedGenres?.map(g => g.toLowerCase()) || [];
-      const excludeGenres = excludedGenres?.map(g => g.toLowerCase()) || [];
+      // Genre filtering - Include genres
+      const includeGenresLower = selectedGenres
+        .split(',')
+        .map(g => g.trim().toLowerCase())
+        .filter(Boolean); // Remove empty strings
+      
+      let matchesIncludeGenres = true;
+      
+      if (includeGenresLower.length > 0) {
+        if (genreLogic === 'AND') {
+          // All selected genres must be present
+          matchesIncludeGenres = includeGenresLower.every(genre => 
+            novelGenres.some(novelGenre => novelGenre.includes(genre))
+          );
+        } else {
+          // At least one selected genre must be present (OR logic)
+          matchesIncludeGenres = includeGenresLower.some(genre => 
+            novelGenres.some(novelGenre => novelGenre.includes(genre))
+          );
+        }
+      }
 
-      const matchesIncludeGenres = !includeGenres.length || (
-        genreLogic === 'AND'
-          ? includeGenres.every(genre => genresLower.includes(genre))
-          : includeGenres.some(genre => genresLower.includes(genre))
+      // Genre filtering - Exclude genres
+      const excludeGenresLower = excludedGenres
+        .split(',')
+        .map(g => g.trim().toLowerCase())
+        .filter(Boolean); // Remove empty strings
+      
+      const matchesExcludeGenres = !excludeGenresLower.some(genre => 
+        novelGenres.some(novelGenre => novelGenre.includes(genre))
       );
 
-      const matchesExcludeGenres = !excludeGenres.length ||
-        !excludeGenres.some(genre => genresLower.includes(genre));
-
       // Tag filtering with null checks
-      const includeTags = (tagSearchInclude || '').toLowerCase().split(',').map(t => t.trim()).filter(t => t);
-      const excludeTags = (tagSearchExclude || '').toLowerCase().split(',').map(t => t.trim()).filter(t => t);
+      const includeTags = (tagSearchInclude || '').toLowerCase().split(',')
+        .map(t => t.trim())
+        .filter(Boolean);
+      
+      const excludeTags = (tagSearchExclude || '').toLowerCase().split(',')
+        .map(t => t.trim())
+        .filter(Boolean);
       
       const matchesIncludeTags = !includeTags.length || (
         tagLogic === 'AND'
@@ -263,17 +379,10 @@ function BrowsePageContent() {
     sortOrder
   ]);
 
-  // Effect to apply filters when novels or filter criteria change
-  useEffect(() => {
-    if (novels.length > 0) {
-      applyFilters(novels);
-    }
-  }, [novels, applyFilters]);
-
   // Handle apply filters button click
   const handleApplyFilters = useCallback(() => {
     // Save filter state
-    localStorage.setItem(FILTER_STATE_KEY, JSON.stringify({
+    const filterState = {
       selectedGenres,
       excludedGenres,
       genreLogic,
@@ -283,8 +392,11 @@ function BrowsePageContent() {
       readingStatus,
       publisherSearch,
       searchTerm
-    }));
+    };
     
+    localStorage.setItem(FILTER_STATE_KEY, JSON.stringify(filterState));
+    
+    // Now actually apply the filters
     applyFilters(novels);
   }, [
     novels,
@@ -301,8 +413,8 @@ function BrowsePageContent() {
   ]);
 
   const handleResetFilters = useCallback(() => {
-    setSelectedGenres([])
-    setExcludedGenres([])
+    setSelectedGenres('')
+    setExcludedGenres('')
     setGenreLogic('OR')
     setTagLogic('OR')
     setTagSearchInclude('')
@@ -354,11 +466,12 @@ function BrowsePageContent() {
 
 
   // Pagination logic
-  const indexOfLastNovel = currentPage * itemsPerPage
-  const indexOfFirstNovel = indexOfLastNovel - itemsPerPage
-  const currentNovels = filteredNovels.slice(indexOfFirstNovel, indexOfLastNovel)
+  const indexOfLastNovel = currentPage * itemsPerPage;
+  const indexOfFirstNovel = indexOfLastNovel - itemsPerPage;
+  const currentNovels = filteredNovels.slice(indexOfFirstNovel, indexOfLastNovel);
 
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
+  const totalPages = Math.ceil(filteredNovels.length / itemsPerPage);
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
 
 
@@ -366,87 +479,11 @@ function BrowsePageContent() {
     handleApplyFilters()
   }
 
-  useEffect(() => {
-    const savedFilterState = localStorage.getItem(FILTER_STATE_KEY)
-    if (savedFilterState) {
-      const { appliedGenres} = JSON.parse(savedFilterState)
-      setSelectedGenres(appliedGenres)
-      setExcludedGenres(appliedGenres)
-      setGenreLogic(genreLogic || 'OR')
-      setTagLogic(tagLogic || 'OR')
-      setTagSearchInclude(tagSearchInclude || '')
-      setTagSearchExclude(tagSearchExclude || '')
-      setReadingStatus(readingStatus || 'all')
-      setPublisherSearch(publisherSearch || '')
-    }
-  }, [])
-
-  useEffect(() => {
-    // Apply filters and sorting
-    const filtered = novels.filter(novel => {
-      if (!novel || !novel.genres || !novel.tags) return false;
-
-      const matchesGenre = !selectedGenres?.length || 
-        selectedGenres.map(g => g.toLowerCase()).some(g => 
-          novel.genres.map(genre => genre.name.toLowerCase()).includes(g)
-        );
-
-      const matchesTag = !selectedTags?.length || 
-        novel.tags.some(tag => 
-          selectedTags.map(t => t.toLowerCase()).includes(tag.toLowerCase())
-        );
-
-      const matchesSearch = !searchTerm || 
-        novel.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        novel.publishers.original.toLowerCase().includes(searchTerm.toLowerCase());
-
-      return matchesGenre && matchesTag && matchesSearch;
-    });
-
-    // Apply sorting with null checks
-    const sorted = [...filtered].sort((a, b) => {
-      if (sortCriteria === 'name') {
-        return sortOrder === 'asc' 
-          ? (a.title || '').localeCompare(b.title || '')
-          : (b.title || '').localeCompare(a.title || '');
-      } else {
-        const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
-        const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
-        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
-      }
-    });
-
-    setFilteredNovels(sorted);
-    setCurrentPage(1);
-  }, [novels, selectedGenres, selectedTags, searchTerm, sortCriteria, sortOrder]);
-
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
-
-  // Add pagination controls
-  const Pagination = () => (
-    <div className="flex justify-center mt-8 space-x-2">
-      <Button
-        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-        disabled={currentPage === 1 || isLoading}
-        variant="outline"
-      >
-        <ChevronLeft size={16} />
-        Previous
-      </Button>
-      <Button
-        onClick={() => setCurrentPage(prev => prev + 1)}
-        disabled={!hasMore || isLoading}
-        variant="outline"
-      >
-        Next
-        <ChevronRight size={16} />
-      </Button>
-    </div>
-  );
 
   return (
     <div className={`min-h-screen bg-[#E7E7E8] dark:bg-[#232120] ${mounted && theme === 'dark' ? 'dark' : ''}`}>
@@ -618,14 +655,10 @@ function BrowsePageContent() {
                     <div className="flex p-4">
                       <div className="flex-shrink-0 w-24 h-36 mr-4 relative group">
                         <div className="relative w-24 h-36">
-                          <Image
-                            src={novel.coverPhoto || '/placeholder.svg'}
+                          <NovelCoverImage
+                            src={novel.coverPhoto}
                             alt={novel.title}
-                            fill
-                            sizes="96px"
                             priority={index < 3}
-                            style={{ objectFit: "cover" }}
-                            className="rounded"
                           />
                         </div>
                         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -633,8 +666,8 @@ function BrowsePageContent() {
                             variant="ghost" 
                             size="sm" 
                             onClick={(e) => {
-                              e.stopPropagation()
-                              handleReadNow(novel.novelId)
+                              e.stopPropagation();
+                              handleReadNow(novel.novelId);
                             }}
                           >
                             <ClientSideIcon name="book-open" className="mr-2" size={16} />
@@ -683,7 +716,38 @@ function BrowsePageContent() {
               </motion.div>
 
               {/* Add after novels grid */}
-              {filteredNovels.length > 0 && <Pagination />}
+              {filteredNovels.length > 0 && (
+                <div className="flex justify-center mt-8 space-x-2">
+                  <Button
+                    onClick={() => paginate(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    variant="outline"
+                  >
+                    <ChevronLeft size={16} />
+                    Previous
+                  </Button>
+                  <div className="flex items-center space-x-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
+                      <Button
+                        key={number}
+                        onClick={() => paginate(number)}
+                        variant={currentPage === number ? "default" : "outline"}
+                        className={currentPage === number ? "bg-[#F1592A] text-white" : ""}
+                      >
+                        {number}
+                      </Button>
+                    ))}
+                  </div>
+                  <Button
+                    onClick={() => paginate(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    variant="outline"
+                  >
+                    Next
+                    <ChevronRight size={16} />
+                  </Button>
+                </div>
+              )}
 
               {filteredNovels.length === 0 && (
                 <p className="text-center text-[#232120] dark:text-[#E7E7E8] mt-8">

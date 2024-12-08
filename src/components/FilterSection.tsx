@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Autocomplete } from "@/components/ui/autocomplete"
 import { tags } from '../app/tags'
-import { genreColors } from '../app/genreColors'
+import { genreColors, genres } from '../app/genreColors'
 
-export default function FilterSection({
+const FilterSection = memo(function FilterSection({
   tagLogic,
   setTagLogic,
   tagSearchInclude,
@@ -40,20 +40,21 @@ export default function FilterSection({
   setPublisherSearch: (value: string) => void
   genreLogic: 'AND' | 'OR'
   setGenreLogic: (value: 'AND' | 'OR') => void
-  selectedGenres: string[]
-  setSelectedGenres: (value: string[]) => void
-  excludedGenres: string[]
-  setExcludedGenres: (value: string[]) => void
+  selectedGenres: string
+  setSelectedGenres: (value: string) => void
+  excludedGenres: string
+  setExcludedGenres: (value: string) => void
   handleApplyFilters: () => void
   handleResetFilters: () => void
 }) {
+
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
         <CardTitle>Filters</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Genres Section - Now First */}
+        {/* Genres Section */}
         <div className="space-y-4">
           <h3 className="font-semibold">Genres</h3>
           <div className="flex items-center space-x-2">
@@ -71,20 +72,18 @@ export default function FilterSection({
           <div className="space-y-2">
             <Label htmlFor="include-genres">Include genres</Label>
             <Autocomplete
-              
-              suggestions={Object.keys(genreColors)}
-              selectedItems={selectedGenres}
-              onSelect={setSelectedGenres}
+              suggestions={genres}
+              selectedItems={selectedGenres.split(',').filter(genre => genre.trim())}
+              onSelect={(items) => setSelectedGenres(items.join(', '))}
               placeholder="Select genres to include..."
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="exclude-genres">Exclude genres</Label>
             <Autocomplete
-           
-              suggestions={Object.keys(genreColors)}
-              selectedItems={excludedGenres}
-              onSelect={setExcludedGenres}
+              suggestions={genres}
+              selectedItems={excludedGenres.split(',').filter(genre => genre.trim())}
+              onSelect={(items) => setExcludedGenres(items.join(', '))}
               placeholder="Select genres to exclude..."
             />
           </div>
@@ -167,4 +166,6 @@ export default function FilterSection({
       </CardContent>
     </Card>
   )
-}
+})
+
+export default FilterSection;

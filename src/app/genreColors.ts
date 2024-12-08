@@ -51,3 +51,17 @@ export const genreColors = {
     "Yaoi": { light: 'bg-indigo-200 text-indigo-800', dark: 'bg-indigo-800 text-indigo-100' },
     "Yuri": { light: 'bg-fuchsia-300 text-fuchsia-800', dark: 'bg-fuchsia-700 text-fuchsia-100' }
   };
+
+  export const genres = [
+    "Action", "Adapted to Drama", "Adult", "Adventure", "Alternate History",
+    "BL", "Comedy", "Comic", "Drama", "Ecchi",
+    "Fantasy", "Full Color", "Gender Bender", "Harem", "Historical",
+    "Horror", "Isekai", "Josei", "Magic", "Manhua",
+    "Manhwa", "Martial Arts", "Mature", "Mecha", "Mystery",
+    "Netori", "Oneshot", "Original", "PG-13", "Pick-Ups",
+    "Psychological", "Romance", "School Life", "Sci-fi", "Seinen",
+    "Shorts", "Shoujo", "Shoujo Ai", "Shounen", "Shounen Ai",
+    "Slice of Life", "Smut", "Sports", "Supernatural", "Thriller",
+    "Tragedy", "Wuxia", "Xianxia", "Xuanhuan", "Yaoi",
+    "Yuri"
+]
