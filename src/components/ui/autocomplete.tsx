@@ -6,7 +6,7 @@ import { XIcon } from "lucide-react"
 
 interface AutocompleteProps {
   suggestions: string[]
-  selectedItems?: string[]
+  selectedItems?: string[] | string | null | undefined
   onSelect: (items: string[]) => void
   placeholder?: string
   className?: string
@@ -19,6 +19,10 @@ export const Autocomplete = memo(({
   placeholder = "Type to search...",
   className
 }: AutocompleteProps) => {
+  const normalizedSelectedItems = Array.isArray(selectedItems) 
+    ? selectedItems 
+    : (selectedItems ? String(selectedItems).split(',').filter(Boolean) : []);
+
   const [inputValue, setInputValue] = useState('')
   const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([])
   const [isOpen, setIsOpen] = useState(false)
@@ -27,10 +31,10 @@ export const Autocomplete = memo(({
   useEffect(() => {
     const filtered = suggestions.filter(suggestion =>
       suggestion.toLowerCase().includes(inputValue.toLowerCase()) &&
-      !selectedItems.includes(suggestion)
+      !normalizedSelectedItems.includes(suggestion)
     )
     setFilteredSuggestions(filtered)
-  }, [inputValue, suggestions, selectedItems])
+  }, [inputValue, suggestions, normalizedSelectedItems])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -43,15 +47,15 @@ export const Autocomplete = memo(({
   }, [])
 
   const handleSelect = (item: string) => {
-    if (!selectedItems.includes(item)) {
-      onSelect([...selectedItems, item]);
+    if (!normalizedSelectedItems.includes(item)) {
+      onSelect([...normalizedSelectedItems, item]);
     }
     setInputValue("");
     setIsOpen(false);
   };
 
   const handleRemove = (item: string) => {
-    onSelect(selectedItems.filter(i => i !== item));
+    onSelect(normalizedSelectedItems.filter(i => i !== item));
   };
 
   return (
@@ -84,9 +88,9 @@ export const Autocomplete = memo(({
         </div>
       )}
       
-      {(selectedItems?.length ?? 0) > 0 && (
+      {normalizedSelectedItems.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-2">
-          {selectedItems?.map((item) => (
+          {normalizedSelectedItems.map((item) => (
             <div
               key={item}
               className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md"
