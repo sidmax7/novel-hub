@@ -75,7 +75,12 @@ interface FilterState {
   selectedGenres: string;
   excludedGenres: string;
   genreLogic: 'AND' | 'OR';
-  // ... other filter state properties
+  tagLogic: 'AND' | 'OR';
+  tagSearchInclude: string;
+  tagSearchExclude: string;
+  readingStatus: string;
+  publisherSearch: string;
+  searchTerm: string;
 }
 
 // Update Redis initialization
@@ -141,7 +146,7 @@ const NovelCoverImage = ({ src, alt, priority }: { src: string, alt: string, pri
       className="rounded object-cover"
       // Add blur placeholder for better loading experience
       placeholder="blur"
-      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx0fHRsdHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR3/2wBDAR0XFyAeIRshGxsdIR0hHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR3/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx0fHRsdHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR3/2wBDAR0XFyAeIRshGxsdIR0hHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR3/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
       onError={(e) => {
         // Fallback to placeholder on error
         const img = e.target as HTMLImageElement;
@@ -278,52 +283,55 @@ function BrowsePageContent() {
   }, [fetchNovels]);
 
   const applyFilters = useCallback((novelsList: Novel[] = novels) => {
-    if (!novelsList?.length) return;
+    if (!Array.isArray(novelsList)) return;
     
     let filtered = novelsList.filter(novel => {
       if (!novel) return false;
 
-      const searchTermLower = searchTerm?.toLowerCase() || '';
+      const searchTermLower = String(searchTerm || '').toLowerCase();
       
-      // Convert genre names to lowercase for case-insensitive comparison
-      const novelGenres = novel.genres?.map(g => g.name.toLowerCase()) || [];
-      const tagsLower = novel.tags?.map(tag => tag.toLowerCase()) || [];
+      // Safely handle genre arrays
+      const novelGenres = Array.isArray(novel.genres) 
+        ? novel.genres.map(g => (g?.name || '').toLowerCase())
+        : [];
       
-      // Basic search with null checks
+      const tagsLower = Array.isArray(novel.tags)
+        ? novel.tags.map(tag => String(tag || '').toLowerCase())
+        : [];
+      
+      // Basic search with strict type checking
       const matchesSearch = 
-        (novel.title?.toLowerCase().includes(searchTermLower) ?? false) ||
-        (novel.publishers?.original?.toLowerCase().includes(searchTermLower) ?? false);
+        (String(novel.title || '').toLowerCase().includes(searchTermLower)) ||
+        (String(novel.publishers?.original || '').toLowerCase().includes(searchTermLower));
 
-      // Genre filtering - Include genres
-      const includeGenresLower = selectedGenres
+      // Genre filtering with strict type handling
+      const includeGenresLower = String(selectedGenres || '')
         .split(',')
         .map(g => g.trim().toLowerCase())
-        .filter(Boolean); // Remove empty strings
+        .filter(Boolean);
       
       let matchesIncludeGenres = true;
       
       if (includeGenresLower.length > 0) {
         if (genreLogic === 'AND') {
-          // All selected genres must be present
           matchesIncludeGenres = includeGenresLower.every(genre => 
-            novelGenres.some(novelGenre => novelGenre.includes(genre))
+            novelGenres.some(novelGenre => String(novelGenre).includes(genre))
           );
         } else {
-          // At least one selected genre must be present (OR logic)
           matchesIncludeGenres = includeGenresLower.some(genre => 
-            novelGenres.some(novelGenre => novelGenre.includes(genre))
+            novelGenres.some(novelGenre => String(novelGenre).includes(genre))
           );
         }
       }
 
-      // Genre filtering - Exclude genres
-      const excludeGenresLower = excludedGenres
+      // Genre filtering - Exclude genres with strict type handling
+      const excludeGenresLower = String(excludedGenres || '')
         .split(',')
         .map(g => g.trim().toLowerCase())
-        .filter(Boolean); // Remove empty strings
+        .filter(Boolean);
       
       const matchesExcludeGenres = !excludeGenresLower.some(genre => 
-        novelGenres.some(novelGenre => novelGenre.includes(genre))
+        novelGenres.some(novelGenre => String(novelGenre).includes(genre))
       );
 
       // Tag filtering with null checks
