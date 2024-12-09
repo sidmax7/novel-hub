@@ -62,14 +62,7 @@ const FilterSection = memo(function FilterSection({
 
   const handleResetClick = () => {
     handleResetFilters();
-    setTagLogic('OR');
-    setTagSearchInclude('');
-    setTagSearchExclude('');
-    setReadingStatus('all');
-    setPublisherSearch('');
-    setGenreLogic('OR');
-    setSelectedGenres('');
-    setExcludedGenres('');
+    closeSheet?.();
   };
 
   return (

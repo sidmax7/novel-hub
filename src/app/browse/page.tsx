@@ -453,6 +453,7 @@ export default function BrowsePage() {
   }
 
   const handleResetFilters = useCallback(() => {
+    // Reset all filter states
     setSelectedGenres('');
     setExcludedGenres('');
     setGenreLogic('OR');
@@ -463,29 +464,37 @@ export default function BrowsePage() {
     setPublisherSearch('');
     setSearchTerm('');
     setCurrentPage(1);
-    applyFilters(novels);
-  }, [novels, applyFilters]);
+    
+    // Reset the novels display
+    setFilteredNovels(novels);
+    setDisplayedNovels(novels.slice(0, ITEMS_PER_LOAD));
+    setHasMore(novels.length > ITEMS_PER_LOAD);
+  }, [novels, ITEMS_PER_LOAD]);
 
   // Add a ref for the timeout
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Update the search input onChange handler
   <Input
-    className="pl-10 bg-[#C3C3C3] dark:bg-[#3E3F3E] text-[#232120] dark:text-[#E7E7E8]"
+    className="pl-10 pr-10 bg-transparent border-2 border-[#F1592A]/50 hover:border-[#F1592A] text-[#232120] dark:text-[#E7E7E8] placeholder:text-[#232120]/60 dark:placeholder:text-[#E7E7E8]/60 transition-colors focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
     placeholder="Search novels, authors, genres..."
     value={searchTerm}
     onChange={(e) => {
       const newValue = e.target.value;
       setSearchTerm(newValue);
-      applyFilters(novels);
-    }}
-    onPaste={(e) => {
-      e.preventDefault();
-      const pastedText = e.clipboardData.getData('text');
-      // Update both state and input value immediately
-      setSearchTerm(pastedText);
-      e.currentTarget.value = pastedText;
-      applyFilters(novels);
+      // Apply filters with the new search term
+      const filtered = novels.filter(novel => {
+        const searchLower = newValue.toLowerCase();
+        return (
+          novel.title.toLowerCase().includes(searchLower) ||
+          novel.publishers.original.toLowerCase().includes(searchLower) ||
+          novel.genres.some(g => g.name.toLowerCase().includes(searchLower)) ||
+          novel.tags.some(t => t.toLowerCase().includes(searchLower))
+        );
+      });
+      setFilteredNovels(filtered);
+      setDisplayedNovels(filtered.slice(0, ITEMS_PER_LOAD));
+      setHasMore(filtered.length > ITEMS_PER_LOAD);
     }}
   />
 
@@ -511,19 +520,32 @@ export default function BrowsePage() {
 
             <div className="flex-1 max-w-2xl mx-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#232120] dark:text-[#E7E7E8]" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#232120] dark:text-[#E7E7E8] opacity-70" />
                 <Input
-                  className="pl-10 pr-10 bg-[#C3C3C3] dark:bg-[#3E3F3E] text-[#232120] dark:text-[#E7E7E8]"
+                  className="pl-10 pr-10 bg-transparent border-2 border-[#F1592A]/50 hover:border-[#F1592A] text-[#232120] dark:text-[#E7E7E8] placeholder:text-[#232120]/60 dark:placeholder:text-[#E7E7E8]/60 transition-colors focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                   placeholder="Search novels, authors, genres..."
                   value={searchTerm}
                   onChange={(e) => {
                     const newValue = e.target.value;
                     setSearchTerm(newValue);
-                    applyFilters(novels);
+                    // Apply filters with the new search term
+                    const filtered = novels.filter(novel => {
+                      const searchLower = newValue.toLowerCase();
+                      return (
+                        novel.title.toLowerCase().includes(searchLower) ||
+                        novel.publishers.original.toLowerCase().includes(searchLower) ||
+                        novel.genres.some(g => g.name.toLowerCase().includes(searchLower)) ||
+                        novel.tags.some(t => t.toLowerCase().includes(searchLower))
+                      );
+                    });
+                    setFilteredNovels(filtered);
+                    setDisplayedNovels(filtered.slice(0, ITEMS_PER_LOAD));
+                    setHasMore(filtered.length > ITEMS_PER_LOAD);
                   }}
                   onPaste={(e) => {
                     e.preventDefault();
                     const pastedText = e.clipboardData.getData('text');
+                    // Update both state and input value immediately
                     setSearchTerm(pastedText);
                     e.currentTarget.value = pastedText;
                     applyFilters(novels);
@@ -535,13 +557,15 @@ export default function BrowsePage() {
                     size="sm"
                     onClick={() => {
                       setSearchTerm('');
-                      setFilteredNovels(novels);
-                      setDisplayedNovels(novels.slice(0, ITEMS_PER_LOAD));
-                      setHasMore(novels.length > ITEMS_PER_LOAD);
+                      // Reset to current filtered state or all novels
+                      const currentFiltered = novels;
+                      setFilteredNovels(currentFiltered);
+                      setDisplayedNovels(currentFiltered.slice(0, ITEMS_PER_LOAD));
+                      setHasMore(currentFiltered.length > ITEMS_PER_LOAD);
                     }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 hover:bg-transparent"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 hover:bg-transparent p-0 h-auto"
                   >
-                    <X className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A]" />
+                    <X className="h-4 w-4 text-[#232120]/70 dark:text-[#E7E7E8]/70 hover:text-[#F1592A] transition-colors" />
                   </Button>
                 )}
               </div>
