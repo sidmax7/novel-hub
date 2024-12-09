@@ -280,13 +280,13 @@ export default function AdminDashboard() {
 
     try {
       const novelData: Omit<Novel, 'novelId'> = {
-        title: currentNovel.title || '',
-        synopsis: currentNovel.synopsis || '',
-        coverPhoto: currentNovel.coverPhoto || '',
-        extraArt: currentNovel.extraArt || [],
+        title: currentNovel.title.trim(),
+        synopsis: currentNovel.synopsis.trim(),
+        coverPhoto: currentNovel.coverPhoto.trim(),
+        extraArt: currentNovel.extraArt?.map(art => art.trim()) || [],
         brand: {
-          name: currentNovel.brand?.name || '',
-          logo: currentNovel.brand?.logo || '',
+          name: (currentNovel.brand?.name || '').trim(),
+          logo: (currentNovel.brand?.logo || '').trim(),
         },
         seriesType: currentNovel.seriesType || 'ORIGINAL',
         styleCategory: {
@@ -302,7 +302,7 @@ export default function AdminDashboard() {
           english: currentNovel.publishers?.english || '',
         },
         releaseFrequency: currentNovel.releaseFrequency || '',
-        alternativeNames: currentNovel.alternativeNames || '',
+        alternativeNames: currentNovel.alternativeNames.trim(),
         chapterType: currentNovel.chapterType || 'TEXT',
         totalChapters: currentNovel.totalChapters || 0,
         seriesStatus: currentNovel.seriesStatus || 'ONGOING',
@@ -383,10 +383,16 @@ export default function AdminDashboard() {
 
       // Handle extraArt field specifically
       if (name === 'extraArt') {
-        return { ...prev, extraArt: value.split(',').map(url => url.trim()).filter(Boolean) };
+        return { 
+          ...prev, 
+          extraArt: value.split(',')
+            .map(url => url.trim())
+            .filter(Boolean) 
+        };
       }
 
-      return { ...prev, [name]: value };
+      // Trim the value for all text inputs
+      return { ...prev, [name]: value.trim() };
     });
   };
 
@@ -620,7 +626,7 @@ export default function AdminDashboard() {
                   name="brand.name"
                   value={currentNovel?.brand?.name || ''}
                   onChange={(e) => {
-                    const { value } = e.target;
+                    const value = e.target.value.trim();
                     setCurrentNovel(prev => ({
                       ...prev!,
                       brand: {
@@ -674,7 +680,7 @@ export default function AdminDashboard() {
                   name="language.original"
                   value={currentNovel?.language?.original || ''}
                   onChange={(e) => {
-                    const { value } = e.target;
+                    const value = e.target.value.trim();
                     setCurrentNovel(prev => ({
                       ...prev!,
                       language: {
@@ -693,7 +699,7 @@ export default function AdminDashboard() {
                   name="publishers.original"
                   value={currentNovel?.publishers?.original || ''}
                   onChange={(e) => {
-                    const { value } = e.target;
+                    const value = e.target.value.trim();
                     setCurrentNovel(prev => ({
                       ...prev!,
                       publishers: {
@@ -712,7 +718,7 @@ export default function AdminDashboard() {
                   name="publishers.english"
                   value={currentNovel?.publishers?.english || ''}
                   onChange={(e) => {
-                    const { value } = e.target;
+                    const value = e.target.value.trim();
                     setCurrentNovel(prev => ({
                       ...prev!,
                       publishers: {
