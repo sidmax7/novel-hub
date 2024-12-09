@@ -55,9 +55,21 @@ const FilterSection = memo(function FilterSection({
     return value.split(',').filter(item => item.trim());
   };
 
-  const handleApplyAndClose = () => {
+  const handleApplyClick = () => {
     handleApplyFilters();
     closeSheet?.();
+  };
+
+  const handleResetClick = () => {
+    handleResetFilters();
+    setTagLogic('OR');
+    setTagSearchInclude('');
+    setTagSearchExclude('');
+    setReadingStatus('all');
+    setPublisherSearch('');
+    setGenreLogic('OR');
+    setSelectedGenres('');
+    setExcludedGenres('');
   };
 
   return (
@@ -179,13 +191,13 @@ const FilterSection = memo(function FilterSection({
       <div className="mt-auto p-4 border-t border-[#F1592A]/10">
         <div className="flex space-x-2">
           <Button 
-            onClick={handleApplyAndClose} 
+            onClick={handleApplyClick} 
             className="flex-1 bg-[#F1592A] text-white hover:bg-[#F1592A]/90"
           >
             Apply Filters
           </Button>
           <Button 
-            onClick={handleResetFilters} 
+            onClick={handleResetClick} 
             variant="outline" 
             className="flex-1 border-[#F1592A] text-[#232120] dark:text-[#E7E7E8] hover:bg-[#F1592A] hover:text-white"
           >

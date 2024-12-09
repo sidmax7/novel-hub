@@ -49,10 +49,13 @@ interface Novel {
   synopsis: string;
   type?: string;
   lastUpdated?: string;
-  releaseDate?: string | null;
+  firstReleaseDate?: string | null;
   chapters?: number;
   language?: string;
   rank?: number;
+  seriesInfo: {
+    firstReleaseDate: any;
+  };
 }
 
 const initializeRedis = () => {
@@ -97,7 +100,6 @@ const initializeRedis = () => {
 };
 
 const redis = initializeRedis();
-console.log('Redis initialized:', !!redis);
 
 const NovelCoverImage = ({ src, alt, priority }: { src: string, alt: string, priority?: boolean }) => {
   return (
@@ -155,6 +157,47 @@ const itemVariants = {
   }
 };
 
+// First, update the type for sort criteria
+type SortCriteria = 'latest' | 'oldest' | 'alphabetical_asc' | 'alphabetical_desc' | 'rating' | 'likes';
+
+const sortNovels = (novels: Novel[], criteria: SortCriteria) => {
+  const sorted = [...novels];
+  switch (criteria) {
+    case 'latest':
+      return sorted.sort((a, b) => {
+        // Handle Firestore Timestamp
+        const dateA = a.seriesInfo?.firstReleaseDate?.seconds 
+          ? a.seriesInfo.firstReleaseDate.seconds * 1000 
+          : 0;
+        const dateB = b.seriesInfo?.firstReleaseDate?.seconds 
+          ? b.seriesInfo.firstReleaseDate.seconds * 1000 
+          : 0;
+        return dateB - dateA;
+      });
+    case 'oldest':
+      return sorted.sort((a, b) => {
+        // Handle Firestore Timestamp
+        const dateA = a.seriesInfo?.firstReleaseDate?.seconds 
+          ? a.seriesInfo.firstReleaseDate.seconds * 1000 
+          : Infinity;
+        const dateB = b.seriesInfo?.firstReleaseDate?.seconds 
+          ? b.seriesInfo.firstReleaseDate.seconds * 1000 
+          : Infinity;
+        return dateA - dateB;
+      });
+    case 'alphabetical_asc':
+      return sorted.sort((a, b) => a.title.localeCompare(b.title));
+    case 'alphabetical_desc':
+      return sorted.sort((a, b) => b.title.localeCompare(a.title));
+    case 'rating':
+      return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    case 'likes':
+      return sorted.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+    default:
+      return sorted;
+  }
+};
+
 export default function BrowsePage() {
   const { theme, setTheme } = useTheme()
   const [novels, setNovels] = useState<Novel[]>([])
@@ -162,8 +205,7 @@ export default function BrowsePage() {
   const [searchTerm, setSearchTerm] = useState('')
   const router = useRouter()
   const [currentPage, setCurrentPage] = useState(1)
-  const [sortCriteria, setSortCriteria] = useState<'releaseDate' | 'name'>('releaseDate')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [sortBy, setSortBy] = useState<SortCriteria>('latest');
   const [isLoading, setIsLoading] = useState(true)
   const [itemsPerPage] = useState(10);
   const [tagLogic, setTagLogic] = useState<'AND' | 'OR'>('OR');
@@ -198,7 +240,9 @@ export default function BrowsePage() {
 
   const loadMore = useCallback(() => {
     const currentLength = displayedNovels.length;
-    const nextBatch = filteredNovels.slice(
+    // Sort the next batch before adding
+    const sorted = sortNovels(filteredNovels, sortBy);
+    const nextBatch = sorted.slice(
       currentLength,
       currentLength + ITEMS_PER_LOAD
     );
@@ -208,12 +252,12 @@ export default function BrowsePage() {
     }
     
     setHasMore(currentLength + nextBatch.length < filteredNovels.length);
-  }, [filteredNovels, displayedNovels.length]);
+  }, [filteredNovels, displayedNovels.length, sortBy]);
 
   const fetchNovels = useCallback(async () => {
     try {
       setIsLoading(true);
-      const CACHE_KEY = 'all_novels_v1';
+      const CACHE_KEY = 'all_novels_test_v3';
       const CACHE_TTL = 3600;
 
       if (redis) {
@@ -221,7 +265,7 @@ export default function BrowsePage() {
           console.log('🔍 Checking Redis cache...');
           const cachedData = await redis.get(CACHE_KEY);
           if (cachedData) {
-            console.log('✨ Successfully retrieved data from Redis cache');
+            console.log('✨ Cache hit: Using cached novels data');
             let parsedData;
             
             try {
@@ -233,22 +277,39 @@ export default function BrowsePage() {
                 throw new Error('Invalid cache format');
               }
               
+              // Sort without logging
+              parsedData.sort((a, b) => {
+                const dateA = a.seriesInfo?.firstReleaseDate?.seconds 
+                  ? a.seriesInfo.firstReleaseDate.seconds * 1000 
+                  : 0;
+                const dateB = b.seriesInfo?.firstReleaseDate?.seconds 
+                  ? b.seriesInfo.firstReleaseDate.seconds * 1000 
+                  : 0;
+                return dateB - dateA;
+              });
+              
               setNovels(parsedData);
               setFilteredNovels(parsedData);
               return;
             } catch (parseError) {
-              const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown error occurred';
+              console.error('❌ Cache parse error:', parseError);
+              const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown error';
               throw new Error(`Failed to parse cached data: ${errorMessage}`);
             }
+          } else {
+            console.log('📭 Cache miss: Fetching from Firebase');
           }
         } catch (redisError) {
           console.error('Redis error:', redisError);
-          // Continue to Firebase fetch on Redis error
         }
       }
 
       const novelsRef = collection(db, 'novels');
-      const q = query(novelsRef, orderBy('title'));
+      const q = query(
+        novelsRef, 
+        orderBy('seriesInfo.firstReleaseDate', 'desc')
+      );
+      
       const querySnapshot = await getDocs(q);
       
       const fetchedNovels = querySnapshot.docs.map(doc => ({
@@ -273,146 +334,77 @@ export default function BrowsePage() {
   }, [fetchNovels]);
 
   const applyFilters = useCallback((novelsList: Novel[] = novels) => {
-    if (!Array.isArray(novelsList)) {
-      console.warn('Invalid novels list provided to filter');
-      return;
-    }
+    if (!Array.isArray(novelsList)) return;
     
-    const searchTermLower = searchTerm.toLowerCase().trim();
-    
-    let filtered = novelsList;
-    
-    if (searchTermLower) {
+    let filtered = [...novelsList];
+
+    // Handle genre filters
+    if (selectedGenres) {
+      const genres = selectedGenres.split(',').map(g => g.trim().toLowerCase());
       filtered = filtered.filter(novel => {
-        const novelTitle = novel.title.toLowerCase();
-        const publisherOriginal = novel.publishers?.original.toLowerCase() || '';
-        const genres = novel.genres.map(g => g.name.toLowerCase()).join(' ');
-        const tags = novel.tags.map(t => t.toLowerCase()).join(' ');
-        
-        const titleWords = novelTitle.split(' ');
-        const titleMatch = titleWords.some(word => word.startsWith(searchTermLower)) || 
-                          novelTitle.includes(searchTermLower);
-        
-        return titleMatch ||
-               publisherOriginal.includes(searchTermLower) ||
-               genres.includes(searchTermLower) ||
-               tags.includes(searchTermLower);
+        const novelGenres = novel.genres.map(g => g.name.toLowerCase());
+        return genreLogic === 'AND' 
+          ? genres.every(g => novelGenres.includes(g))
+          : genres.some(g => novelGenres.includes(g));
       });
     }
 
-    const safeString = (value: any): string => {
-      if (value === null || value === undefined) return '';
-      if (typeof value === 'string') return value;
-      if (typeof value === 'object') return JSON.stringify(value);
-      return String(value);
-    };
-
-    const safeSplit = (value: any): string[] => {
-      try {
-        const str = safeString(value);
-        return str ? str.split(',').map(s => s.trim()).filter(Boolean) : [];
-      } catch (error) {
-        console.warn('Split operation failed:', error);
-        return [];
-      }
-    };
-
-    // Include genres
-    const includeGenresLower = safeSplit(selectedGenres)
-      .map(g => g.toLowerCase());
-
-    // Exclude genres
-    const excludeGenresLower = safeSplit(excludedGenres)
-      .map(g => g.toLowerCase());
-
-    // Tags
-    const includeTags = safeSplit(tagSearchInclude)
-      .map(t => t.toLowerCase());
-    const excludeTags = safeSplit(tagSearchExclude)
-      .map(t => t.toLowerCase());
-
-    // Genre filtering
-    let matchesIncludeGenres = true;
-    if (includeGenresLower.length > 0) {
-      matchesIncludeGenres = genreLogic === 'AND'
-        ? includeGenresLower.every(genre => 
-            filtered.some(novel => 
-              Array.isArray(novel.genres) && 
-              novel.genres.some(g => g.name.toLowerCase() === genre)
-            )
-          )
-        : includeGenresLower.some(genre => 
-            filtered.some(novel => 
-              Array.isArray(novel.genres) && 
-              novel.genres.some(g => g.name.toLowerCase() === genre)
-            )
-          );
+    // Handle excluded genres
+    if (excludedGenres) {
+      const genres = excludedGenres.split(',').map(g => g.trim().toLowerCase());
+      filtered = filtered.filter(novel => {
+        const novelGenres = novel.genres.map(g => g.name.toLowerCase());
+        return !genres.some(g => novelGenres.includes(g));
+      });
     }
 
-    const matchesExcludeGenres = !excludeGenresLower.some(genre => 
-      filtered.some(novel => 
-        Array.isArray(novel.genres) && 
-        novel.genres.some(g => g.name.toLowerCase() === genre)
-      )
-    );
+    // Handle tag filters
+    if (tagSearchInclude) {
+      const tags = tagSearchInclude.split(',').map(t => t.trim().toLowerCase());
+      filtered = filtered.filter(novel => {
+        const novelTags = novel.tags.map(t => t.toLowerCase());
+        return tagLogic === 'AND'
+          ? tags.every(t => novelTags.includes(t))
+          : tags.some(t => novelTags.includes(t));
+      });
+    }
 
-    // Tag filtering
-    const matchesIncludeTags = !includeTags.length || (
-      tagLogic === 'AND'
-        ? includeTags.every(tag => filtered.some(novel => 
-            Array.isArray(novel.tags) && 
-            novel.tags.some(t => t.toLowerCase() === tag)
-          ))
-        : includeTags.some(tag => filtered.some(novel => 
-            Array.isArray(novel.tags) && 
-            novel.tags.some(t => t.toLowerCase() === tag)
-          ))
-    );
-    
-    const matchesExcludeTags = !excludeTags.length ||
-      !excludeTags.some(tag => filtered.some(novel => 
-        Array.isArray(novel.tags) && 
-        novel.tags.some(t => t.toLowerCase() === tag)
-      ));
+    // Handle excluded tags
+    if (tagSearchExclude) {
+      const tags = tagSearchExclude.split(',').map(t => t.trim().toLowerCase());
+      filtered = filtered.filter(novel => {
+        const novelTags = novel.tags.map(t => t.toLowerCase());
+        return !tags.some(t => novelTags.includes(t));
+      });
+    }
 
-    filtered = filtered.filter(novel => 
-      matchesIncludeGenres && 
-      matchesExcludeGenres && 
-      matchesIncludeTags && 
-      matchesExcludeTags
-    );
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      if (sortCriteria === 'name') {
-        return sortOrder === 'asc' 
-          ? (a.title || '').localeCompare(b.title || '')
-          : (b.title || '').localeCompare(a.title || '');
-      } else {
-        const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
-        const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
-        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
-      }
-    });
+    // Handle publisher search
+    if (publisherSearch) {
+      const search = publisherSearch.toLowerCase();
+      filtered = filtered.filter(novel => 
+        novel.publishers.original.toLowerCase().includes(search) ||
+        (novel.publishers.english?.toLowerCase().includes(search) ?? false)
+      );
+    }
 
     setFilteredNovels(filtered);
     setDisplayedNovels(filtered.slice(0, ITEMS_PER_LOAD));
     setHasMore(filtered.length > ITEMS_PER_LOAD);
   }, [
     novels,
-    searchTerm,
     selectedGenres,
     excludedGenres,
     genreLogic,
     tagLogic,
     tagSearchInclude,
     tagSearchExclude,
-    sortCriteria,
-    sortOrder
+    publisherSearch,
+    ITEMS_PER_LOAD
   ]);
 
   const handleApplyFilters = useCallback(() => {
     applyFilters(novels);
+    setOpen(false);
   }, [novels, applyFilters]);
 
   const handleTileClick = (novelId: string) => {
@@ -420,10 +412,10 @@ export default function BrowsePage() {
   };
   
   const getSortButtonText = () => {
-    if (sortCriteria === 'name') {
-      return sortOrder === 'asc' ? 'A-Z' : 'Z-A'
+    if (sortBy === 'alphabetical_asc') {
+      return 'A-Z'
     } else {
-      return sortOrder === 'desc' ? 'Newest first' : 'Oldest first'
+      return sortBy === 'latest' ? 'Newest first' : 'Oldest first'
     }
   }
 
@@ -431,18 +423,25 @@ export default function BrowsePage() {
     console.log(`Start reading novel with id: ${novelId}`)
   }
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'No date available'
+  const formatDate = (date: any) => {
+    if (!date) return 'No date available';
     
-    if (typeof dateString === 'string') {
-      const date = new Date(dateString)
-      if (!isNaN(date.getTime())) {
-        return date.toLocaleDateString()
+    try {
+      // Handle Firestore Timestamp
+      if (date.toDate && typeof date.toDate === 'function') {
+        return date.toDate().toLocaleDateString();
       }
+      // Handle regular date string
+      const parsedDate = new Date(date);
+      if (!isNaN(parsedDate.getTime())) {
+        return parsedDate.toLocaleDateString();
+      }
+      return 'Invalid date';
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
     }
-    
-    return 'Invalid date'
-  }
+  };
 
   const getColorScheme = (item: string) => {
     const key = Object.keys(genreColors).find(k => item.toLowerCase().includes(k.toLowerCase()));
@@ -619,18 +618,36 @@ export default function BrowsePage() {
                 </SheetContent>
               </Sheet>
               
-              <Select onValueChange={(value) => {
-                setSortCriteria(value.includes('name') ? 'name' : 'releaseDate')
-                setSortOrder(value.includes('asc') ? 'asc' : 'desc')
-              }}>
+              <Select
+                value={sortBy}
+                onValueChange={(value: SortCriteria) => {
+                  setSortBy(value);
+                  const sorted = sortNovels(filteredNovels, value);
+                  setFilteredNovels(sorted);
+                  setDisplayedNovels([]);
+                  setTimeout(() => {
+                    setDisplayedNovels(sorted.slice(0, ITEMS_PER_LOAD));
+                    setHasMore(sorted.length > ITEMS_PER_LOAD);
+                  }, 0);
+                }}
+              >
                 <SelectTrigger className="w-[160px] border-[#F1592A]">
-                  <SelectValue placeholder="Sort by" />
+                  <SelectValue placeholder="Sort by">
+                    {sortBy === 'latest' && "Latest Release"}
+                    {sortBy === 'oldest' && "Oldest Release"}
+                    {sortBy === 'alphabetical_asc' && "A to Z"}
+                    {sortBy === 'alphabetical_desc' && "Z to A"}
+                    {sortBy === 'rating' && "Highest Rating"}
+                    {sortBy === 'likes' && "Most Liked"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="oldest">Oldest First</SelectItem>
-                  <SelectItem value="name_asc">A-Z</SelectItem>
-                  <SelectItem value="name_desc">Z-A</SelectItem>
+                  <SelectItem value="latest">Latest Release</SelectItem>
+                  <SelectItem value="oldest">Oldest Release</SelectItem>
+                  <SelectItem value="alphabetical_asc">A to Z</SelectItem>
+                  <SelectItem value="alphabetical_desc">Z to A</SelectItem>
+                  <SelectItem value="rating">Highest Rating</SelectItem>
+                  <SelectItem value="likes">Most Liked</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -712,9 +729,9 @@ export default function BrowsePage() {
                             </span>
                           ))}
                           <span className="text-sm text-gray-500 dark:text-gray-400">{novel.likes} likes</span>
-                          {novel.releaseDate && (
+                          {novel.seriesInfo?.firstReleaseDate && (
                             <span className="text-sm text-gray-500 dark:text-gray-400">
-                              Released: {formatDate(novel.releaseDate)}
+                              Released: {formatDate(novel.seriesInfo.firstReleaseDate)}
                             </span>
                           )}
                         </div>
