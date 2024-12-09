@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Check, ChevronLeft, ChevronRight, X, Home} from "lucide-react"
@@ -24,6 +24,7 @@ import { Suspense } from 'react'
 import FilterSection from '@/components/FilterSection'
 import { ImageProps } from 'next/image'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 interface IconProps extends LucideProps {
   name: keyof typeof dynamicIconImports
@@ -521,6 +522,15 @@ function BrowsePageContent() {
     setMounted(true)
   }, [])
 
+  const parentRef = useRef(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: filteredNovels.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 160, // Approximate height of each novel card
+    overscan: 5
+  });
+
   return (
     <div className={`min-h-screen bg-[#E7E7E8] dark:bg-[#232120] ${mounted && theme === 'dark' ? 'dark' : ''}`}>
       <header className="bg-white dark:bg-[#232120] shadow">
@@ -668,88 +678,98 @@ function BrowsePageContent() {
               </div>
 
               {/* Novels grid */}
-              <motion.div 
-                className="space-y-4"
-                initial="hidden"
-                animate="visible"
-                variants={{
-                  hidden: { opacity: 0 },
-                  visible: {
-                    opacity: 1,
-                    transition: {
-                      staggerChildren: 0.1
-                    }
-                  }
-                }}
-              >
-                {currentNovels.map((novel, index) => (
-                  <motion.div
-                    key={novel.novelId}
-                    className="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
-                    onClick={() => handleTileClick(novel.novelId)}
-                  >
-                    <div className="flex p-4">
-                      <div className="flex-shrink-0 w-24 h-36 mr-4 relative group">
-                        <div className="relative w-24 h-36">
-                          <NovelCoverImage
-                            src={novel.coverPhoto}
-                            alt={novel.title}
-                            priority={index < 3}
-                          />
-                        </div>
-                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleReadNow(novel.novelId);
-                            }}
-                          >
-                            <ClientSideIcon name="book-open" className="mr-2" size={16} />
-                            Read Now
-                          </Button>
-                        </div>
+              <div ref={parentRef} className="h-[800px] overflow-auto">
+                <div
+                  style={{
+                    height: `${rowVirtualizer.getTotalSize()}px`,
+                    width: '100%',
+                    position: 'relative',
+                  }}
+                >
+                  {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const novel = filteredNovels[virtualRow.index];
+                    return (
+                      <div
+                        key={novel.novelId}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: `${virtualRow.size}px`,
+                          transform: `translateY(${virtualRow.start}px)`,
+                        }}
+                      >
+                        <motion.div
+                          key={novel.novelId}
+                          className="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
+                          onClick={() => handleTileClick(novel.novelId)}
+                        >
+                          <div className="flex p-4">
+                            <div className="flex-shrink-0 w-24 h-36 mr-4 relative group">
+                              <div className="relative w-24 h-36">
+                                <NovelCoverImage
+                                  src={novel.coverPhoto}
+                                  alt={novel.title}
+                                  priority={virtualRow.index < 3}
+                                />
+                              </div>
+                              <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleReadNow(novel.novelId);
+                                  }}
+                                >
+                                  <ClientSideIcon name="book-open" className="mr-2" size={16} />
+                                  Read Now
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="flex-grow">
+                              <h3 className="text-xl font-semibold text-[#232120] dark:text-[#E7E7E8] mb-2">
+                                {novel.title}
+                              </h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                                Published by{' '}
+                                <span className="font-semibold">
+                                  {novel.publishers.original}
+                                </span>
+                                {novel.publishers.english && (
+                                  <span> / {novel.publishers.english}</span>
+                                )}
+                              </p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">{novel.synopsis}</p>
+                              <div className="flex flex-wrap items-center gap-2 mb-2">
+                                {novel.genres.slice(0, 3).map((g, i) => (
+                                  <span 
+                                    key={i}
+                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                      theme === 'dark'
+                                        ? getColorScheme(g.name).dark
+                                        : getColorScheme(g.name).light
+                                    }`}
+                                  >
+                                    {g.name}
+                                  </span>
+                                ))}
+                                <span className="text-sm text-gray-500 dark:text-gray-400">{novel.likes} likes</span>
+                                {novel.releaseDate && (
+                                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                                    Released: {formatDate(novel.releaseDate)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
                       </div>
-                      <div className="flex-grow">
-                        <h3 className="text-xl font-semibold text-[#232120] dark:text-[#E7E7E8] mb-2">
-                          {novel.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                          Published by{' '}
-                          <span className="font-semibold">
-                            {novel.publishers.original}
-                          </span>
-                          {novel.publishers.english && (
-                            <span> / {novel.publishers.english}</span>
-                          )}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">{novel.synopsis}</p>
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                          {novel.genres.slice(0, 3).map((g, i) => (
-                            <span 
-                              key={i}
-                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                theme === 'dark'
-                                  ? getColorScheme(g.name).dark
-                                  : getColorScheme(g.name).light
-                              }`}
-                            >
-                              {g.name}
-                            </span>
-                          ))}
-                          <span className="text-sm text-gray-500 dark:text-gray-400">{novel.likes} likes</span>
-                          {novel.releaseDate && (
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                              Released: {formatDate(novel.releaseDate)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
 
               {/* Add after novels grid */}
               {filteredNovels.length > 0 && (
