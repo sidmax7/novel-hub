@@ -147,6 +147,7 @@ const NovelCoverImage = ({ src, alt, priority }: { src: string, alt: string, pri
       className="rounded object-cover"
       // Add blur placeholder for better loading experience
       placeholder="blur"
+      blurDataURL="/placeholder.svg"
       onError={(e) => {
         // Fallback to placeholder on error
         const img = e.target as HTMLImageElement;

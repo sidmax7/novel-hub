@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-const REDIS_URL = process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_URL;
-const REDIS_TOKEN = process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN;
+const REDIS_URL = process.env.KV_REST_API_URL;
+const REDIS_TOKEN = process.env.KV_REST_API_TOKEN;
 
 async function redisRequest(endpoint: string, options: RequestInit = {}) {
   if (!REDIS_URL || !REDIS_TOKEN) {
@@ -33,7 +33,8 @@ async function redisRequest(endpoint: string, options: RequestInit = {}) {
       endpoint,
       error: error instanceof Error ? error.message : error,
       url: REDIS_URL,
-      hasToken: !!REDIS_TOKEN
+      hasToken: !!REDIS_TOKEN,
+      headers: options.headers,
     });
     throw error;
   }
