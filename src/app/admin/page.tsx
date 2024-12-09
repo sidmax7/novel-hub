@@ -141,6 +141,13 @@ export default function AdminDashboard() {
   const [isAuthor, setIsAuthor] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false);
   const [authorsList, setAuthorsList] = useState<{ id: string; name: string; username: string; }[]>([]);
+  const [authorsInput, setAuthorsInput] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (currentNovel) {
+      setAuthorsInput(currentNovel.credits.authors || []);
+    }
+  }, [currentNovel]);
 
   // Add these new state variables for stats
   const [stats, setStats] = useState({
@@ -257,6 +264,16 @@ export default function AdminDashboard() {
     calculateStats();
   }, [calculateStats]);
 
+  const handleAddAuthor = () => {
+    setAuthorsInput([...authorsInput, '']);
+  };
+
+  const handleAuthorChange = (index: number, value: string) => {
+    const updatedAuthors = [...authorsInput];
+    updatedAuthors[index] = value;
+    setAuthorsInput(updatedAuthors);
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user || !currentNovel) return;
@@ -301,7 +318,7 @@ export default function AdminDashboard() {
           firstReleaseDate: currentNovel.seriesInfo?.firstReleaseDate || Timestamp.now(),
         },
         credits: {
-          authors: currentNovel.credits?.authors || [],
+          authors: authorsInput.filter(Boolean),
           artists: {
             translators: currentNovel.credits?.artists?.translators || [],
             editors: currentNovel.credits?.artists?.editors || [],
@@ -363,6 +380,12 @@ export default function AdminDashboard() {
 
     setCurrentNovel(prev => {
       if (!prev) return prev;
+
+      // Handle extraArt field specifically
+      if (name === 'extraArt') {
+        return { ...prev, extraArt: value.split(',').map(url => url.trim()).filter(Boolean) };
+      }
+
       return { ...prev, [name]: value };
     });
   };
@@ -539,6 +562,41 @@ export default function AdminDashboard() {
               <DialogTitle>{currentNovel?.novelId ? 'Edit Novel' : 'Add New Novel'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Main Authors</Label>
+                {authorsInput.length === 0 && (
+                    <Button type="button" size="sm" onClick={handleAddAuthor} className="w-full">
+                        <PlusIcon className="h-4 w-4 mr-2" /> Add Author
+                    </Button>
+                )}
+                {authorsInput.map((author, index) => (
+                    <div key={index} className="flex items-center space-x-2 mb-2">
+                        <Input
+                            value={author}
+                            onChange={(e) => handleAuthorChange(index, e.target.value)}
+                            placeholder="Enter author name"
+                        />
+                        <Button 
+                            type="button" 
+                            size="sm" 
+                            variant="destructive" 
+                            onClick={() => {
+                                const newAuthors = [...authorsInput];
+                                newAuthors.splice(index, 1);
+                                setAuthorsInput(newAuthors);
+                            }}
+                        >
+                            <Trash className="h-4 w-4" />
+                        </Button>
+                        {index === authorsInput.length - 1 && (
+                            <Button type="button" size="sm" onClick={handleAddAuthor}>
+                                <PlusIcon className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                ))}
+              </div>
+
               <div>
                 <Label htmlFor="title">Title</Label>
                 <Input id="title" name="title" value={currentNovel?.title || ''} onChange={handleInputChange} required />
