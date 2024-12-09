@@ -3,89 +3,58 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Check, ChevronLeft, ChevronRight, X, Home} from "lucide-react"
-import Link from "next/link"
-import { motion } from 'framer-motion'
-import { useTheme } from 'next-themes'
-import { collection, query, orderBy, getDocs, limit} from 'firebase/firestore'
+import { Search, Home, Moon, Sun, ChevronLeft, ChevronRight, X } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Separator } from "@/components/ui/separator"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import { collection, query, orderBy, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebaseConfig'
 import { toast } from 'react-hot-toast'
 import Image from "next/image"
 import { useRouter, useSearchParams } from 'next/navigation'
-import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { ArrowUpDown } from "lucide-react"
-import dynamic from 'next/dynamic'
-import { LucideProps } from 'lucide-react'
-import dynamicIconImports from 'lucide-react/dynamicIconImports'
+import { useTheme } from 'next-themes'
+import Link from 'next/link'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { genreColors } from '../genreColors'
-import { Suspense } from 'react'
 import FilterSection from '@/components/FilterSection'
-import { ImageProps } from 'next/image'
-import ErrorBoundary from '@/components/ErrorBoundary'
-import { useVirtualizer } from '@tanstack/react-virtual';
-
-interface IconProps extends LucideProps {
-  name: keyof typeof dynamicIconImports
-}
-
-const Icon = ({ name, ...props }: IconProps) => {
-  const LucideIcon = dynamic(dynamicIconImports[name])
-  return <LucideIcon {...props} />
-}
-
-const ClientSideIcon = ({ name, ...props }: IconProps) => {
-  const [isMounted, setIsMounted] = useState(false)
-
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
-
-  if (!isMounted) {
-    return null
-  }
-
-  return <Icon name={name} {...props} />
-}
+import { useInView } from 'react-intersection-observer';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface Novel {
-  novelId: string
-  title: string
+  novelId: string;
+  title: string;
   publishers: {
-    original: string
-    english?: string
-  }
-  genres: { name: string }[]
-  rating: number
-  coverPhoto: string
-  authorId: string
-  tags: string[]
-  likes: number
-  synopsis: string
-  type?: string
-  lastUpdated?: string
-  releaseDate?: string | null
-  chapters?: number
-  language?: string
-  rank?: number
+    original: string;
+    english?: string;
+  };
+  genres: { name: string }[];
+  rating: number;
+  coverPhoto: string;
+  authorId: string;
+  tags: string[];
+  likes: number;
+  synopsis: string;
+  type?: string;
+  lastUpdated?: string;
+  releaseDate?: string | null;
+  chapters?: number;
+  language?: string;
+  rank?: number;
 }
 
-const FILTER_STATE_KEY = 'novelHubFilterState'
-
-interface FilterState {
-  selectedGenres: string;
-  excludedGenres: string;
-  genreLogic: 'AND' | 'OR';
-  tagLogic: 'AND' | 'OR';
-  tagSearchInclude: string;
-  tagSearchExclude: string;
-  readingStatus: string;
-  publisherSearch: string;
-  searchTerm: string;
-}
-
-// Update Redis initialization
 const initializeRedis = () => {
   return {
     async get(key: string) {
@@ -108,14 +77,8 @@ const initializeRedis = () => {
       try {
         const response = await fetch('/api/redis', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            key,
-            value,
-            ttl: options?.ex
-          })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key, value, ttl: options?.ex })
         });
         if (!response.ok) {
           const errorData = await response.json();
@@ -136,7 +99,6 @@ const initializeRedis = () => {
 const redis = initializeRedis();
 console.log('Redis initialized:', !!redis);
 
-// Add a new component for optimized novel cover images
 const NovelCoverImage = ({ src, alt, priority }: { src: string, alt: string, priority?: boolean }) => {
   return (
     <Image
@@ -146,11 +108,9 @@ const NovelCoverImage = ({ src, alt, priority }: { src: string, alt: string, pri
       sizes="(max-width: 768px) 96px, 96px"
       priority={priority}
       className="rounded object-cover"
-      // Add blur placeholder for better loading experience
       placeholder="blur"
       blurDataURL="/placeholder.svg"
       onError={(e) => {
-        // Fallback to placeholder on error
         const img = e.target as HTMLImageElement;
         img.src = '/placeholder.svg';
       }}
@@ -158,7 +118,44 @@ const NovelCoverImage = ({ src, alt, priority }: { src: string, alt: string, pri
   );
 };
 
-function BrowsePageContent() {
+// Update the animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { 
+    opacity: 0,
+    y: 10,
+    scale: 0.98
+  },
+  visible: { 
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 20,
+      duration: 0.3
+    }
+  },
+  exit: { 
+    opacity: 0,
+    scale: 0.98,
+    transition: {
+      duration: 0.15
+    }
+  }
+};
+
+export default function BrowsePage() {
   const { theme, setTheme } = useTheme()
   const [novels, setNovels] = useState<Novel[]>([])
   const [filteredNovels, setFilteredNovels] = useState<Novel[]>([])
@@ -167,49 +164,52 @@ function BrowsePageContent() {
   const [currentPage, setCurrentPage] = useState(1)
   const [sortCriteria, setSortCriteria] = useState<'releaseDate' | 'name'>('releaseDate')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const [itemsPerPage] = useState(10)
   const [isLoading, setIsLoading] = useState(true)
+  const [itemsPerPage] = useState(10);
+  const [tagLogic, setTagLogic] = useState<'AND' | 'OR'>('OR');
+  const [tagSearchInclude, setTagSearchInclude] = useState('');
+  const [tagSearchExclude, setTagSearchExclude] = useState('');
+  const [readingStatus, setReadingStatus] = useState('all');
+  const [publisherSearch, setPublisherSearch] = useState('');
+  const [genreLogic, setGenreLogic] = useState<'AND' | 'OR'>('OR');
+  const [selectedGenres, setSelectedGenres] = useState<string>('');
+  const [excludedGenres, setExcludedGenres] = useState<string>('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const totalPages = Math.ceil(filteredNovels.length / itemsPerPage);
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
-  // Filter state variables
-  const [tagLogic, setTagLogic] = useState<'AND' | 'OR'>('OR')
-  const [tagSearchInclude, setTagSearchInclude] = useState('')
-  const [tagSearchExclude, setTagSearchExclude] = useState('')
-  const [readingStatus, setReadingStatus] = useState('all')
-  const [publisherSearch, setPublisherSearch] = useState('')
-  const [genreLogic, setGenreLogic] = useState<'AND' | 'OR'>('OR')
-  const [selectedGenres, setSelectedGenres] = useState<string>('')
-  const [excludedGenres, setExcludedGenres] = useState<string>('')
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const searchParams = useSearchParams();
 
-  const searchParams = useSearchParams()
+  const [open, setOpen] = useState(false);
 
-  // Load filter state from localStorage on initial render
+  const [displayedNovels, setDisplayedNovels] = useState<Novel[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const ITEMS_PER_LOAD = 12;
+
+  const { ref, inView } = useInView({
+    threshold: 0,
+  });
+
   useEffect(() => {
-    const savedFilterState = localStorage.getItem(FILTER_STATE_KEY)
-    if (savedFilterState) {
-      try {
-        const parsedState = JSON.parse(savedFilterState);
-        setSelectedGenres(parsedState.selectedGenres || '');
-        setExcludedGenres(parsedState.excludedGenres || '');
-        setGenreLogic(parsedState.genreLogic || 'OR');
-        setTagLogic(parsedState.tagLogic || 'OR');
-        setTagSearchInclude(parsedState.tagSearchInclude || '');
-        setTagSearchExclude(parsedState.tagSearchExclude || '');
-        setReadingStatus(parsedState.readingStatus || 'all');
-        setPublisherSearch(parsedState.publisherSearch || '');
-        setSearchTerm(parsedState.searchTerm || '');
-      } catch (error) {
-        console.error('Error parsing filter state:', error);
-      }
+    if (inView && hasMore) {
+      loadMore();
     }
+  }, [inView]);
 
-    const genreFromUrl = searchParams.get('genre')
-    if (genreFromUrl) {
-      setSelectedGenres(genreFromUrl);
+  const loadMore = useCallback(() => {
+    const currentLength = displayedNovels.length;
+    const nextBatch = filteredNovels.slice(
+      currentLength,
+      currentLength + ITEMS_PER_LOAD
+    );
+    
+    if (nextBatch.length > 0) {
+      setDisplayedNovels(prev => [...prev, ...nextBatch]);
     }
-  }, [searchParams]);
+    
+    setHasMore(currentLength + nextBatch.length < filteredNovels.length);
+  }, [filteredNovels, displayedNovels.length]);
 
-  // Update fetchNovels function
   const fetchNovels = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -247,15 +247,10 @@ function BrowsePageContent() {
         }
       }
 
-      // Fetch from Firebase
       const novelsRef = collection(db, 'novels');
       const q = query(novelsRef, orderBy('title'));
-      
       const querySnapshot = await getDocs(q);
-      if (querySnapshot.empty) {
-        throw new Error('No novels found in the database');
-      }
-
+      
       const fetchedNovels = querySnapshot.docs.map(doc => ({
         novelId: doc.id,
         ...doc.data()
@@ -264,27 +259,15 @@ function BrowsePageContent() {
       setNovels(fetchedNovels);
       setFilteredNovels(fetchedNovels);
 
-      // Cache the data
-      if (redis) {
-        try {
-          await redis.set(CACHE_KEY, JSON.stringify(fetchedNovels), {
-            ex: CACHE_TTL
-          });
-        } catch (cacheError) {
-          console.error('Failed to cache data:', cacheError);
-        }
-      }
-
+      await redis.set(CACHE_KEY, JSON.stringify(fetchedNovels), { ex: CACHE_TTL });
     } catch (error) {
       console.error("Error fetching novels:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to load novels");
-      throw error; // This will be caught by the ErrorBoundary
+      toast.error("Failed to load novels");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // Load data on mount
   useEffect(() => {
     fetchNovels();
   }, [fetchNovels]);
@@ -295,6 +278,28 @@ function BrowsePageContent() {
       return;
     }
     
+    const searchTermLower = searchTerm.toLowerCase().trim();
+    
+    let filtered = novelsList;
+    
+    if (searchTermLower) {
+      filtered = filtered.filter(novel => {
+        const novelTitle = novel.title.toLowerCase();
+        const publisherOriginal = novel.publishers?.original.toLowerCase() || '';
+        const genres = novel.genres.map(g => g.name.toLowerCase()).join(' ');
+        const tags = novel.tags.map(t => t.toLowerCase()).join(' ');
+        
+        const titleWords = novelTitle.split(' ');
+        const titleMatch = titleWords.some(word => word.startsWith(searchTermLower)) || 
+                          novelTitle.includes(searchTermLower);
+        
+        return titleMatch ||
+               publisherOriginal.includes(searchTermLower) ||
+               genres.includes(searchTermLower) ||
+               tags.includes(searchTermLower);
+      });
+    }
+
     const safeString = (value: any): string => {
       if (value === null || value === undefined) return '';
       if (typeof value === 'string') return value;
@@ -312,80 +317,72 @@ function BrowsePageContent() {
       }
     };
 
-    let filtered = novelsList.filter(novel => {
-      if (!novel) return false;
+    // Include genres
+    const includeGenresLower = safeSplit(selectedGenres)
+      .map(g => g.toLowerCase());
 
-      // Basic search
-      const searchTermLower = safeString(searchTerm).toLowerCase();
-      const novelTitle = safeString(novel.title).toLowerCase();
-      const publisherOriginal = safeString(novel.publishers?.original).toLowerCase();
+    // Exclude genres
+    const excludeGenresLower = safeSplit(excludedGenres)
+      .map(g => g.toLowerCase());
 
-      // Genre arrays
-      const novelGenres = Array.isArray(novel.genres) 
-        ? novel.genres
-            .filter(g => g && typeof g === 'object' && g.name)
-            .map(g => safeString(g.name).toLowerCase())
-        : [];
+    // Tags
+    const includeTags = safeSplit(tagSearchInclude)
+      .map(t => t.toLowerCase());
+    const excludeTags = safeSplit(tagSearchExclude)
+      .map(t => t.toLowerCase());
 
-      // Tags array
-      const tagsLower = Array.isArray(novel.tags)
-        ? novel.tags.map(tag => safeString(tag).toLowerCase())
-        : [];
-
-      // Include genres
-      const includeGenresLower = safeSplit(selectedGenres)
-        .map(g => g.toLowerCase());
-
-      // Exclude genres
-      const excludeGenresLower = safeSplit(excludedGenres)
-        .map(g => g.toLowerCase());
-
-      // Tags
-      const includeTags = safeSplit(tagSearchInclude)
-        .map(t => t.toLowerCase());
-      const excludeTags = safeSplit(tagSearchExclude)
-        .map(t => t.toLowerCase());
-
-      // Basic search
-      const matchesSearch = 
-        novelTitle.includes(searchTermLower) ||
-        publisherOriginal.includes(searchTermLower);
-
-      // Genre filtering - Include genres
-      let matchesIncludeGenres = true;
-      if (includeGenresLower.length > 0) {
-        matchesIncludeGenres = genreLogic === 'AND'
-          ? includeGenresLower.every(genre => 
-              novelGenres.some(novelGenre => novelGenre.includes(genre))
+    // Genre filtering
+    let matchesIncludeGenres = true;
+    if (includeGenresLower.length > 0) {
+      matchesIncludeGenres = genreLogic === 'AND'
+        ? includeGenresLower.every(genre => 
+            filtered.some(novel => 
+              Array.isArray(novel.genres) && 
+              novel.genres.some(g => g.name.toLowerCase() === genre)
             )
-          : includeGenresLower.some(genre => 
-              novelGenres.some(novelGenre => novelGenre.includes(genre))
-            );
-      }
+          )
+        : includeGenresLower.some(genre => 
+            filtered.some(novel => 
+              Array.isArray(novel.genres) && 
+              novel.genres.some(g => g.name.toLowerCase() === genre)
+            )
+          );
+    }
 
-      // Genre filtering - Exclude genres
-      const matchesExcludeGenres = !excludeGenresLower.some(genre => 
-        novelGenres.some(novelGenre => novelGenre.includes(genre))
-      );
+    const matchesExcludeGenres = !excludeGenresLower.some(genre => 
+      filtered.some(novel => 
+        Array.isArray(novel.genres) && 
+        novel.genres.some(g => g.name.toLowerCase() === genre)
+      )
+    );
 
-      // Tag filtering
-      const matchesIncludeTags = !includeTags.length || (
-        tagLogic === 'AND'
-          ? includeTags.every(tag => tagsLower.includes(tag))
-          : includeTags.some(tag => tagsLower.includes(tag))
-      );
-      
-      const matchesExcludeTags = !excludeTags.length ||
-        !excludeTags.some(tag => tagsLower.includes(tag));
+    // Tag filtering
+    const matchesIncludeTags = !includeTags.length || (
+      tagLogic === 'AND'
+        ? includeTags.every(tag => filtered.some(novel => 
+            Array.isArray(novel.tags) && 
+            novel.tags.some(t => t.toLowerCase() === tag)
+          ))
+        : includeTags.some(tag => filtered.some(novel => 
+            Array.isArray(novel.tags) && 
+            novel.tags.some(t => t.toLowerCase() === tag)
+          ))
+    );
+    
+    const matchesExcludeTags = !excludeTags.length ||
+      !excludeTags.some(tag => filtered.some(novel => 
+        Array.isArray(novel.tags) && 
+        novel.tags.some(t => t.toLowerCase() === tag)
+      ));
 
-      return matchesSearch && 
-             matchesIncludeGenres && 
-             matchesExcludeGenres && 
-             matchesIncludeTags && 
-             matchesExcludeTags;
-    });
+    filtered = filtered.filter(novel => 
+      matchesIncludeGenres && 
+      matchesExcludeGenres && 
+      matchesIncludeTags && 
+      matchesExcludeTags
+    );
 
-    // Apply sorting with null checks
+    // Apply sorting
     filtered.sort((a, b) => {
       if (sortCriteria === 'name') {
         return sortOrder === 'asc' 
@@ -399,7 +396,8 @@ function BrowsePageContent() {
     });
 
     setFilteredNovels(filtered);
-    setCurrentPage(1);
+    setDisplayedNovels(filtered.slice(0, ITEMS_PER_LOAD));
+    setHasMore(filtered.length > ITEMS_PER_LOAD);
   }, [
     novels,
     searchTerm,
@@ -413,58 +411,14 @@ function BrowsePageContent() {
     sortOrder
   ]);
 
-  // Handle apply filters button click
   const handleApplyFilters = useCallback(() => {
-    try {
-      const filterState = {
-        selectedGenres,
-        excludedGenres,
-        genreLogic,
-        tagLogic,
-        tagSearchInclude,
-        tagSearchExclude,
-        readingStatus,
-        publisherSearch,
-        searchTerm
-      };
-      
-      localStorage.setItem(FILTER_STATE_KEY, JSON.stringify(filterState));
-      applyFilters(novels);
-    } catch (error) {
-      console.error("Error applying filters:", error);
-      toast.error("Failed to apply filters. Please try again.");
-      throw error; // This will be caught by the ErrorBoundary
-    }
-  }, [
-    novels,
-    selectedGenres,
-    excludedGenres,
-    genreLogic,
-    tagLogic,
-    tagSearchInclude,
-    tagSearchExclude,
-    readingStatus,
-    publisherSearch,
-    searchTerm,
-    applyFilters
-  ]);
-
-  const handleResetFilters = useCallback(() => {
-    setSelectedGenres('')
-    setExcludedGenres('')
-    setGenreLogic('OR')
-    setTagLogic('OR')
-    setTagSearchInclude('')
-    setTagSearchExclude('')
-    setReadingStatus('all')
-    setPublisherSearch('')
-    setSearchTerm('')
-    setCurrentPage(1)
-    
-    localStorage.removeItem(FILTER_STATE_KEY)
-    applyFilters(novels)
+    applyFilters(novels);
   }, [novels, applyFilters]);
 
+  const handleTileClick = (novelId: string) => {
+    router.push(`/novel/${novelId}`);
+  };
+  
   const getSortButtonText = () => {
     if (sortCriteria === 'name') {
       return sortOrder === 'asc' ? 'A-Z' : 'Z-A'
@@ -490,340 +444,336 @@ function BrowsePageContent() {
     return 'Invalid date'
   }
 
-  const handleTileClick = (novelId: string) => {
-    router.push(`/novel/${novelId}`)
-  }
-
   const getColorScheme = (item: string) => {
     const key = Object.keys(genreColors).find(k => item.toLowerCase().includes(k.toLowerCase()));
     return key ? genreColors[key as keyof typeof genreColors] : genreColors.Horror;
   }
 
-
-
-
-  // Pagination logic
-  const indexOfLastNovel = currentPage * itemsPerPage;
-  const indexOfFirstNovel = indexOfLastNovel - itemsPerPage;
-  const currentNovels = filteredNovels.slice(indexOfFirstNovel, indexOfLastNovel);
-
-  const totalPages = Math.ceil(filteredNovels.length / itemsPerPage);
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
-
-
-
   const handleSearch = () => {
     handleApplyFilters()
   }
 
-  const [mounted, setMounted] = useState(false)
+  const handleResetFilters = useCallback(() => {
+    setSelectedGenres('');
+    setExcludedGenres('');
+    setGenreLogic('OR');
+    setTagLogic('OR');
+    setTagSearchInclude('');
+    setTagSearchExclude('');
+    setReadingStatus('all');
+    setPublisherSearch('');
+    setSearchTerm('');
+    setCurrentPage(1);
+    applyFilters(novels);
+  }, [novels, applyFilters]);
 
+  // Add a ref for the timeout
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Update the search input onChange handler
+  <Input
+    className="pl-10 bg-[#C3C3C3] dark:bg-[#3E3F3E] text-[#232120] dark:text-[#E7E7E8]"
+    placeholder="Search novels, authors, genres..."
+    value={searchTerm}
+    onChange={(e) => {
+      const newValue = e.target.value;
+      setSearchTerm(newValue);
+      applyFilters(novels);
+    }}
+    onPaste={(e) => {
+      e.preventDefault();
+      const pastedText = e.clipboardData.getData('text');
+      // Update both state and input value immediately
+      setSearchTerm(pastedText);
+      e.currentTarget.value = pastedText;
+      applyFilters(novels);
+    }}
+  />
+
+  // Add cleanup on unmount
   useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  const parentRef = useRef(null);
-
-  const rowVirtualizer = useVirtualizer({
-    count: filteredNovels.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 160, // Approximate height of each novel card
-    overscan: 5
-  });
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
-    <div className={`min-h-screen bg-[#E7E7E8] dark:bg-[#232120] ${mounted && theme === 'dark' ? 'dark' : ''}`}>
-      <header className="bg-white dark:bg-[#232120] shadow">
-        <div className="container mx-auto px-4 py-6 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-3xl font-bold text-[#F1592A]">
+    <div className={`min-h-screen bg-[#E7E7E8] dark:bg-[#232120]`}>
+      <header className="sticky top-0 z-50 bg-white dark:bg-[#232120] shadow">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center space-x-4">
               <Link href="/" className="text-3xl font-bold text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] dark:hover:text-[#F1592A] transition-colors">
                 Novellize
               </Link>
-            </h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Link href="/" passHref>
-              <Button
-                variant="outline"
-                size="icon"
-                className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
-              >
-                <Home className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" />
-                <span className="sr-only">Home</span>
-              </Button>
-            </Link>
-            {mounted && (
+            </div>
+
+            <div className="flex-1 max-w-2xl mx-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#232120] dark:text-[#E7E7E8]" />
+                <Input
+                  className="pl-10 pr-10 bg-[#C3C3C3] dark:bg-[#3E3F3E] text-[#232120] dark:text-[#E7E7E8]"
+                  placeholder="Search novels, authors, genres..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    setSearchTerm(newValue);
+                    applyFilters(novels);
+                  }}
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const pastedText = e.clipboardData.getData('text');
+                    setSearchTerm(pastedText);
+                    e.currentTarget.value = pastedText;
+                    applyFilters(novels);
+                  }}
+                />
+                {searchTerm && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setFilteredNovels(novels);
+                      setDisplayedNovels(novels.slice(0, ITEMS_PER_LOAD));
+                      setHasMore(novels.length > ITEMS_PER_LOAD);
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 hover:bg-transparent"
+                  >
+                    <X className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A]" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <Link href="/" passHref>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
+                >
+                  <Home className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" />
+                </Button>
+              </Link>
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
                 className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-white dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
               >
-                <ClientSideIcon 
-                  name={theme === 'dark' ? 'sun' : 'moon'} 
-                  className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" 
-                />
-                <span className="sr-only">Toggle theme</span>
+                {theme === 'light' ? (
+                  <Moon className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" />
+                ) : (
+                  <Sun className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" />
+                )}
               </Button>
-            )}
+            </div>
           </div>
         </div>
       </header>
-      
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <LoadingSpinner />
-        </div>
-      ) : (
-        <main className="container mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row gap-8">
-            {/* Sidebar with FilterSection */}
-            <aside className="md:w-80">
-              <FilterSection
-                tagLogic={tagLogic}
-                setTagLogic={setTagLogic}
-                tagSearchInclude={tagSearchInclude}
-                setTagSearchInclude={setTagSearchInclude}
-                tagSearchExclude={tagSearchExclude}
-                setTagSearchExclude={setTagSearchExclude}
-                readingStatus={readingStatus}
-                setReadingStatus={setReadingStatus}
-                publisherSearch={publisherSearch}
-                setPublisherSearch={setPublisherSearch}
-                genreLogic={genreLogic}
-                setGenreLogic={setGenreLogic}
-                selectedGenres={selectedGenres}
-                setSelectedGenres={setSelectedGenres}
-                excludedGenres={excludedGenres}
-                setExcludedGenres={setExcludedGenres}
-                handleApplyFilters={handleApplyFilters}
-                handleResetFilters={handleResetFilters}
-              />
-            </aside>
 
-            {/* Main content area */}
-            <div className="flex-1">
-              <div className="flex justify-between items-center mb-8">
-                <h1 className="text-4xl font-bold text-[#232120] dark:text-[#E7E7E8]">Browse Novels</h1>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="ml-auto">
-                      <ArrowUpDown className="mr-2 h-4 w-4" />
-                      Sort by : {getSortButtonText()}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => {
-                      setSortCriteria('releaseDate')
-                      setSortOrder('desc')
-                    }}>
-                      Newest first
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {
-                      setSortCriteria('releaseDate')
-                      setSortOrder('asc')
-                    }}>
-                      Oldest first
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {
-                      setSortCriteria('name')
-                      setSortOrder('asc')
-                    }}>
-                      A-Z
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {
-                      setSortCriteria('name')
-                      setSortOrder('desc')
-                    }}>
-                      Z-A
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              
-              {/* Search bar */}
-              <div className="mb-8">
-                <div className="relative flex items-center">
-                  <ClientSideIcon name="search" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#232120]/60 dark:text-[#E7E7E8]/60" />
-                  <Input
-                    type="search"
-                    placeholder="Search novels, authors, genres, or tags..."
-                    className="pl-10 pr-4 py-2 w-full rounded-l-full bg-[#C3C3C3] dark:bg-[#3E3F3E] focus:outline-none focus:ring-2 focus:ring-[#F1592A] text-[#232120] dark:text-[#E7E7E8] placeholder-[#8E8F8E] dark:placeholder-[#C3C3C3]"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        handleSearch()
-                      }
-                    }}
-                  />
-                  <Button
-                    onClick={handleSearch}
-                    className="rounded-r-full bg-[#F1592A] text-white hover:bg-[#E7E7E8] hover:text-[#F1592A] dark:hover:bg-[#232120]"
-                  >
-                    Search
+      <main className="container mx-auto px-4 py-8">
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <h1 className="text-3xl font-bold text-[#232120] dark:text-[#E7E7E8]">Browse Novels</h1>
+            <div className="flex items-center gap-4">
+              <Sheet open={open} onOpenChange={setOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="border-[#F1592A] text-[#232120] dark:text-[#E7E7E8]">
+                    Filters
                   </Button>
-                  {searchTerm && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-24 top-1/2 transform -translate-y-1/2"
-                      onClick={() => setSearchTerm('')}
-                    >
-                      <X size={16} />
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              {/* Novels grid */}
-              <div ref={parentRef} className="h-[800px] overflow-auto">
-                <div
-                  style={{
-                    height: `${rowVirtualizer.getTotalSize()}px`,
-                    width: '100%',
-                    position: 'relative',
-                  }}
-                >
-                  {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                    const novel = filteredNovels[virtualRow.index];
-                    return (
-                      <div
-                        key={novel.novelId}
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: `${virtualRow.size}px`,
-                          transform: `translateY(${virtualRow.start}px)`,
-                        }}
-                      >
-                        <motion.div
-                          key={novel.novelId}
-                          className="bg-white dark:bg-black rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
-                          onClick={() => handleTileClick(novel.novelId)}
-                        >
-                          <div className="flex p-4">
-                            <div className="flex-shrink-0 w-24 h-36 mr-4 relative group">
-                              <div className="relative w-24 h-36">
-                                <NovelCoverImage
-                                  src={novel.coverPhoto}
-                                  alt={novel.title}
-                                  priority={virtualRow.index < 3}
-                                />
-                              </div>
-                              <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleReadNow(novel.novelId);
-                                  }}
-                                >
-                                  <ClientSideIcon name="book-open" className="mr-2" size={16} />
-                                  Read Now
-                                </Button>
-                              </div>
-                            </div>
-                            <div className="flex-grow">
-                              <h3 className="text-xl font-semibold text-[#232120] dark:text-[#E7E7E8] mb-2">
-                                {novel.title}
-                              </h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                Published by{' '}
-                                <span className="font-semibold">
-                                  {novel.publishers.original}
-                                </span>
-                                {novel.publishers.english && (
-                                  <span> / {novel.publishers.english}</span>
-                                )}
-                              </p>
-                              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">{novel.synopsis}</p>
-                              <div className="flex flex-wrap items-center gap-2 mb-2">
-                                {novel.genres.slice(0, 3).map((g, i) => (
-                                  <span 
-                                    key={i}
-                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                      theme === 'dark'
-                                        ? getColorScheme(g.name).dark
-                                        : getColorScheme(g.name).light
-                                    }`}
-                                  >
-                                    {g.name}
-                                  </span>
-                                ))}
-                                <span className="text-sm text-gray-500 dark:text-gray-400">{novel.likes} likes</span>
-                                {novel.releaseDate && (
-                                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                                    Released: {formatDate(novel.releaseDate)}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </motion.div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Add after novels grid */}
-              {filteredNovels.length > 0 && (
-                <div className="flex justify-center mt-8 space-x-2">
-                  <Button
-                    onClick={() => paginate(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    variant="outline"
-                  >
-                    <ChevronLeft size={16} />
-                    Previous
-                  </Button>
-                  <div className="flex items-center space-x-2">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
-                      <Button
-                        key={number}
-                        onClick={() => paginate(number)}
-                        variant={currentPage === number ? "default" : "outline"}
-                        className={currentPage === number ? "bg-[#F1592A] text-white" : ""}
-                      >
-                        {number}
-                      </Button>
-                    ))}
+                </SheetTrigger>
+                <SheetContent className="h-full flex flex-col p-0">
+                  <SheetHeader className="p-6 pb-2">
+                    <SheetTitle>Filter Novels</SheetTitle>
+                    <SheetDescription>
+                      Customize your novel search with these filters
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="flex-1 overflow-hidden">
+                    <FilterSection
+                      tagLogic={tagLogic}
+                      setTagLogic={setTagLogic}
+                      tagSearchInclude={tagSearchInclude}
+                      setTagSearchInclude={setTagSearchInclude}
+                      tagSearchExclude={tagSearchExclude}
+                      setTagSearchExclude={setTagSearchExclude}
+                      readingStatus={readingStatus}
+                      setReadingStatus={setReadingStatus}
+                      publisherSearch={publisherSearch}
+                      setPublisherSearch={setPublisherSearch}
+                      genreLogic={genreLogic}
+                      setGenreLogic={setGenreLogic}
+                      selectedGenres={selectedGenres}
+                      setSelectedGenres={setSelectedGenres}
+                      excludedGenres={excludedGenres}
+                      setExcludedGenres={setExcludedGenres}
+                      handleApplyFilters={handleApplyFilters}
+                      handleResetFilters={handleResetFilters}
+                      closeSheet={() => setOpen(false)}
+                    />
                   </div>
-                  <Button
-                    onClick={() => paginate(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    variant="outline"
-                  >
-                    Next
-                    <ChevronRight size={16} />
-                  </Button>
-                </div>
-              )}
-
-              {filteredNovels.length === 0 && (
-                <p className="text-center text-[#232120] dark:text-[#E7E7E8] mt-8">
-                  No novels found matching your criteria.
-                </p>
-              )}
+                </SheetContent>
+              </Sheet>
+              
+              <Select onValueChange={(value) => {
+                setSortCriteria(value.includes('name') ? 'name' : 'releaseDate')
+                setSortOrder(value.includes('asc') ? 'asc' : 'desc')
+              }}>
+                <SelectTrigger className="w-[160px] border-[#F1592A]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="oldest">Oldest First</SelectItem>
+                  <SelectItem value="name_asc">A-Z</SelectItem>
+                  <SelectItem value="name_desc">Z-A</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </main>
-      )}
+
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <LoadingSpinner />
+            </div>
+          ) : (
+            <motion.div 
+              className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 auto-rows-[250px]"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              <AnimatePresence mode="sync">
+                {displayedNovels.map((novel) => (
+                  <motion.div
+                    key={novel.novelId}
+                    variants={itemVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    layout
+                    className="group relative overflow-hidden rounded-lg border bg-white dark:bg-black p-2 transition-colors cursor-pointer h-[250px]"
+                    onClick={() => handleTileClick(novel.novelId)}
+                  >
+                    <div className="flex p-4 h-full">
+                      <div className="flex-shrink-0 w-24 h-36 mr-4 relative group">
+                        <div className="relative w-24 h-36">
+                          <NovelCoverImage
+                            src={novel.coverPhoto}
+                            alt={novel.title}
+                            priority={false}
+                          />
+                        </div>
+                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleReadNow(novel.novelId);
+                            }}
+                          >
+                            <Search className="mr-2" size={16} />
+                            Read Now
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex-grow flex flex-col">
+                        <h3 className="text-xl font-semibold text-[#232120] dark:text-[#E7E7E8] mb-2">
+                          {novel.title}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                          Published by{' '}
+                          <span className="font-semibold">
+                            {novel.publishers.original}
+                          </span>
+                          {novel.publishers.english && (
+                            <span> / {novel.publishers.english}</span>
+                          )}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 flex-grow overflow-y-auto custom-scrollbar">
+                          {novel.synopsis}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {novel.genres.slice(0, 3).map((g, i) => (
+                            <span 
+                              key={i}
+                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                theme === 'dark'
+                                  ? getColorScheme(g.name).dark
+                                  : getColorScheme(g.name).light
+                              }`}
+                            >
+                              {g.name}
+                            </span>
+                          ))}
+                          <span className="text-sm text-gray-500 dark:text-gray-400">{novel.likes} likes</span>
+                          {novel.releaseDate && (
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              Released: {formatDate(novel.releaseDate)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 p-6 flex flex-col">
+                      <h3 className="text-xl font-semibold text-[#232120] dark:text-[#E7E7E8] mb-4">
+                        {novel.title}
+                      </h3>
+                      <div className="flex-grow overflow-y-auto custom-scrollbar">
+                        <p className="text-[#232120] dark:text-[#E7E7E8]">
+                          {novel.synopsis}
+                        </p>
+                      </div>
+                      <div className="mt-4 flex gap-2 pt-4 border-t border-[#232120]/10 dark:border-[#E7E7E8]/10">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="border-[#F1592A] hover:bg-[#F1592A] hover:text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReadNow(novel.novelId);
+                          }}
+                        >
+                          Read Now
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="border-[#F1592A] hover:bg-[#F1592A] hover:text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTileClick(novel.novelId);
+                          }}
+                        >
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              
+              {hasMore && (
+                <div ref={ref} className="col-span-full flex justify-center p-4">
+                  <LoadingSpinner />
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {filteredNovels.length === 0 && (
+            <p className="text-center text-[#232120] dark:text-[#E7E7E8] mt-8">
+              No novels found matching your criteria.
+            </p>
+          )}
+        </div>
+      </main>
     </div>
   )
 }
 
-export default function BrowsePage() {
-  return (
-    <ErrorBoundary>
-      <Suspense fallback={<LoadingSpinner />}>
-        <BrowsePageContent />
-      </Suspense>
-    </ErrorBoundary>
-  )
-}
