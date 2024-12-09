@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Home, Moon, Sun, ChevronLeft, ChevronRight, X } from "lucide-react"
@@ -199,6 +199,14 @@ const sortNovels = (novels: Novel[], criteria: SortCriteria) => {
 };
 
 export default function BrowsePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BrowseContent />
+    </Suspense>
+  )
+}
+
+function BrowseContent() {
   const { theme, setTheme } = useTheme()
   const [novels, setNovels] = useState<Novel[]>([])
   const [filteredNovels, setFilteredNovels] = useState<Novel[]>([])
