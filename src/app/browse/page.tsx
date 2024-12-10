@@ -268,6 +268,8 @@ function BrowseContent() {
       const CACHE_KEY = 'all_novels_test_v3';
       const CACHE_TTL = 3600;
 
+      let fetchedData: Novel[] = [];
+
       if (redis) {
         try {
           console.log('🔍 Checking Redis cache...');
@@ -285,20 +287,7 @@ function BrowseContent() {
                 throw new Error('Invalid cache format');
               }
               
-              // Sort without logging
-              parsedData.sort((a, b) => {
-                const dateA = a.seriesInfo?.firstReleaseDate?.seconds 
-                  ? a.seriesInfo.firstReleaseDate.seconds * 1000 
-                  : 0;
-                const dateB = b.seriesInfo?.firstReleaseDate?.seconds 
-                  ? b.seriesInfo.firstReleaseDate.seconds * 1000 
-                  : 0;
-                return dateB - dateA;
-              });
-              
-              setNovels(parsedData);
-              setFilteredNovels(parsedData);
-              return;
+              fetchedData = parsedData;
             } catch (parseError) {
               console.error('❌ Cache parse error:', parseError);
               const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown error';
@@ -312,23 +301,31 @@ function BrowseContent() {
         }
       }
 
-      const novelsRef = collection(db, 'novels');
-      const q = query(
-        novelsRef, 
-        orderBy('seriesInfo.firstReleaseDate', 'desc')
-      );
-      
-      const querySnapshot = await getDocs(q);
-      
-      const fetchedNovels = querySnapshot.docs.map(doc => ({
-        novelId: doc.id,
-        ...doc.data()
-      } as Novel));
+      if (!fetchedData.length) {
+        const novelsRef = collection(db, 'novels');
+        const q = query(
+          novelsRef, 
+          orderBy('seriesInfo.firstReleaseDate', 'desc')
+        );
+        
+        const querySnapshot = await getDocs(q);
+        
+        fetchedData = querySnapshot.docs.map(doc => ({
+          novelId: doc.id,
+          ...doc.data()
+        } as Novel));
 
-      setNovels(fetchedNovels);
-      setFilteredNovels(fetchedNovels);
+        await redis.set(CACHE_KEY, JSON.stringify(fetchedData), { ex: CACHE_TTL });
+      }
 
-      await redis.set(CACHE_KEY, JSON.stringify(fetchedNovels), { ex: CACHE_TTL });
+      // Sort the data using current sortBy
+      const sortedData = sortNovels(fetchedData, sortBy);
+      
+      setNovels(sortedData);
+      setFilteredNovels(sortedData);
+      setDisplayedNovels(sortedData.slice(0, ITEMS_PER_LOAD));
+      setHasMore(sortedData.length > ITEMS_PER_LOAD);
+
     } catch (error) {
       console.error("Error fetching novels:", error);
       toast.error("Failed to load novels");
@@ -665,13 +662,12 @@ function BrowseContent() {
                 value={sortBy}
                 onValueChange={(value: SortCriteria) => {
                   setSortBy(value);
+                  // Sort the current filtered novels
                   const sorted = sortNovels(filteredNovels, value);
                   setFilteredNovels(sorted);
-                  setDisplayedNovels([]);
-                  setTimeout(() => {
-                    setDisplayedNovels(sorted.slice(0, ITEMS_PER_LOAD));
-                    setHasMore(sorted.length > ITEMS_PER_LOAD);
-                  }, 0);
+                  // Reset displayed novels with first batch
+                  setDisplayedNovels(sorted.slice(0, ITEMS_PER_LOAD));
+                  setHasMore(sorted.length > ITEMS_PER_LOAD);
                 }}
               >
                 <SelectTrigger className="w-[160px] border-[#F1592A]">
@@ -706,8 +702,9 @@ function BrowseContent() {
               variants={containerVariants}
               initial="hidden"
               animate="visible"
+              layoutRoot
             >
-              <AnimatePresence mode="sync">
+              <AnimatePresence mode="popLayout">
                 {displayedNovels.map((novel) => (
                   <motion.div
                     key={novel.novelId}
@@ -818,7 +815,7 @@ function BrowseContent() {
                 ))}
               </AnimatePresence>
               
-              {hasMore && (
+              {!isLoading && hasMore && (
                 <div ref={ref} className="col-span-full flex justify-center p-4">
                   <LoadingSpinner />
                 </div>
