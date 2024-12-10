@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/app/authcontext'
 import { db } from '@/lib/firebaseConfig'
-import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, orderBy, getDoc, Timestamp } from 'firebase/firestore'
+import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, orderBy, getDoc, Timestamp, writeBatch } from 'firebase/firestore'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -162,29 +162,41 @@ export default function ChapterManagement() {
       header: true,
       complete: async (results) => {
         try {
+          console.log(`Attempting to upload ${results.data.length} chapters`);
+          
+          // Create a batch
+          const batch = writeBatch(db);
+          const chaptersRef = collection(db, 'novels', novelId, 'chapters');
+          
           const chaptersToAdd = results.data.map((row: any) => ({
             title: row.title,
             link: row.link,
             chapter: Number(row.chapter),
             releaseDate: Timestamp.now()
-          }))
+          }));
 
-          // Add chapters in sequence
+          // Add chapters in batches of 500 (Firestore limit)
           for (const chapter of chaptersToAdd) {
-            await addDoc(collection(db, 'novels', novelId, 'chapters'), chapter)
+            const newChapterRef = doc(chaptersRef);
+            batch.set(newChapterRef, chapter);
           }
 
-          toast.success(`Successfully uploaded ${chaptersToAdd.length} chapters`)
-          fetchChapters()
+          // Commit the batch
+          await batch.commit();
+          
+          console.log(`Successfully processed ${chaptersToAdd.length} chapters`);
+          toast.success(`Successfully uploaded ${chaptersToAdd.length} chapters`);
+          fetchChapters();
         } catch (error) {
-          console.error('Error uploading chapters:', error)
-          toast.error(`Failed to upload chapters: ${error instanceof Error ? error.message : 'Unknown error'}`)
+          console.error('Error uploading chapters:', error);
+          toast.error(`Failed to upload chapters: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       },
       error: (error) => {
-        toast.error(`Error parsing CSV: ${error.message}`)
+        console.error('CSV parsing error:', error);
+        toast.error(`Error parsing CSV: ${error.message}`);
       }
-    })
+    });
   }
 
   const copyFormatTemplate = () => {
