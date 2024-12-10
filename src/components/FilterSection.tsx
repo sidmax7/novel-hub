@@ -184,17 +184,17 @@ const FilterSection = memo(function FilterSection({
       <div className="mt-auto p-4 border-t border-[#F1592A]/10">
         <div className="flex space-x-2">
           <Button 
-            onClick={handleApplyClick} 
-            className="flex-1 bg-[#F1592A] text-white hover:bg-[#F1592A]/90"
-          >
-            Apply Filters
-          </Button>
-          <Button 
             onClick={handleResetClick} 
             variant="outline" 
             className="flex-1 border-[#F1592A] text-[#232120] dark:text-[#E7E7E8] hover:bg-[#F1592A] hover:text-white"
           >
             Reset
+          </Button>
+          <Button 
+            onClick={handleApplyClick} 
+            className="flex-1 bg-[#F1592A] text-white hover:bg-[#F1592A]/90"
+          >
+            Apply Filters
           </Button>
         </div>
       </div>

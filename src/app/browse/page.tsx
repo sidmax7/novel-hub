@@ -436,14 +436,25 @@ function BrowseContent() {
     
     try {
       // Handle Firestore Timestamp
-      if (date.toDate && typeof date.toDate === 'function') {
-        return date.toDate().toLocaleDateString();
+      if (date && typeof date === 'object' && 'seconds' in date) {
+        // Convert seconds to milliseconds and create a Date object
+        return new Date(date.seconds * 1000).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
       }
-      // Handle regular date string
+      
+      // Handle string dates
       const parsedDate = new Date(date);
       if (!isNaN(parsedDate.getTime())) {
-        return parsedDate.toLocaleDateString();
+        return parsedDate.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
       }
+      
       return 'Invalid date';
     } catch (error) {
       console.error('Error formatting date:', error);
@@ -617,7 +628,7 @@ function BrowseContent() {
                     Filters
                   </Button>
                 </SheetTrigger>
-                <SheetContent className="h-full flex flex-col p-0">
+                <SheetContent side="left" className="h-full flex flex-col p-0">
                   <SheetHeader className="p-6 pb-2">
                     <SheetTitle>Filter Novels</SheetTitle>
                     <SheetDescription>
