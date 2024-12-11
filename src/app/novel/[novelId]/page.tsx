@@ -13,7 +13,7 @@ import { StarRating } from '@/components/ui/starrating'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { BookOpen, ThumbsUp, BookMarked, Gift, Eye, Info, MessageCircle, Search, Moon, Sun, LogOut, User, ChevronsLeftRight, MessageSquare, Menu, X } from 'lucide-react'
+import { BookOpen, ThumbsUp, BookMarked, Gift, Eye, Info, MessageCircle, Search, Moon, Sun, LogOut, User, ChevronsLeftRight, MessageSquare, Menu, X, Calendar, Users } from 'lucide-react'
 import CommentSystem from '@/components/ui/commentsystem'
 import { motion } from 'framer-motion'
 import { toast, Toaster } from 'react-hot-toast'
@@ -36,23 +36,54 @@ import { signOut } from 'firebase/auth'
 import { auth } from '@/lib/firebaseConfig'
 
 interface Novel {
-  novelId: string
-  title: string
-  synopsis: string
-  coverPhoto: string
-  genres: { name: string }[]
-  rating: number
+  novelId: string;
+  title: string;
+  synopsis: string;
+  coverPhoto: string;
+  extraArt?: string[];
+  brand?: {
+    name: string;
+    logo?: string;
+  };
+  seriesType: 'ORIGINAL' | 'TRANSLATED' | 'FAN_FIC';
+  language: {
+    original: string;
+    translated?: string[];
+  };
   publishers: {
-    original: string
-    english?: string
-  }
-  likes: number
-  views: number
-  totalChapters: number
-  uploaderId: string
-  uploader: string
-  seriesStatus: 'ONGOING' | 'COMPLETED' | 'ON HOLD' | 'CANCELLED' | 'UPCOMING'
-  tags?: string[]
+    original: string;
+    english?: string;
+  };
+  releaseFrequency: string;
+  alternativeNames?: string;
+  chapterType: 'TEXT' | 'MANGA' | 'VIDEO';
+  totalChapters: number;
+  seriesStatus: 'ONGOING' | 'COMPLETED' | 'ON HOLD' | 'CANCELLED' | 'UPCOMING';
+  availability: {
+    type: 'FREE' | 'FREEMIUM' | 'PAID';
+    price?: number;
+  };
+  seriesInfo: {
+    volumeNumber?: number;
+    seriesNumber?: number;
+    firstReleaseDate: Timestamp;
+  };
+  credits: {
+    authors: string[];
+    artists?: {
+      translators?: string[];
+      editors?: string[];
+      proofreaders?: string[];
+      [key: string]: string[] | undefined;
+    };
+  };
+  genres: { name: string }[];
+  tags?: string[];
+  likes: number;
+  views: number;
+  rating: number;
+  uploaderId: string;
+  uploader: string;
 }
 
 interface Chapter {
@@ -75,9 +106,20 @@ const formatDate = (timestamp: Timestamp) => {
 const getGenreColor = (genreName: string, theme: string | undefined) => {
   const normalizedGenre = genreName.toLowerCase();
   const key = Object.keys(genreColors).find(k => k.toLowerCase() === normalizedGenre);
-  if (!key) return theme === 'dark' ? 'bg-gray-800 text-gray-200' : 'bg-gray-100 text-gray-800';
-  return theme === 'dark' ? genreColors[key as keyof typeof genreColors].dark : genreColors[key as keyof typeof genreColors].light;
+  if (!key) return theme === 'dark' 
+    ? 'bg-gray-800/50 text-white font-semibold tracking-wide uppercase text-sm px-4 py-2 backdrop-blur-sm' 
+    : 'bg-gray-100/80 text-gray-900 font-semibold tracking-wide uppercase text-sm px-4 py-2 backdrop-blur-sm';
+  return theme === 'dark' 
+    ? `${genreColors[key as keyof typeof genreColors].dark} font-semibold tracking-wide uppercase text-sm px-4 py-2 backdrop-blur-sm` 
+    : `${genreColors[key as keyof typeof genreColors].light} font-semibold tracking-wide uppercase text-sm px-4 py-2 backdrop-blur-sm`;
 };
+
+// Common card styles
+const cardClasses = "bg-transparent border-none shadow-none"
+const cardHeaderClasses = "text-2xl font-bold mb-6 text-gray-900 dark:text-gray-50 flex items-center gap-3"
+const itemClasses = "flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800 last:border-none"
+const labelClasses = "text-gray-500 dark:text-gray-400 font-medium"
+const valueClasses = "text-gray-900 dark:text-gray-100 font-medium"
 
 export default function NovelPage({ params }: { params: { novelId: string } }) {
   const [novel, setNovel] = useState<Novel | null>(null)
@@ -505,33 +547,39 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
               <div className="space-y-4 mb-6">
                 {/* Genres */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Genres</h3>
-                  <div className="flex flex-wrap gap-2">
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Genres</h3>
+                  <div className="flex flex-wrap gap-3">
                     {novel.genres.map((genre, index) => (
                       <span
                         key={index}
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${getGenreColor(genre.name, theme)}`}
+                        className={`rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 cursor-pointer ${getGenreColor(genre.name, theme)}`}
                       >
-                        {genre.name}
+                        {genre.name.toUpperCase()}
                       </span>
                     ))}
                   </div>
                 </div>
 
                 {/* Tags */}
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {novel.tags?.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
+                {novel.tags && novel.tags.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Tags</h3>
+                    <div className="flex flex-wrap gap-3">
+                      {novel.tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="px-4 py-2 rounded-full text-sm font-semibold tracking-wide uppercase 
+                                   bg-[#F1592A]/10 text-[#F1592A] hover:bg-[#F1592A]/20 
+                                   dark:bg-[#F1592A]/20 dark:hover:bg-[#F1592A]/30
+                                   shadow-lg hover:shadow-xl transition-all duration-200 
+                                   hover:-translate-y-0.5 cursor-pointer backdrop-blur-sm"
+                        >
+                          #{tag.toUpperCase()}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -634,68 +682,179 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="about" className="space-y-8 pt-6">
-            <div className="space-y-4 prose dark:prose-invert max-w-none">
-              <h2 className="text-xl font-semibold">Synopsis</h2>
-              <ReactMarkdown className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                {novel.synopsis}
-              </ReactMarkdown>
-            </div>
+          <TabsContent value="about" className="space-y-12 pt-6">
+            {/* Synopsis Section */}
+            <Card className={cardClasses}>
+              <CardContent className="p-0">
+                <h2 className={cardHeaderClasses}>
+                  <Info className="w-6 h-6 text-[#F1592A]" />
+                  Synopsis
+                </h2>
+                <ReactMarkdown className="text-lg text-gray-900 dark:text-gray-100 leading-relaxed prose dark:prose-invert max-w-none">
+                  {novel.synopsis}
+                </ReactMarkdown>
+              </CardContent>
+            </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-gray-50 dark:bg-gray-900 border-0 shadow-sm rounded-3xl">
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-semibold mb-4">Publication Info</h2>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800">
-                      <span className="text-gray-600 dark:text-gray-400">Original Publisher</span>
-                      <span className="font-medium">{novel.publishers.original}</span>
+            {/* Series Information Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <Card className={cardClasses}>
+                <CardContent className="p-0">
+                  <h2 className={cardHeaderClasses}>
+                    <BookOpen className="w-6 h-6 text-[#F1592A]" />
+                    Series Information
+                  </h2>
+                  <div className="space-y-1">
+                    <div className={itemClasses}>
+                      <span className={labelClasses}>Series Type</span>
+                      <span className={valueClasses}>{novel.seriesType}</span>
                     </div>
-                    {novel.publishers.english && (
-                      <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800">
-                        <span className="text-gray-600 dark:text-gray-400">English Publisher</span>
-                        <span className="font-medium">{novel.publishers.english}</span>
+                    <div className={itemClasses}>
+                      <span className={labelClasses}>Release Frequency</span>
+                      <span className={valueClasses}>{novel.releaseFrequency}</span>
+                    </div>
+                    <div className={itemClasses}>
+                      <span className={labelClasses}>Chapter Type</span>
+                      <span className={valueClasses}>{novel.chapterType}</span>
+                    </div>
+                    <div className={itemClasses}>
+                      <span className={labelClasses}>Status</span>
+                      <span className="px-3 py-1 rounded-full text-sm font-medium bg-[#F1592A]/10 text-[#F1592A]">
+                        {novel.seriesStatus}
+                      </span>
+                    </div>
+                    <div className={itemClasses}>
+                      <span className={labelClasses}>Availability</span>
+                      <span className={`font-medium ${novel.availability.type === 'FREE' ? 'text-green-500' : 'text-[#F1592A]'}`}>
+                        {novel.availability.type}
+                        {novel.availability.price && ` - $${novel.availability.price}`}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Release Details Card */}
+              <Card className={cardClasses}>
+                <CardContent className="p-0">
+                  <h2 className={cardHeaderClasses}>
+                    <Calendar className="w-6 h-6 text-[#F1592A]" />
+                    Release Details
+                  </h2>
+                  <div className="space-y-1">
+                    {novel.seriesInfo.volumeNumber && (
+                      <div className={itemClasses}>
+                        <span className={labelClasses}>Volume</span>
+                        <span className={valueClasses}>{novel.seriesInfo.volumeNumber}</span>
                       </div>
                     )}
-                    <div className="flex items-center justify-between py-2">
-                      <span className="text-gray-600 dark:text-gray-400">Status</span>
-                      <span className="font-medium">{novel.seriesStatus}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gray-50 dark:bg-gray-900 border-0 shadow-sm rounded-3xl">
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-semibold mb-4">Statistics</h2>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800">
-                      <span className="flex items-center text-gray-600 dark:text-gray-400">
-                        <ThumbsUp className="w-4 h-4 mr-2" />
-                        Likes
+                    <div className={itemClasses}>
+                      <span className={labelClasses}>First Release</span>
+                      <span className={valueClasses}>
+                        {formatDate(novel.seriesInfo.firstReleaseDate)}
                       </span>
-                      <span className="font-medium">{likes}</span>
                     </div>
-                    <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800">
-                      <span className="flex items-center text-gray-600 dark:text-gray-400">
-                        <BookOpen className="w-4 h-4 mr-2" />
-                        Total Views
-                      </span>
-                      <span className="font-medium">{novel.views}</span>
+                    <div className={itemClasses}>
+                      <span className={labelClasses}>Original Language</span>
+                      <span className={valueClasses}>{novel.language.original}</span>
                     </div>
-                    <div className="flex items-center justify-between py-2">
-                      <span className="flex items-center text-gray-600 dark:text-gray-400">
-                        <BookMarked className="w-4 h-4 mr-2" />
-                        Chapters
-                      </span>
-                      <span className="font-medium">{novel.totalChapters}</span>
-                    </div>
+                    {novel.language.translated && novel.language.translated.length > 0 && (
+                      <div className={itemClasses}>
+                        <span className={labelClasses}>Translations</span>
+                        <span className={valueClasses}>
+                          {novel.language.translated.join(', ')}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="mt-8">
+            {/* Credits Section */}
+            <Card className={cardClasses}>
+              <CardContent className="p-0">
+                <h2 className={cardHeaderClasses}>
+                  <Users className="w-6 h-6 text-[#F1592A]" />
+                  Credits
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Main Credits</h3>
+                    <div className="space-y-1">
+                      <div className={itemClasses}>
+                        <span className={labelClasses}>Authors</span>
+                        <span className={valueClasses}>{novel.credits.authors.join(', ')}</span>
+                      </div>
+                      {novel.brand?.name && (
+                        <div className={itemClasses}>
+                          <span className={labelClasses}>Brand</span>
+                          <span className={valueClasses}>{novel.brand.name}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {novel.credits.artists && Object.keys(novel.credits.artists).length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Additional Credits</h3>
+                      <div className="space-y-1">
+                        {Object.entries(novel.credits.artists).map(([role, people]) => (
+                          people && people.length > 0 && (
+                            <div key={role} className={itemClasses}>
+                              <span className={labelClasses}>
+                                {role.charAt(0).toUpperCase() + role.slice(1)}
+                              </span>
+                              <span className={valueClasses}>{people.join(', ')}</span>
+                            </div>
+                          )
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Alternative Names */}
+            {novel.alternativeNames && (
+              <Card className={cardClasses}>
+                <CardContent className="p-0">
+                  <h2 className={cardHeaderClasses}>
+                    <BookMarked className="w-6 h-6 text-[#F1592A]" />
+                    Alternative Names
+                  </h2>
+                  <p className="text-gray-900 dark:text-gray-100 text-lg">{novel.alternativeNames}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Extra Artwork Gallery */}
+            {novel.extraArt && novel.extraArt.length > 0 && (
+              <Card className={cardClasses}>
+                <CardContent className="p-0">
+                  <h2 className={cardHeaderClasses}>
+                    {/* <Image className="w-6 h-6 text-[#F1592A]" /> */}
+                    Gallery
+                  </h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {novel.extraArt.map((art, index) => (
+                      <Image
+                        key={index}
+                        src={art}
+                        alt={`Artwork ${index + 1}`}
+                        width={200}
+                        height={200}
+                        className="rounded-lg object-cover w-full h-48 hover:opacity-90 transition-opacity"
+                      />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Recommended Novels Section */}
+            <div className="mt-12">
               <RecommendedList 
                 novels={recommendedNovels} 
                 loading={recommendedLoading}
