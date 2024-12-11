@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  /* Flame effect for Trending */
+  @keyframes flame {
+    0%, 100% {
+      background-position: 0% 50%;
+      filter: brightness(1) hue-rotate(0deg);
+    }
+    50% {
+      background-position: 100% 50%;
+      filter: brightness(1.2) hue-rotate(10deg);
+    }
+  }
+
+  .animate-fire {
+    background: linear-gradient(-45deg, #ff0000, #ff6600, #ff3300);
+    background-size: 200% auto;
+    animation: flame 3s ease-in-out infinite;
+    color: white !important;
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+  }
+
+  /* Electric effect for New */
+  @keyframes electric {
+    0%, 100% {
+      box-shadow: 0 0 5px #00ffff;
+    }
+    50% {
+      box-shadow: 0 0 20px #00ffff;
+    }
+  }
+
+  .animate-pulse {
+    background: linear-gradient(-45deg, #00ffff, #0099ff);
+    background-size: 200% auto;
+    animation: electric 2s ease-in-out infinite;
+    color: white !important;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.7);
+  }
+
+  /* Crystal effect for Popular */
+  @keyframes crystal {
+    0%, 100% {
+      background-position: 0% 50%;
+      filter: brightness(1);
+    }
+    50% {
+      background-position: 100% 50%;
+      filter: brightness(1.2);
+    }
+  }
+
+  .animate-sparkle {
+    background: linear-gradient(-45deg, #9333ea, #4f46e5);
+    background-size: 200% auto;
+    animation: crystal 3s ease-in-out infinite;
+    color: white !important;
+    text-shadow: 0 0 8px rgba(147, 51, 234, 0.7);
+    box-shadow: 0 0 15px rgba(147, 51, 234, 0.3);
+  }
+
+  /* Common styles for all badges */
+  .animate-fire,
+  .animate-pulse,
+  .animate-sparkle {
+    transition: all 0.3s ease;
+    padding: 4px 12px;
+    border-radius: 9999px;
+  }
+
+  /* Hover effects */
+  .animate-fire:hover,
+  .animate-pulse:hover,
+  .animate-sparkle:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+  }
+}

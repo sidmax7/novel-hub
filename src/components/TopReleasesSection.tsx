@@ -283,6 +283,16 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                           </span>
                         </div>
                       </div>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {selectedNovel.genres.map((genre, index) => (
+                          <span 
+                            key={index}
+                            className="text-xs px-2 py-1 bg-[#F1592A]/10 text-[#F1592A] rounded-full"
+                          >
+                            {genre.name}
+                          </span>
+                        ))}
+                      </div>
                       <p className="text-sm text-[#464646] dark:text-[#C3C3C3] mb-3 line-clamp-3">
                         {selectedNovel.synopsis}
                       </p>

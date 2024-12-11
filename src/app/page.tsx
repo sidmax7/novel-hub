@@ -749,8 +749,38 @@ export default function ModernLightNovelsHomepage() {
         </section>
 
         {/* Explore Genres Section */}
+        <style jsx global>{`
+          @keyframes shine {
+            0% {
+              transform: translateX(-100%);
+            }
+            100% {
+              transform: translateX(100%);
+            }
+          }
+          .shine-effect {
+            position: relative;
+            overflow: hidden;
+          }
+          .shine-effect::after {
+            position: absolute;
+            content: "";
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+              90deg,
+              transparent,
+              rgba(255, 255, 255, 0.2),
+              transparent
+            );
+            transform: translateX(-100%);
+            animation: shine 2s infinite;
+          }
+        `}</style>
         <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120] relative z-10">
-          <div className={`container rounded-lg mx-auto px-6 md:px-12 py-8 md:py-12 ${
+          <div className={`container rounded-3xl mx-auto px-6 md:px-12 py-8 md:py-12 ${
             mounted && theme === 'dark'
               ? 'bg-black dark:bg-[#3E3F3E]'
               : 'bg-white dark:bg-[#3E3F3E] border border-[#F1592A] border-opacity-30'
@@ -771,15 +801,15 @@ export default function ModernLightNovelsHomepage() {
                   <motion.div
                     key={genre}
                     variants={fadeIn}
-                    whileHover={{ scale: 1.05 }}
+                    whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                   >
                     <Link 
                       href={`/browse?genre=${encodeURIComponent(genre.toLowerCase())}`}
-                      className={`p-4 md:p-6 rounded-lg shadow-md text-center block transition-colors h-full
+                      className={`shine-effect p-2 md:p-3 rounded-full shadow-lg text-center block transition-colors h-full
                       ${mounted ? (theme === 'dark' ? colors.dark : colors.light) : colors.dark}`}
                     >
-                      <span className="font-medium text-base md:text-lg">{genre}</span>
+                      <span className="font-semibold text-sm md:text-base relative z-10">{genre}</span>
                     </Link>
                   </motion.div>
                 ))}
@@ -793,7 +823,7 @@ export default function ModernLightNovelsHomepage() {
               <Button
                 variant="outline"
                 onClick={() => setShowAllGenres(!showAllGenres)}
-                className="border-[#F1592A] text-[#F1592A] hover:bg-[#F1592A] hover:text-white dark:border-[#F1592A] dark:text-[#F1592A] dark:hover:bg-[#F1592A] dark:hover:text-[#E7E7E8]"
+                className="rounded-full border-[#F1592A] text-[#F1592A] hover:bg-[#F1592A] hover:text-white dark:border-[#F1592A] dark:text-[#F1592A] dark:hover:bg-[#F1592A] dark:hover:text-[#E7E7E8]"
               >
                 {showAllGenres ? 'Show Less' : 'Show More'}
               </Button>

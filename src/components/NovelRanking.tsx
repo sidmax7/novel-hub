@@ -17,19 +17,23 @@ interface NovelRankingsProps {
 }
 
 export function NovelRankings({ newReleases, trending, popular }: NovelRankingsProps) {
-  const renderNovelList = (novels: Novel[], title: string, subtitle: string) => (
-    <div className="bg-[#E7E7E8] dark:bg-[#232120] rounded-lg p-4 ">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-3xl font-bold text-[#F1592A]">{title}</h2>
-        <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-          #{subtitle}
-        </span>
+  const renderNovelList = (novels: Novel[], title: string, subtitle: string, animationClass: string) => (
+    <div className="bg-[#E7E7E8] dark:bg-[#232120] rounded-lg p-4">
+      <div className="flex items-center gap-3 mb-3">
+        <h2 className="text-3xl font-bold text-[#F1592A] flex items-center gap-2">
+          {title}
+          <div className="relative">
+            <span className={`text-sm px-4 py-1.5 rounded-full ${animationClass} inline-block bg-[#F1592A]/10 text-[#F1592A] font-medium border border-[#F1592A]/20 shadow-sm`}>
+              {subtitle}
+            </span>
+          </div>
+        </h2>
       </div>
       <div className="h-[1px] w-full bg-[#F1592A] mb-4"></div>
       <div className="space-y-6">
         {novels.slice(0, 5).map((novel, index) => (
           <Link href={`/novel/${novel.novelId}`} key={novel.novelId}>
-            <div className="flex items-center space-x-2 hover:bg-gray-50 dark:hover:bg-[#3E3F3E] p-1.5 rounded-lg transition-colors h-[90px] bg-opacity-100 dark:bg-[#232120] mb-2">
+            <div className="flex items-center space-x-2 hover:bg-gray-50 dark:hover:bg-[#3E3F3E] p-1.5 rounded-lg transition-colors h-[90px] bg-opacity-100 dark:bg-[#232120] mb-2 hover:scale-[1.02] transition-transform duration-200">
               <span className="font-bold text-[#F1592A] w-6 text-base">{(index + 1).toString().padStart(2, '0')}</span>
               <Image
                 src={novel.coverPhoto || '/assets/cover.jpg'}
@@ -58,9 +62,9 @@ export function NovelRankings({ newReleases, trending, popular }: NovelRankingsP
     <section className="py-4 md:py-6 bg-[#E7E7E8] dark:bg-[#232120]">
       <div className="container mx-auto px-3">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-1 max-w-6xl mx-auto">
-          {renderNovelList(newReleases, "New", "Latest")}
-          {renderNovelList(trending, "Trending", "Top 5")}
-          {renderNovelList(popular, "Popular", "All Time")}
+          {renderNovelList(newReleases, "New", "#Latest", "animate-pulse")}
+          {renderNovelList(trending, "Trending", "#Top 5", "animate-fire")}
+          {renderNovelList(popular, "Popular", "#All Time", "animate-sparkle")}
         </div>
       </div>
     </section>

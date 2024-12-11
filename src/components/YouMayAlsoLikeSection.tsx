@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, BookOpen, Star } from 'lucide-react';
 import { useState } from 'react';
 
 interface Novel {
@@ -66,7 +66,7 @@ export function YouMayAlsoLikeSection({ novels, onFollowNovel, userFollowedNovel
             <Link href={`/novel/${novel.id}`} key={novel.id} className="group">
               <div className="flex gap-4">
                 {/* Cover Image */}
-                <div className="relative w-[120px] h-[160px] flex-shrink-0">
+                <div className="relative w-[120px] h-[180px] flex-shrink-0">
                   <Image
                     src={novel.coverImage}
                     alt={novel.title}
@@ -83,7 +83,7 @@ export function YouMayAlsoLikeSection({ novels, onFollowNovel, userFollowedNovel
                     {novel.tags.slice(0, 3).map((tag) => (
                       <span
                         key={tag}
-                        className="text-xs font-medium text-[#2E6FE4] dark:text-[#5C9DFF]"
+                        className="text-sm font-medium text-[#2E6FE4] dark:text-[#5C9DFF] uppercase"
                       >
                         #{tag}
                       </span>
@@ -106,17 +106,19 @@ export function YouMayAlsoLikeSection({ novels, onFollowNovel, userFollowedNovel
                   </p>
                   
                   {/* Stats and Add Button */}
-                  <div className="flex items-center justify-between mt-auto">
-                    <div className="flex items-center gap-4 text-sm text-[#464646] dark:text-[#C3C3C3]">
-                      <div className="flex items-center gap-1">
-                        ⭐ {novel.rating.toFixed(1)}
-                      </div>
-                      <div>{novel.chaptersCount} Chapters</div>
+                  <div className="flex items-center gap-4 text-sm text-[#464646] dark:text-[#C3C3C3]">
+                    <div className="flex items-center gap-1">
+                      <Star className="w-4 h-4 fill-current text-yellow-400" />
+                      {novel.rating.toFixed(1)}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <BookOpen className="w-4 h-4" />
+                      {novel.chaptersCount} Chapters
                     </div>
                     <Button
                       variant={followingStates[novel.id] ? "secondary" : "outline"}
                       size="sm"
-                      className={`${
+                      className={`rounded-full px-3 flex items-center gap-1 ${
                         followingStates[novel.id] 
                           ? 'bg-[#F1592A]/10 text-[#F1592A] hover:bg-[#F1592A]/20' 
                           : 'hover:text-[#F1592A] hover:border-[#F1592A]'
@@ -124,6 +126,7 @@ export function YouMayAlsoLikeSection({ novels, onFollowNovel, userFollowedNovel
                       onClick={(e) => handleFollow(novel.id, e)}
                     >
                       <Plus className="w-4 h-4" />
+                      Add
                     </Button>
                   </div>
                 </div>
