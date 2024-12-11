@@ -809,7 +809,7 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                             </div>
                           )
                         ))}
-                      </div>
+                      </div>  
                     </div>
                   )}
                 </div>
