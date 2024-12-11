@@ -28,13 +28,13 @@ interface Novel {
   likes: number
 }
 
-interface LatestReleasesCarouselProps {
+interface RecommendedListProps {
   novels: Novel[]
   loading: boolean
   onFollowChange: (novelId: string, isFollowing: boolean) => void
 }
 
-export function LatestReleasesCarousel({ novels, loading, onFollowChange }: LatestReleasesCarouselProps) {
+export function RecommendedList({ novels, loading, onFollowChange }: RecommendedListProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   const fadeIn = {
@@ -53,16 +53,16 @@ export function LatestReleasesCarousel({ novels, loading, onFollowChange }: Late
   }
 
   return (
-    <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120]">
+    <section className="py-4 md:py-6 bg-[#E7E7E8] dark:bg-[#232120]">
       <div className="container mx-auto px-4">
         <motion.h2 
-          className="text-2xl md:text-3xl font-bold mb-6 text-[#232120] dark:text-[#E7E7E8]"
+          className="text-xl md:text-2xl font-bold mb-4 text-[#232120] dark:text-[#E7E7E8]"
           variants={fadeIn}
         >
-          Latest Releases
+          Recommended For You
         </motion.h2>
         {loading ? (
-          <div className="flex justify-center items-center h-40">
+          <div className="flex justify-center items-center h-24">
             <LoadingSpinner />
           </div>
         ) : (
@@ -73,12 +73,12 @@ export function LatestReleasesCarousel({ novels, loading, onFollowChange }: Late
             }}
             className="w-full"
           >
-            <CarouselContent className="-ml-2 md:-ml-4">
+            <CarouselContent className="-ml-1 md:-ml-2">
               {novels.map((novel, index) => (
-                <CarouselItem key={novel.novelId} className="pl-2 md:pl-4 md:basis-1/3 lg:basis-1/5">
+                <CarouselItem key={novel.novelId} className="pl-1 md:pl-2 md:basis-1/2 lg:basis-1/4">
                   <motion.div
                     variants={fadeIn}
-                    whileHover={{ scale: 1.05 }}
+                    whileHover={{ scale: 1.03 }}
                     onHoverStart={() => setHoveredIndex(index)}
                     onHoverEnd={() => setHoveredIndex(null)}
                   >
@@ -92,14 +92,14 @@ export function LatestReleasesCarousel({ novels, loading, onFollowChange }: Late
           </Carousel>
         )}
         <motion.div 
-          className="mt-8 md:mt-12 text-center"
+          className="mt-4 md:mt-6 text-center"
           variants={fadeIn}
-          whileHover={{ scale: 1.05 }}
+          whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.95 }}
         >
-          <Link href="/browse">
-            <Button variant="outline" className="border-[#F1592A] text-[#F1592A] hover:bg-[#F1592A] hover:text-white dark:border-[#F1592A] dark:text-[#F1592A] dark:hover:bg-[#F1592A] dark:hover:text-[#E7E7E8]">
-              Browse All Novels
+          <Link href="/recommendations">
+            <Button variant="outline" className="text-sm border-[#F1592A] text-[#F1592A] hover:bg-[#F1592A] hover:text-white dark:border-[#F1592A] dark:text-[#F1592A] dark:hover:bg-[#F1592A] dark:hover:text-[#E7E7E8]">
+              View All Recommendations
             </Button>
           </Link>
         </motion.div>

@@ -80,3 +80,5 @@
     filter: brightness(1.1);
   }
 }
+
+@import './animations.css';
