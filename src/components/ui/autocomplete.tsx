@@ -93,13 +93,13 @@ export const Autocomplete = memo(({
           {normalizedSelectedItems.map((item) => (
             <div
               key={item}
-              className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md"
+              className="flex items-center gap-1 px-2 py-1 bg-[#F1592A]/10 border border-[#F1592A] rounded-md"
             >
-              <span className="text-sm">{item}</span>
+              <span className="text-sm text-[#232120] dark:text-[#E7E7E8]">{item}</span>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-4 w-4 p-0 hover:bg-gray-200 dark:hover:bg-gray-600"
+                className="h-4 w-4 p-0 hover:text-[#F1592A] text-[#232120] dark:text-[#E7E7E8]"
                 onClick={() => handleRemove(item)}
               >
                 <XIcon className="h-3 w-3" />
