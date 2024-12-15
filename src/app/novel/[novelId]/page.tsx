@@ -13,7 +13,7 @@ import { StarRating } from '@/components/ui/starrating'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { BookOpen, ThumbsUp, BookMarked, Gift, Eye, Info, MessageCircle, Search, Moon, Sun, LogOut, User, ChevronsLeftRight, MessageSquare, Menu, X, Calendar, Users } from 'lucide-react'
+import { BookOpen, ThumbsUp, BookMarked, Gift, Eye, Info, MessageCircle, Search, Moon, Sun, LogOut, User, ChevronsLeftRight, MessageSquare, Menu, X, Calendar, Users, FileText } from 'lucide-react'
 import CommentSystem from '@/components/ui/commentsystem'
 import { motion } from 'framer-motion'
 import { toast, Toaster } from 'react-hot-toast'
@@ -647,42 +647,56 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
           </div>
         </div>
 
-        {/* Tabs Section - Second Row */}
-        <Tabs defaultValue="about" className="w-full" onValueChange={setActiveTab}>
-          <TabsList className="w-full grid grid-cols-3 h-14 items-center bg-transparent border-b border-gray-200 dark:border-gray-800 rounded-none mb-8">
-            <TabsTrigger 
-              value="about"
-              className="flex items-center gap-2 text-lg h-full data-[state=active]:border-b-2 border-[#F1592A] 
-              text-gray-600 data-[state=active]:text-[#F1592A] 
-              dark:text-gray-400 dark:data-[state=active]:text-[#F1592A]
-              transition-colors duration-200"
+        {/* Tabs Section */}
+        <div className="border-b border-gray-200 dark:border-gray-800 mb-8">
+          <div className="flex gap-12">
+            <button
+              onClick={() => setActiveTab('about')}
+              className={`relative pb-4 ${
+                activeTab === 'about'
+                  ? 'text-[#F1592A]'
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
             >
-              <Info className="w-5 h-5" />
-              About
-            </TabsTrigger>
-            <TabsTrigger 
-              value="chapters"
-              className="flex items-center gap-2 text-lg h-full data-[state=active]:border-b-2 border-[#F1592A] 
-              text-gray-600 data-[state=active]:text-[#F1592A] 
-              dark:text-gray-400 dark:data-[state=active]:text-[#F1592A]
-              transition-colors duration-200"
-            >
-              <BookOpen className="w-5 h-5" />
-              Chapters
-            </TabsTrigger>
-            <TabsTrigger 
-              value="comments"
-              className="flex items-center gap-2 text-lg h-full data-[state=active]:border-b-2 border-[#F1592A] 
-              text-gray-600 data-[state=active]:text-[#F1592A] 
-              dark:text-gray-400 dark:data-[state=active]:text-[#F1592A]
-              transition-colors duration-200"
-            >
-              <MessageCircle className="w-5 h-5" />
-              Comments
-            </TabsTrigger>
-          </TabsList>
+              <span className="text-2xl font-bold">About</span>
+              {activeTab === 'about' && (
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#F1592A]" />
+              )}
+            </button>
 
-          <TabsContent value="about" className="space-y-12 pt-6">
+            <button
+              onClick={() => setActiveTab('chapters')}
+              className={`relative pb-4 ${
+                activeTab === 'chapters'
+                  ? 'text-[#F1592A]'
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              <span className="text-2xl font-bold">Table of Contents</span>
+              {activeTab === 'chapters' && (
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#F1592A]" />
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('comments')}
+              className={`relative pb-4 ${
+                activeTab === 'comments'
+                  ? 'text-[#F1592A]'
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              <span className="text-2xl font-bold">Comments</span>
+              {activeTab === 'comments' && (
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#F1592A]" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'about' && (
+          <div className="space-y-12 pt-6">
             {/* Synopsis Section */}
             <Card className={cardClasses}>
               <CardContent className="p-0">
@@ -696,79 +710,87 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
               </CardContent>
             </Card>
 
-            {/* Series Information Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              <Card className={cardClasses}>
-                <CardContent className="p-0">
-                  <h2 className={cardHeaderClasses}>
-                    <BookOpen className="w-6 h-6 text-[#F1592A]" />
-                    Series Information
-                  </h2>
-                  <div className="space-y-1">
-                    <div className={itemClasses}>
-                      <span className={labelClasses}>Series Type</span>
-                      <span className={valueClasses}>{novel.seriesType}</span>
+            {/* Series Information and Release Details */}
+            <div className="w-full">
+              <div className="flex flex-col items-center gap-12">
+                {/* First Row */}
+                <div className="flex flex-wrap gap-x-20 gap-y-12 justify-center">
+                  {/* Series Type */}
+                  <div className="flex flex-col items-center text-center min-w-[160px]">
+                    <div className="w-12 h-12 flex items-center justify-center mb-3">
+                      <BookOpen className="w-8 h-8 text-[#F1592A]" />
                     </div>
-                    <div className={itemClasses}>
-                      <span className={labelClasses}>Release Frequency</span>
-                      <span className={valueClasses}>{novel.releaseFrequency}</span>
-                    </div>
-                    <div className={itemClasses}>
-                      <span className={labelClasses}>Chapter Type</span>
-                      <span className={valueClasses}>{novel.chapterType}</span>
-                    </div>
-                    <div className={itemClasses}>
-                      <span className={labelClasses}>Status</span>
-                      <span className="px-3 py-1 rounded-full text-sm font-medium bg-[#F1592A]/10 text-[#F1592A]">
-                        {novel.seriesStatus}
-                      </span>
-                    </div>
-                    <div className={itemClasses}>
-                      <span className={labelClasses}>Availability</span>
-                      <span className={`font-medium ${novel.availability.type === 'FREE' ? 'text-green-500' : 'text-[#F1592A]'}`}>
-                        {novel.availability.type}
-                        {novel.availability.price && ` - $${novel.availability.price}`}
-                      </span>
-                    </div>
+                    <span className="text-sm text-gray-500 mb-1">Series Type</span>
+                    <span className="text-base font-semibold text-white">{novel.seriesType}</span>
                   </div>
-                </CardContent>
-              </Card>
 
-              {/* Release Details Card */}
-              <Card className={cardClasses}>
-                <CardContent className="p-0">
-                  <h2 className={cardHeaderClasses}>
-                    <Calendar className="w-6 h-6 text-[#F1592A]" />
-                    Release Details
-                  </h2>
-                  <div className="space-y-1">
-                    {novel.seriesInfo.volumeNumber && (
-                      <div className={itemClasses}>
-                        <span className={labelClasses}>Volume</span>
-                        <span className={valueClasses}>{novel.seriesInfo.volumeNumber}</span>
-                      </div>
-                    )}
-                    <div className={itemClasses}>
-                      <span className={labelClasses}>First Release</span>
-                      <span className={valueClasses}>
-                        {formatDate(novel.seriesInfo.firstReleaseDate)}
-                      </span>
+                  {/* Release Frequency */}
+                  <div className="flex flex-col items-center text-center min-w-[160px]">
+                    <div className="w-12 h-12 flex items-center justify-center mb-3">
+                      <Calendar className="w-8 h-8 text-[#F1592A]" />
                     </div>
-                    <div className={itemClasses}>
-                      <span className={labelClasses}>Original Language</span>
-                      <span className={valueClasses}>{novel.language.original}</span>
-                    </div>
-                    {novel.language.translated && novel.language.translated.length > 0 && (
-                      <div className={itemClasses}>
-                        <span className={labelClasses}>Translations</span>
-                        <span className={valueClasses}>
-                          {novel.language.translated.join(', ')}
-                        </span>
-                      </div>
-                    )}
+                    <span className="text-sm text-gray-500 mb-1">Release Frequency</span>
+                    <span className="text-base font-semibold text-white">{novel.releaseFrequency}</span>
                   </div>
-                </CardContent>
-              </Card>
+
+                  {/* Chapter Type */}
+                  <div className="flex flex-col items-center text-center min-w-[160px]">
+                    <div className="w-12 h-12 flex items-center justify-center mb-3">
+                      <BookOpen className="w-8 h-8 text-[#F1592A]" />
+                    </div>
+                    <span className="text-sm text-gray-500 mb-1">Chapter Type</span>
+                    <span className="text-base font-semibold text-white">{novel.chapterType}</span>
+                  </div>
+
+                  {/* Status */}
+                  <div className="flex flex-col items-center text-center min-w-[160px]">
+                    <div className="w-12 h-12 flex items-center justify-center mb-3">
+                      <Info className="w-8 h-8 text-[#F1592A]" />
+                    </div>
+                    <span className="text-sm text-gray-500 mb-1">Status</span>
+                    <span className="text-base font-semibold text-[#F1592A]">
+                      {novel.seriesStatus}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Second Row */}
+                <div className="flex flex-wrap gap-x-20 gap-y-12 justify-center">
+                  {/* Availability */}
+                  <div className="flex flex-col items-center text-center min-w-[160px]">
+                    <div className="w-12 h-12 flex items-center justify-center mb-3">
+                      <Gift className="w-8 h-8 text-[#F1592A]" />
+                    </div>
+                    <span className="text-sm text-gray-500 mb-1">Availability</span>
+                    <span className={`text-base font-semibold ${
+                      novel.availability.type === 'FREE' ? 'text-green-500' : 'text-[#F1592A]'
+                    }`}>
+                      {novel.availability.type}
+                      {novel.availability.price && ` - $${novel.availability.price}`}
+                    </span>
+                  </div>
+
+                  {/* First Release */}
+                  <div className="flex flex-col items-center text-center min-w-[160px]">
+                    <div className="w-12 h-12 flex items-center justify-center mb-3">
+                      <Calendar className="w-8 h-8 text-[#F1592A]" />
+                    </div>
+                    <span className="text-sm text-gray-500 mb-1">First Release</span>
+                    <span className="text-base font-semibold text-white">
+                      {formatDate(novel.seriesInfo.firstReleaseDate)}
+                    </span>
+                  </div>
+
+                  {/* Original Language */}
+                  <div className="flex flex-col items-center text-center min-w-[160px]">
+                    <div className="w-12 h-12 flex items-center justify-center mb-3">
+                      <MessageSquare className="w-8 h-8 text-[#F1592A]" />
+                    </div>
+                    <span className="text-sm text-gray-500 mb-1">Original Language</span>
+                    <span className="text-base font-semibold text-white">{novel.language.original}</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Credits Section */}
@@ -854,16 +876,18 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
             )}
 
             {/* Recommended Novels Section */}
-            <div className="mt-12">
+            {/* <div className="mt-12">
               <RecommendedList 
                 novels={recommendedNovels} 
                 loading={recommendedLoading}
                 onFollowChange={handleFollowChange}
               />
-            </div>
-          </TabsContent>
+            </div> */}
+          </div>
+        )}
 
-          <TabsContent value="chapters" className="h-[calc(100vh-300px)]">
+        {activeTab === 'chapters' && (
+          <div className="h-[calc(100vh-300px)]">
             <div className="h-full">
               <ScrollArea className="h-full">
                 <div className="space-y-4">
@@ -895,12 +919,14 @@ export default function NovelPage({ params }: { params: { novelId: string } }) {
                 </div>
               </ScrollArea>
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          <TabsContent value="comments" className="pt-6">
+        {activeTab === 'comments' && (
+          <div className="pt-6">
             <CommentSystem novelId={novel.novelId} />
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </main>
     </div>
   )

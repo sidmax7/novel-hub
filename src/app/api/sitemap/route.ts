@@ -45,16 +45,11 @@ export async function GET() {
 
     if (testDoc.size > 0) {
       for (const doc of testDoc.docs) {
-        const data = doc.data()
-        const title = data.title || ''
-        const safeTitle = escapeXml(title)
-        
         xml += `  <url>
     <loc>${BASE_URL}/novel/${doc.id}</loc>
     <lastmod>${new Date().toISOString()}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
-    <title>${safeTitle}</title>
   </url>\n`
       }
     } else {
