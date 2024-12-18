@@ -81,12 +81,14 @@ export function YouMayAlsoLikeSection({ novels, onFollowNovel, userFollowedNovel
                   {/* Tags */}
                   <div className="flex flex-wrap gap-1.5 mb-2">
                     {novel.tags.slice(0, 3).map((tag) => (
-                      <span
+                      <Link
                         key={tag}
-                        className="text-sm font-medium text-[#2E6FE4] dark:text-[#5C9DFF] uppercase"
+                        href={`/browse?tagSearchInclude=${encodeURIComponent(tag)}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-sm font-medium text-[#2E6FE4] dark:text-[#5C9DFF] uppercase hover:text-[#F1592A] transition-colors"
                       >
                         #{tag}
-                      </span>
+                      </Link>
                     ))}
                   </div>
                   

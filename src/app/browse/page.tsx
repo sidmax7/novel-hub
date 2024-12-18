@@ -236,6 +236,25 @@ function BrowseContent() {
   const [hasMore, setHasMore] = useState(true);
   const ITEMS_PER_LOAD = 12;
 
+  // Add effect to handle URL search parameters
+  useEffect(() => {
+    const tagParam = searchParams.get('tagSearchInclude');
+    if (tagParam) {
+      setTagSearchInclude(decodeURIComponent(tagParam));
+      // Apply filters after setting the tag
+      const filtered = novels.filter(novel => {
+        const novelTags = novel.tags.map(t => t.toLowerCase());
+        const searchTags = tagParam.toLowerCase().split(',').map(t => t.trim());
+        return tagLogic === 'AND'
+          ? searchTags.every(t => novelTags.includes(t))
+          : searchTags.some(t => novelTags.includes(t));
+      });
+      setFilteredNovels(filtered);
+      setDisplayedNovels(filtered.slice(0, ITEMS_PER_LOAD));
+      setHasMore(filtered.length > ITEMS_PER_LOAD);
+    }
+  }, [searchParams, novels, tagLogic, ITEMS_PER_LOAD]);
+
   const { ref, inView } = useInView({
     threshold: 0,
   });
