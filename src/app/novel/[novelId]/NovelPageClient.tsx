@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -551,12 +550,13 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
                   <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Genres</h3>
                   <div className="flex flex-wrap gap-3">
                     {novel.genres.map((genre, index) => (
-                      <span
+                      <Link
                         key={index}
+                        href={`/browse?selectedGenres=${encodeURIComponent(genre.name)}`}
                         className={`rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 cursor-pointer ${getGenreColor(genre.name, theme)}`}
                       >
                         {genre.name.toUpperCase()}
-                      </span>
+                      </Link>
                     ))}
                   </div>
                 </div>
@@ -567,8 +567,9 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
                     <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Tags</h3>
                     <div className="flex flex-wrap gap-3">
                       {novel.tags.map((tag, index) => (
-                        <span
+                        <Link
                           key={index}
+                          href={`/browse?tagSearchInclude=${encodeURIComponent(tag)}`}
                           className="px-4 py-2 rounded-full text-sm font-semibold tracking-wide uppercase 
                                    bg-[#F1592A]/10 text-[#F1592A] hover:bg-[#F1592A]/20 
                                    dark:bg-[#F1592A]/20 dark:hover:bg-[#F1592A]/30
@@ -576,7 +577,7 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
                                    hover:-translate-y-0.5 cursor-pointer backdrop-blur-sm"
                         >
                           #{tag.toUpperCase()}
-                        </span>
+                        </Link>
                       ))}
                     </div>
                   </div>

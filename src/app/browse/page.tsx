@@ -239,21 +239,43 @@ function BrowseContent() {
   // Add effect to handle URL search parameters
   useEffect(() => {
     const tagParam = searchParams.get('tagSearchInclude');
-    if (tagParam) {
-      setTagSearchInclude(decodeURIComponent(tagParam));
-      // Apply filters after setting the tag
-      const filtered = novels.filter(novel => {
-        const novelTags = novel.tags.map(t => t.toLowerCase());
-        const searchTags = tagParam.toLowerCase().split(',').map(t => t.trim());
-        return tagLogic === 'AND'
-          ? searchTags.every(t => novelTags.includes(t))
-          : searchTags.some(t => novelTags.includes(t));
-      });
-      setFilteredNovels(filtered);
-      setDisplayedNovels(filtered.slice(0, ITEMS_PER_LOAD));
-      setHasMore(filtered.length > ITEMS_PER_LOAD);
+    const genreParam = searchParams.get('selectedGenres');
+
+    if (novels.length > 0) {
+      let filtered = [...novels];
+
+      // Handle tag parameter
+      if (tagParam) {
+        const decodedTag = decodeURIComponent(tagParam);
+        setTagSearchInclude(decodedTag);
+        
+        filtered = filtered.filter(novel => {
+          const novelTags = novel.tags || [];
+          return novelTags.some(tag => 
+            tag.toLowerCase() === decodedTag.toLowerCase()
+          );
+        });
+      }
+
+      // Handle genre parameter
+      if (genreParam) {
+        const decodedGenre = decodeURIComponent(genreParam);
+        setSelectedGenres(decodedGenre);
+        
+        filtered = filtered.filter(novel => {
+          const novelGenres = novel.genres.map(g => g.name.toLowerCase());
+          return novelGenres.includes(decodedGenre.toLowerCase());
+        });
+      }
+
+      if (tagParam || genreParam) {
+        setOpen(true); // Open the filter sheet to show the applied filters
+        setFilteredNovels(filtered);
+        setDisplayedNovels(filtered.slice(0, ITEMS_PER_LOAD));
+        setHasMore(filtered.length > ITEMS_PER_LOAD);
+      }
     }
-  }, [searchParams, novels, tagLogic, ITEMS_PER_LOAD]);
+  }, [searchParams, novels, ITEMS_PER_LOAD]);
 
   const { ref, inView } = useInView({
     threshold: 0,
@@ -357,23 +379,52 @@ function BrowseContent() {
     fetchNovels();
   }, [fetchNovels]);
 
-  const applyFilters = useCallback((novelsList: Novel[] = novels) => {
-    if (!Array.isArray(novelsList)) return;
-    
-    let filtered = [...novelsList];
+  const handleSearch = useCallback(() => {
+    if (!novels.length) return;
 
-    // Handle genre filters
+    let filtered = [...novels];
+
+    // Apply search term filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(novel => 
+        novel.title.toLowerCase().includes(searchLower) ||
+        novel.publishers.original.toLowerCase().includes(searchLower) ||
+        novel.tags?.some(tag => tag.toLowerCase().includes(searchLower)) ||
+        novel.genres.some(g => g.name.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Apply tag filters
+    if (tagSearchInclude) {
+      const includeTags = tagSearchInclude.split(',').map(t => t.trim().toLowerCase());
+      filtered = filtered.filter(novel => {
+        const novelTags = (novel.tags || []).map(t => t.toLowerCase());
+        return tagLogic === 'AND'
+          ? includeTags.every(t => novelTags.includes(t))
+          : includeTags.some(t => novelTags.includes(t));
+      });
+    }
+
+    if (tagSearchExclude) {
+      const excludeTags = tagSearchExclude.split(',').map(t => t.trim().toLowerCase());
+      filtered = filtered.filter(novel => {
+        const novelTags = (novel.tags || []).map(t => t.toLowerCase());
+        return !excludeTags.some(t => novelTags.includes(t));
+      });
+    }
+
+    // Apply genre filters
     if (selectedGenres) {
       const genres = selectedGenres.split(',').map(g => g.trim().toLowerCase());
       filtered = filtered.filter(novel => {
         const novelGenres = novel.genres.map(g => g.name.toLowerCase());
-        return genreLogic === 'AND' 
+        return genreLogic === 'AND'
           ? genres.every(g => novelGenres.includes(g))
           : genres.some(g => novelGenres.includes(g));
       });
     }
 
-    // Handle excluded genres
     if (excludedGenres) {
       const genres = excludedGenres.split(',').map(g => g.trim().toLowerCase());
       filtered = filtered.filter(novel => {
@@ -382,27 +433,7 @@ function BrowseContent() {
       });
     }
 
-    // Handle tag filters
-    if (tagSearchInclude) {
-      const tags = tagSearchInclude.split(',').map(t => t.trim().toLowerCase());
-      filtered = filtered.filter(novel => {
-        const novelTags = novel.tags.map(t => t.toLowerCase());
-        return tagLogic === 'AND'
-          ? tags.every(t => novelTags.includes(t))
-          : tags.some(t => novelTags.includes(t));
-      });
-    }
-
-    // Handle excluded tags
-    if (tagSearchExclude) {
-      const tags = tagSearchExclude.split(',').map(t => t.trim().toLowerCase());
-      filtered = filtered.filter(novel => {
-        const novelTags = novel.tags.map(t => t.toLowerCase());
-        return !tags.some(t => novelTags.includes(t));
-      });
-    }
-
-    // Handle publisher search
+    // Apply publisher search
     if (publisherSearch) {
       const search = publisherSearch.toLowerCase();
       filtered = filtered.filter(novel => 
@@ -416,20 +447,36 @@ function BrowseContent() {
     setHasMore(filtered.length > ITEMS_PER_LOAD);
   }, [
     novels,
+    searchTerm,
+    tagSearchInclude,
+    tagSearchExclude,
+    tagLogic,
     selectedGenres,
     excludedGenres,
     genreLogic,
-    tagLogic,
-    tagSearchInclude,
-    tagSearchExclude,
     publisherSearch,
     ITEMS_PER_LOAD
   ]);
 
+  // Call handleSearch when filters change
+  useEffect(() => {
+    handleSearch();
+  }, [
+    searchTerm,
+    tagSearchInclude,
+    tagSearchExclude,
+    tagLogic,
+    selectedGenres,
+    excludedGenres,
+    genreLogic,
+    publisherSearch,
+    handleSearch
+  ]);
+
   const handleApplyFilters = useCallback(() => {
-    applyFilters(novels);
+    handleSearch();
     setOpen(false);
-  }, [novels, applyFilters]);
+  }, [handleSearch]);
 
   const handleTileClick = (novelId: string) => {
     router.push(`/novel/${novelId}`);
@@ -481,10 +528,6 @@ function BrowseContent() {
   const getColorScheme = (item: string) => {
     const key = Object.keys(genreColors).find(k => item.toLowerCase().includes(k.toLowerCase()));
     return key ? genreColors[key as keyof typeof genreColors] : genreColors.Horror;
-  }
-
-  const handleSearch = () => {
-    handleApplyFilters()
   }
 
   const handleResetFilters = useCallback(() => {
@@ -583,7 +626,6 @@ function BrowseContent() {
                     // Update both state and input value immediately
                     setSearchTerm(pastedText);
                     e.currentTarget.value = pastedText;
-                    applyFilters(novels);
                   }}
                 />
                 {searchTerm && (

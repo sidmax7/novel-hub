@@ -23,7 +23,7 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from './authcontext'
 import { signOut } from 'firebase/auth'
 import { auth, db } from '@/lib/firebaseConfig'
@@ -47,6 +47,7 @@ import { NovelRankings } from '@/components/NovelRanking'
 import { LatestReleasesCarousel } from '@/components/CarouselList'
 import { TopReleasesSection } from '@/components/TopReleasesSection'
 import { YouMayAlsoLikeSection } from '@/components/YouMayAlsoLikeSection'
+import InitialLoader from '@/components/InitialLoader'
 
 
 interface Novel {
@@ -187,7 +188,7 @@ const fetchRecommendedNovels = async () => {
       author: {
         name: data.publishers?.original || 'Unknown'
       },
-      tags: data.genres?.map((g: { name: string }) => g.name) || [],
+      tags: data.tags || [],
       rating: data.rating || 0,
       chaptersCount: data.chapters?.length || 0,
       synopsis: data.synopsis || ''
@@ -198,6 +199,7 @@ const fetchRecommendedNovels = async () => {
 export default function ModernLightNovelsHomepage() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [showLoader, setShowLoader] = useState(true)
   const [popularNovels, setPopularNovels] = useState<Novel[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
@@ -258,6 +260,10 @@ export default function ModernLightNovelsHomepage() {
 
   useEffect(() => {
     setMounted(true)
+    const timer = setTimeout(() => {
+      setShowLoader(false)
+    }, 2000) // Show loader for 2 seconds
+
     const loadNovels = async () => {
       setLoading(true)
       try {
@@ -285,6 +291,8 @@ export default function ModernLightNovelsHomepage() {
       fetchUserType()
       fetchUserProfile()
     }
+
+    return () => clearTimeout(timer)
   }, [user])
 
   useEffect(() => {
@@ -482,6 +490,10 @@ export default function ModernLightNovelsHomepage() {
       animate="visible"
       variants={fadeIn}
     >
+      <AnimatePresence>
+        {showLoader && <InitialLoader />}
+      </AnimatePresence>
+      
       <header className="border-b dark:border-[#3E3F3E] bg-[#E7E7E8] dark:bg-[#232120] sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
@@ -686,10 +698,10 @@ export default function ModernLightNovelsHomepage() {
                   Discover Your Next Adventure
                 </h2>
                 <p className="text-base md:text-lg lg:text-xl dark:text-[#E7E7E8] text-[#232120] mb-6 text-center md:text-left">
-                  Explore thousands of light novels across various genres. Our platform offers a vast collection of captivating stories, from fantasy and romance to sci-fi and mystery. Immerse yourself in new worlds, follow intriguing characters, and experience thrilling adventures - all at your fingertips.
+                Welcome to Novellize, your ultimate destination for discovering and exploring a vast collection of web novels from diverse genres and authors worldwide. 
                 </p>
                 <p className="text-base md:text-lg dark:text-[#E7E7E8] text-[#232120] text-center md:text-left">
-                  Whether you're a seasoned light novel enthusiast or new to the genre, our curated selection ensures there's something for everyone. Start your journey today and unlock the power of imagination!
+                As a dedicated repository, we aim to connect readers and writers by providing a platform that celebrates creativity, storytelling, and imagination.
                 </p>
               </div>
             </div>
@@ -749,84 +761,183 @@ export default function ModernLightNovelsHomepage() {
         </section>
 
         {/* Explore Genres Section */}
-        <style jsx global>{`
-          @keyframes shine {
-            0% {
-              transform: translateX(-100%);
-            }
-            100% {
-              transform: translateX(100%);
-            }
-          }
-          .shine-effect {
-            position: relative;
-            overflow: hidden;
-          }
-          .shine-effect::after {
-            position: absolute;
-            content: "";
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(
-              90deg,
-              transparent,
-              rgba(255, 255, 255, 0.2),
-              transparent
-            );
-            transform: translateX(-100%);
-            animation: shine 2s infinite;
-          }
-        `}</style>
-        <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#232120] relative z-10">
-          <div className={`container rounded-3xl mx-auto px-6 md:px-12 py-8 md:py-12 ${
-            mounted && theme === 'dark'
-              ? 'bg-black dark:bg-[#3E3F3E]'
-              : 'bg-white dark:bg-[#3E3F3E] border border-[#F1592A] border-opacity-30'
-          } backdrop-blur-md`}>
-            <motion.h2 
-              className="text-2xl md:text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100"
-              variants={fadeIn}
-            >
-              Explore Genres
-            </motion.h2>
+        <section className="py-12 md:py-16 bg-white dark:bg-[#232120] relative overflow-hidden">
+          {/* Circuit-like background patterns */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute w-full h-full">
+              <motion.div
+                className="absolute top-0 left-0 w-full h-full"
+                style={{
+                  background: `
+                    linear-gradient(90deg, transparent 95%, rgba(241, 89, 42, 0.1) 95%),
+                    linear-gradient(transparent 95%, rgba(241, 89, 42, 0.1) 95%)
+                  `,
+                  backgroundSize: '20px 20px'
+                }}
+                animate={{
+                  backgroundPosition: ['0px 0px', '20px 20px'],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="text-center mb-12">
+              <motion.h2 
+                className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#F1592A] via-[#FF8C94] to-[#F1592A] mb-6"
+                animate={{
+                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+                }}
+                transition={{
+                  duration: 5,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+              >
+                Explore Genres
+              </motion.h2>
+              <p className="text-xl md:text-2xl text-[#232120] dark:text-[#E7E7E8] max-w-2xl mx-auto">
+                Dive into our diverse collection of stories across multiple genres
+              </p>
+            </div>
+
             <motion.div 
-              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 max-w-4xl mx-auto"
               variants={staggerChildren}
             >
-              {Object.entries(genreColors)
-                .slice(0, showAllGenres ? undefined : 16)
-                .map(([genre, colors]) => (
-                  <motion.div
-                    key={genre}
-                    variants={fadeIn}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
+              {Object.entries(genreColors).map(([genre, colors], index) => (
+                <motion.div
+                  key={genre}
+                  variants={fadeIn}
+                  className="group relative"
+                  whileHover={{ scale: 1.02 }}
+                  animate={{
+                    y: [0, index % 2 ? 4 : -4, 0],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: index * 0.1,
+                  }}
+                >
+                  <Link 
+                    href={`/browse?selectedGenres=${encodeURIComponent(genre)}`}
+                    className="block relative"
                   >
-                    <Link 
-                      href={`/browse?genre=${encodeURIComponent(genre.toLowerCase())}`}
-                      className={`shine-effect p-2 md:p-3 rounded-full shadow-lg text-center block transition-colors h-full
-                      ${mounted ? (theme === 'dark' ? colors.dark : colors.light) : colors.dark}`}
-                    >
-                      <span className="font-semibold text-sm md:text-base relative z-10">{genre}</span>
-                    </Link>
-                  </motion.div>
-                ))}
-            </motion.div>
-            
-            {/* Add Show More/Less Button */}
-            <motion.div 
-              className="mt-8 text-center"
-              variants={fadeIn}
-            >
-              <Button
-                variant="outline"
-                onClick={() => setShowAllGenres(!showAllGenres)}
-                className="rounded-full border-[#F1592A] text-[#F1592A] hover:bg-[#F1592A] hover:text-white dark:border-[#F1592A] dark:text-[#F1592A] dark:hover:bg-[#F1592A] dark:hover:text-[#E7E7E8]"
-              >
-                {showAllGenres ? 'Show Less' : 'Show More'}
-              </Button>
+                    {/* Neomorphic base */}
+                    <div className={`
+                      relative rounded-3xl
+                      bg-white dark:bg-[#2A2827]
+                      shadow-[4px_4px_10px_#d1d1d1,-4px_-4px_10px_#ffffff] 
+                      dark:shadow-[4px_4px_10px_#1a1918,-4px_-4px_10px_#3a3836]
+                      transition-all duration-300
+                      group-hover:shadow-[8px_8px_16px_#d1d1d1,-8px_-8px_16px_#ffffff]
+                      dark:group-hover:shadow-[8px_8px_16px_#1a1918,-8px_-8px_16px_#3a3836]
+                      overflow-hidden
+                    `}>
+                      {/* Glowing border effect */}
+                      <motion.div
+                        className="absolute inset-0 opacity-0 group-hover:opacity-100"
+                        animate={{
+                          background: [
+                            'radial-gradient(circle at 0% 0%, rgba(241, 89, 42, 0.5) 0%, transparent 50%)',
+                            'radial-gradient(circle at 100% 100%, rgba(241, 89, 42, 0.5) 0%, transparent 50%)',
+                            'radial-gradient(circle at 0% 0%, rgba(241, 89, 42, 0.5) 0%, transparent 50%)',
+                          ]
+                        }}
+                        transition={{
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: "linear"
+                        }}
+                      />
+
+                      {/* Content */}
+                      <div className="relative p-4">
+                        <div className="flex items-center justify-between">
+                          <motion.div 
+                            className="flex items-center space-x-2"
+                            animate={{
+                              x: [0, 2, 0],
+                            }}
+                            transition={{
+                              duration: 0.3,
+                              repeat: Infinity,
+                              repeatType: "reverse",
+                              ease: "easeInOut"
+                            }}
+                          >
+                            {/* Cyber dot */}
+                            <motion.div
+                              className="w-2 h-2 rounded-full bg-[#F1592A]"
+                              animate={{
+                                opacity: [1, 0.5, 1],
+                                scale: [1, 1.2, 1]
+                              }}
+                              transition={{
+                                duration: 0.5,
+                                repeat: Infinity,
+                                repeatType: "reverse",
+                                ease: "easeInOut"
+                              }}
+                            />
+                            <span className={`
+                              text-sm font-bold
+                              bg-clip-text text-transparent
+                              bg-gradient-to-r
+                              ${index % 4 === 0 ? 'from-[#F1592A] to-[#FF8C94]' : ''}
+                              ${index % 4 === 1 ? 'from-[#FF8C94] to-[#F1592A]' : ''}
+                              ${index % 4 === 2 ? 'from-[#F1592A] to-[#FF6B6B]' : ''}
+                              ${index % 4 === 3 ? 'from-[#FF6B6B] to-[#F1592A]' : ''}
+                            `}>
+                              {genre}
+                            </span>
+                          </motion.div>
+
+                          {/* Robotic arrow */}
+                          <motion.div
+                            className="text-[#F1592A] opacity-0 group-hover:opacity-100"
+                            animate={{
+                              x: [-5, 0],
+                              rotate: [0, 90, 180, 270, 360],
+                            }}
+                            transition={{
+                              x: { duration: 0.2 },
+                              rotate: { 
+                                duration: 1,
+                                ease: "linear"
+                              }
+                            }}
+                          >
+                            →
+                          </motion.div>
+                        </div>
+
+                        {/* Tech lines */}
+                        <motion.div
+                          className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#F1592A] to-transparent"
+                          animate={{
+                            scaleX: [0, 1, 0],
+                            opacity: [0, 1, 0],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                            delay: index * 0.1
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
             </motion.div>
           </div>
         </section>

@@ -80,7 +80,7 @@ export function YouMayAlsoLikeSection({ novels, onFollowNovel, userFollowedNovel
                 <div className="flex-1 min-w-0 flex flex-col">
                   {/* Tags */}
                   <div className="flex flex-wrap gap-1.5 mb-2">
-                    {novel.tags.slice(0, 3).map((tag) => (
+                    {(novel.tags || []).slice(0, 3).map((tag) => (
                       <Link
                         key={tag}
                         href={`/browse?tagSearchInclude=${encodeURIComponent(tag)}`}

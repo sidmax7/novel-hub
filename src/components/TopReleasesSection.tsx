@@ -285,12 +285,14 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                       </div>
                       <div className="flex flex-wrap gap-2 mb-2">
                         {selectedNovel.genres.map((genre, index) => (
-                          <span 
+                          <Link 
                             key={index}
-                            className="text-xs px-2 py-1 bg-[#F1592A]/10 text-[#F1592A] rounded-full"
+                            href={`/browse?selectedGenres=${encodeURIComponent(genre.name)}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-xs px-2 py-1 bg-[#F1592A]/10 text-[#F1592A] rounded-full hover:bg-[#F1592A]/20 transition-colors"
                           >
                             {genre.name}
-                          </span>
+                          </Link>
                         ))}
                       </div>
                       <p className="text-sm text-[#464646] dark:text-[#C3C3C3] mb-3 line-clamp-3">
