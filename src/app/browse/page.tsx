@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Home, Moon, Sun, ChevronLeft, ChevronRight, X } from "lucide-react"
+import { Search, Home, Moon, Sun, ChevronLeft, ChevronRight, X, BookOpen, Heart, Calendar, Building2, Hash, Star } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -32,6 +32,7 @@ import { genreColors } from '../genreColors'
 import FilterSection from '@/components/FilterSection'
 import { useInView } from 'react-intersection-observer';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Badge } from "@/components/ui/badge"
 
 interface Novel {
   novelId: string;
@@ -51,10 +52,21 @@ interface Novel {
   lastUpdated?: string;
   firstReleaseDate?: string | null;
   chapters?: number;
-  language?: string;
+  language?: {
+    original: string;
+    translated?: string[];
+  };
   rank?: number;
   seriesInfo: {
     firstReleaseDate: any;
+  };
+  status?: 'Ongoing' | 'Completed' | 'Hiatus' | 'Cancelled';
+  chapterType?: 'Web Novel' | 'Light Novel' | 'Novel';
+  seriesType: 'ORIGINAL' | 'TRANSLATED' | 'FAN_FIC';
+  seriesStatus: 'ONGOING' | 'COMPLETED' | 'ON HOLD' | 'CANCELLED' | 'UPCOMING';
+  availability: {
+    type: 'FREE' | 'FREEMIUM' | 'PAID';
+    price?: number;
   };
 }
 
@@ -219,89 +231,334 @@ function BrowseContent() {
   const [tagLogic, setTagLogic] = useState<'AND' | 'OR'>('OR');
   const [tagSearchInclude, setTagSearchInclude] = useState('');
   const [tagSearchExclude, setTagSearchExclude] = useState('');
-  const [readingStatus, setReadingStatus] = useState('all');
   const [publisherSearch, setPublisherSearch] = useState('');
   const [genreLogic, setGenreLogic] = useState<'AND' | 'OR'>('OR');
   const [selectedGenres, setSelectedGenres] = useState<string>('');
   const [excludedGenres, setExcludedGenres] = useState<string>('');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const totalPages = Math.ceil(filteredNovels.length / itemsPerPage);
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+  const [open, setOpen] = useState(false);
+  const [seriesType, setSeriesType] = useState('all');
+  const [chapterType, setChapterType] = useState('all');
+  const [seriesStatus, setSeriesStatus] = useState('all');
+  const [availabilityType, setAvailabilityType] = useState('all');
+  const [releaseYearRange, setReleaseYearRange] = useState<[number, number]>([2000, new Date().getFullYear()]);
+  const [ratingRange, setRatingRange] = useState<[number, number]>([0, 5]);
 
   const searchParams = useSearchParams();
 
-  const [open, setOpen] = useState(false);
+  // Calculate pagination values
+  const totalPages = Math.ceil(filteredNovels.length / itemsPerPage);
+  const indexOfLastNovel = currentPage * itemsPerPage;
+  const indexOfFirstNovel = indexOfLastNovel - itemsPerPage;
+  const currentNovels = filteredNovels.slice(indexOfFirstNovel, indexOfLastNovel);
 
-  const [displayedNovels, setDisplayedNovels] = useState<Novel[]>([]);
-  const [hasMore, setHasMore] = useState(true);
-  const ITEMS_PER_LOAD = 12;
+  // Pagination controls
+  const paginate = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-  // Add effect to handle URL search parameters
+  // Effect to handle URL search parameters
   useEffect(() => {
     const tagParam = searchParams.get('tagSearchInclude');
     const genreParam = searchParams.get('selectedGenres');
+    const statusParam = searchParams.get('readingStatus');
+    const publisherParam = searchParams.get('publisherSearch');
+    const seriesTypeParam = searchParams.get('seriesType');
+    const chapterTypeParam = searchParams.get('chapterType');
+    const seriesStatusParam = searchParams.get('seriesStatus');
+    const availabilityTypeParam = searchParams.get('availabilityType');
+    const releaseYearMinParam = searchParams.get('releaseYearMin');
+    const releaseYearMaxParam = searchParams.get('releaseYearMax');
+    const ratingMinParam = searchParams.get('ratingMin');
+    const ratingMaxParam = searchParams.get('ratingMax');
 
-    if (novels.length > 0) {
-      let filtered = [...novels];
-
-      // Handle tag parameter
-      if (tagParam) {
-        const decodedTag = decodeURIComponent(tagParam);
-        setTagSearchInclude(decodedTag);
-        
-        filtered = filtered.filter(novel => {
-          const novelTags = novel.tags || [];
-          return novelTags.some(tag => 
-            tag.toLowerCase() === decodedTag.toLowerCase()
-          );
-        });
-      }
-
-      // Handle genre parameter
-      if (genreParam) {
-        const decodedGenre = decodeURIComponent(genreParam);
-        setSelectedGenres(decodedGenre);
-        
-        filtered = filtered.filter(novel => {
-          const novelGenres = novel.genres.map(g => g.name.toLowerCase());
-          return novelGenres.includes(decodedGenre.toLowerCase());
-        });
-      }
-
-      if (tagParam || genreParam) {
-        setOpen(true); // Open the filter sheet to show the applied filters
-        setFilteredNovels(filtered);
-        setDisplayedNovels(filtered.slice(0, ITEMS_PER_LOAD));
-        setHasMore(filtered.length > ITEMS_PER_LOAD);
-      }
+    if (tagParam) setTagSearchInclude(decodeURIComponent(tagParam));
+    if (genreParam) setSelectedGenres(decodeURIComponent(genreParam));
+    if (publisherParam) setPublisherSearch(decodeURIComponent(publisherParam));
+    if (seriesTypeParam) setSeriesType(seriesTypeParam);
+    if (chapterTypeParam) setChapterType(chapterTypeParam);
+    if (seriesStatusParam) setSeriesStatus(seriesStatusParam);
+    if (availabilityTypeParam) setAvailabilityType(availabilityTypeParam);
+    
+    if (releaseYearMinParam && releaseYearMaxParam) {
+      setReleaseYearRange([parseInt(releaseYearMinParam), parseInt(releaseYearMaxParam)]);
     }
-  }, [searchParams, novels, ITEMS_PER_LOAD]);
-
-  const { ref, inView } = useInView({
-    threshold: 0,
-  });
-
-  useEffect(() => {
-    if (inView && hasMore) {
-      loadMore();
+    
+    if (ratingMinParam && ratingMaxParam) {
+      setRatingRange([parseFloat(ratingMinParam), parseFloat(ratingMaxParam)]);
     }
-  }, [inView]);
+  }, [searchParams]);
 
-  const loadMore = useCallback(() => {
-    const currentLength = displayedNovels.length;
-    // Sort the next batch before adding
-    const sorted = sortNovels(filteredNovels, sortBy);
-    const nextBatch = sorted.slice(
-      currentLength,
-      currentLength + ITEMS_PER_LOAD
+  const handleSearch = useCallback(() => {
+    if (!novels.length) return;
+
+    let filtered = [...novels];
+
+    // Apply search term filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(novel => 
+        novel.title.toLowerCase().includes(searchLower) ||
+        novel.publishers.original.toLowerCase().includes(searchLower) ||
+        novel.tags?.some(tag => tag.toLowerCase().includes(searchLower)) ||
+        novel.genres.some(g => g.name.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Apply series type filter
+    if (seriesType !== 'all') {
+      filtered = filtered.filter(novel => novel.seriesType === seriesType);
+    }
+
+    // Apply chapter type filter
+    if (chapterType !== 'all') {
+      filtered = filtered.filter(novel => novel.chapterType === chapterType);
+    }
+
+    // Apply series status filter
+    if (seriesStatus !== 'all') {
+      filtered = filtered.filter(novel => novel.seriesStatus === seriesStatus);
+    }
+
+    // Apply availability type filter
+    if (availabilityType !== 'all') {
+      filtered = filtered.filter(novel => novel.availability.type === availabilityType);
+    }
+
+    // Apply release year range filter
+    filtered = filtered.filter(novel => {
+      const releaseYear = novel.seriesInfo.firstReleaseDate.toDate().getFullYear();
+      return releaseYear >= releaseYearRange[0] && releaseYear <= releaseYearRange[1];
+    });
+
+    // Apply rating range filter
+    filtered = filtered.filter(novel => 
+      novel.rating >= ratingRange[0] && novel.rating <= ratingRange[1]
     );
-    
-    if (nextBatch.length > 0) {
-      setDisplayedNovels(prev => [...prev, ...nextBatch]);
+
+    // Apply tag filters with proper logic
+    if (tagSearchInclude) {
+      const includeTags = tagSearchInclude.toLowerCase().split(',').map(t => t.trim()).filter(Boolean);
+      filtered = filtered.filter(novel => {
+        const novelTags = (novel.tags || []).map(t => t.toLowerCase());
+        if (tagLogic === 'AND') {
+          return includeTags.every(tag => novelTags.some(t => t.includes(tag)));
+        } else {
+          return includeTags.some(tag => novelTags.some(t => t.includes(tag)));
+        }
+      });
     }
+
+    // Apply genre filters with proper logic
+    if (selectedGenres) {
+      const includeGenres = selectedGenres.toLowerCase().split(',').map(g => g.trim()).filter(Boolean);
+      filtered = filtered.filter(novel => {
+        const novelGenres = novel.genres.map(g => g.name.toLowerCase());
+        if (genreLogic === 'AND') {
+          return includeGenres.every(genre => novelGenres.some(g => g.includes(genre)));
+        } else {
+          return includeGenres.some(genre => novelGenres.some(g => g.includes(genre)));
+        }
+      });
+    }
+
+    if (excludedGenres) {
+      const excludeGenres = excludedGenres.toLowerCase().split(',').map(g => g.trim()).filter(Boolean);
+      filtered = filtered.filter(novel => {
+        const novelGenres = novel.genres.map(g => g.name.toLowerCase());
+        return !excludeGenres.some(genre => novelGenres.some(g => g.includes(genre)));
+      });
+    }
+
+    // Apply publisher search
+    if (publisherSearch) {
+      const searchLower = publisherSearch.toLowerCase().trim();
+      filtered = filtered.filter(novel => 
+        novel.publishers.original.toLowerCase().includes(searchLower) ||
+        (novel.publishers.english?.toLowerCase().includes(searchLower) ?? false)
+      );
+    }
+
+    setFilteredNovels(filtered);
+    setCurrentPage(1); // Reset to first page when applying filters
+  }, [
+    novels,
+    searchTerm,
+    tagSearchInclude,
+    tagSearchExclude,
+    tagLogic,
+    selectedGenres,
+    excludedGenres,
+    genreLogic,
+    publisherSearch,
+    seriesType,
+    chapterType,
+    seriesStatus,
+    availabilityType,
+    releaseYearRange,
+    ratingRange
+  ]);
+
+  const handleApplyFilters = useCallback(() => {
+    // Update URL with current filters
+    const params = new URLSearchParams();
+    if (tagSearchInclude) params.set('tagSearchInclude', tagSearchInclude);
+    if (selectedGenres) params.set('selectedGenres', selectedGenres);
+    if (publisherSearch) params.set('publisherSearch', publisherSearch);
+    if (seriesType !== 'all') params.set('seriesType', seriesType);
+    if (chapterType !== 'all') params.set('chapterType', chapterType);
+    if (seriesStatus !== 'all') params.set('seriesStatus', seriesStatus);
+    if (availabilityType !== 'all') params.set('availabilityType', availabilityType);
+    params.set('releaseYearMin', releaseYearRange[0].toString());
+    params.set('releaseYearMax', releaseYearRange[1].toString());
+    params.set('ratingMin', ratingRange[0].toString());
+    params.set('ratingMax', ratingRange[1].toString());
+
+    // Use router.push to update URL without reload
+    const newUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
+    router.push(newUrl);
+
+    handleSearch();
+  }, [
+    tagSearchInclude,
+    selectedGenres,
+    publisherSearch,
+    seriesType,
+    chapterType,
+    seriesStatus,
+    availabilityType,
+    releaseYearRange,
+    ratingRange,
+    router,
+    handleSearch
+  ]);
+
+  // Update the sort handler
+  const handleSort = (value: SortCriteria) => {
+    setSortBy(value);
+    const sorted = sortNovels(filteredNovels, value);
+    setFilteredNovels(sorted);
+    setCurrentPage(1); // Reset to first page when sorting
+  };
+
+  const handleTileClick = (novelId: string) => {
+    router.push(`/novel/${novelId}`);
+  };
+  
+  const getSortButtonText = () => {
+    if (sortBy === 'alphabetical_asc') {
+      return 'A-Z'
+    } else {
+      return sortBy === 'latest' ? 'Newest first' : 'Oldest first'
+    }
+  }
+
+  const handleReadNow = (novelId: string) => {
+    console.log(`Start reading novel with id: ${novelId}`)
+  }
+
+  const formatDate = (date: any) => {
+    if (!date) return 'No date available';
     
-    setHasMore(currentLength + nextBatch.length < filteredNovels.length);
-  }, [filteredNovels, displayedNovels.length, sortBy]);
+    try {
+      // Handle Firestore Timestamp
+      if (date && typeof date === 'object' && 'seconds' in date) {
+        // Convert seconds to milliseconds and create a Date object
+        return new Date(date.seconds * 1000).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }
+      
+      // Handle string dates
+      const parsedDate = new Date(date);
+      if (!isNaN(parsedDate.getTime())) {
+        return parsedDate.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }
+      
+      return 'Invalid date';
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
+    }
+  };
+
+  const getColorScheme = (item: string) => {
+    const key = Object.keys(genreColors).find(k => item.toLowerCase().includes(k.toLowerCase()));
+    return key ? genreColors[key as keyof typeof genreColors] : genreColors.Horror;
+  }
+
+  const handleResetFilters = useCallback(() => {
+    // Reset all filter states
+    setSelectedGenres('');
+    setExcludedGenres('');
+    setGenreLogic('OR');
+    setTagLogic('OR');
+    setTagSearchInclude('');
+    setTagSearchExclude('');
+    setPublisherSearch('');
+    setSearchTerm('');
+    setSeriesType('all');
+    setChapterType('all');
+    setSeriesStatus('all');
+    setAvailabilityType('all');
+    setReleaseYearRange([2000, new Date().getFullYear()]);
+    setRatingRange([0, 5]);
+    
+    // Reset the novels display
+    setFilteredNovels(novels);
+    setCurrentPage(1); // Reset to first page when resetting filters
+  }, [novels]);
+
+  // Add cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Add a ref for the timeout
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Update the search input onChange handler
+  <Input
+    className="pl-10 pr-10 bg-transparent border-2 border-[#F1592A]/50 hover:border-[#F1592A] text-[#232120] dark:text-[#E7E7E8] placeholder:text-[#232120]/60 dark:placeholder:text-[#E7E7E8]/60 transition-colors focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+    placeholder="Search novels, authors, genres..."
+    value={searchTerm}
+    onChange={(e) => {
+      const newValue = e.target.value;
+      setSearchTerm(newValue);
+      // Apply filters with the new search term
+      const filtered = novels.filter(novel => {
+        const searchLower = newValue.toLowerCase();
+        return (
+          novel.title.toLowerCase().includes(searchLower) ||
+          novel.publishers.original.toLowerCase().includes(searchLower) ||
+          novel.genres.some(g => g.name.toLowerCase().includes(searchLower)) ||
+          novel.tags.some(t => t.toLowerCase().includes(searchLower))
+        );
+      });
+      setFilteredNovels(filtered);
+      setCurrentPage(1); // Reset to first page when searching
+    }}
+    onPaste={(e) => {
+      e.preventDefault();
+      const pastedText = e.clipboardData.getData('text');
+      setSearchTerm(pastedText);
+      e.currentTarget.value = pastedText;
+      // Reset to current filtered state or all novels
+      const currentFiltered = novels;
+      setFilteredNovels(currentFiltered);
+      setCurrentPage(1); // Reset to first page when resetting search
+    }}
+  />
 
   const fetchNovels = useCallback(async () => {
     try {
@@ -364,8 +621,7 @@ function BrowseContent() {
       
       setNovels(sortedData);
       setFilteredNovels(sortedData);
-      setDisplayedNovels(sortedData.slice(0, ITEMS_PER_LOAD));
-      setHasMore(sortedData.length > ITEMS_PER_LOAD);
+      setCurrentPage(1); // Start at first page
 
     } catch (error) {
       console.error("Error fetching novels:", error);
@@ -373,217 +629,12 @@ function BrowseContent() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [sortBy]);
 
+  // Call fetchNovels on component mount
   useEffect(() => {
     fetchNovels();
   }, [fetchNovels]);
-
-  const handleSearch = useCallback(() => {
-    if (!novels.length) return;
-
-    let filtered = [...novels];
-
-    // Apply search term filter
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(novel => 
-        novel.title.toLowerCase().includes(searchLower) ||
-        novel.publishers.original.toLowerCase().includes(searchLower) ||
-        novel.tags?.some(tag => tag.toLowerCase().includes(searchLower)) ||
-        novel.genres.some(g => g.name.toLowerCase().includes(searchLower))
-      );
-    }
-
-    // Apply tag filters
-    if (tagSearchInclude) {
-      const includeTags = tagSearchInclude.split(',').map(t => t.trim().toLowerCase());
-      filtered = filtered.filter(novel => {
-        const novelTags = (novel.tags || []).map(t => t.toLowerCase());
-        return tagLogic === 'AND'
-          ? includeTags.every(t => novelTags.includes(t))
-          : includeTags.some(t => novelTags.includes(t));
-      });
-    }
-
-    if (tagSearchExclude) {
-      const excludeTags = tagSearchExclude.split(',').map(t => t.trim().toLowerCase());
-      filtered = filtered.filter(novel => {
-        const novelTags = (novel.tags || []).map(t => t.toLowerCase());
-        return !excludeTags.some(t => novelTags.includes(t));
-      });
-    }
-
-    // Apply genre filters
-    if (selectedGenres) {
-      const genres = selectedGenres.split(',').map(g => g.trim().toLowerCase());
-      filtered = filtered.filter(novel => {
-        const novelGenres = novel.genres.map(g => g.name.toLowerCase());
-        return genreLogic === 'AND'
-          ? genres.every(g => novelGenres.includes(g))
-          : genres.some(g => novelGenres.includes(g));
-      });
-    }
-
-    if (excludedGenres) {
-      const genres = excludedGenres.split(',').map(g => g.trim().toLowerCase());
-      filtered = filtered.filter(novel => {
-        const novelGenres = novel.genres.map(g => g.name.toLowerCase());
-        return !genres.some(g => novelGenres.includes(g));
-      });
-    }
-
-    // Apply publisher search
-    if (publisherSearch) {
-      const search = publisherSearch.toLowerCase();
-      filtered = filtered.filter(novel => 
-        novel.publishers.original.toLowerCase().includes(search) ||
-        (novel.publishers.english?.toLowerCase().includes(search) ?? false)
-      );
-    }
-
-    setFilteredNovels(filtered);
-    setDisplayedNovels(filtered.slice(0, ITEMS_PER_LOAD));
-    setHasMore(filtered.length > ITEMS_PER_LOAD);
-  }, [
-    novels,
-    searchTerm,
-    tagSearchInclude,
-    tagSearchExclude,
-    tagLogic,
-    selectedGenres,
-    excludedGenres,
-    genreLogic,
-    publisherSearch,
-    ITEMS_PER_LOAD
-  ]);
-
-  // Call handleSearch when filters change
-  useEffect(() => {
-    handleSearch();
-  }, [
-    searchTerm,
-    tagSearchInclude,
-    tagSearchExclude,
-    tagLogic,
-    selectedGenres,
-    excludedGenres,
-    genreLogic,
-    publisherSearch,
-    handleSearch
-  ]);
-
-  const handleApplyFilters = useCallback(() => {
-    handleSearch();
-    setOpen(false);
-  }, [handleSearch]);
-
-  const handleTileClick = (novelId: string) => {
-    router.push(`/novel/${novelId}`);
-  };
-  
-  const getSortButtonText = () => {
-    if (sortBy === 'alphabetical_asc') {
-      return 'A-Z'
-    } else {
-      return sortBy === 'latest' ? 'Newest first' : 'Oldest first'
-    }
-  }
-
-  const handleReadNow = (novelId: string) => {
-    console.log(`Start reading novel with id: ${novelId}`)
-  }
-
-  const formatDate = (date: any) => {
-    if (!date) return 'No date available';
-    
-    try {
-      // Handle Firestore Timestamp
-      if (date && typeof date === 'object' && 'seconds' in date) {
-        // Convert seconds to milliseconds and create a Date object
-        return new Date(date.seconds * 1000).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        });
-      }
-      
-      // Handle string dates
-      const parsedDate = new Date(date);
-      if (!isNaN(parsedDate.getTime())) {
-        return parsedDate.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        });
-      }
-      
-      return 'Invalid date';
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Invalid date';
-    }
-  };
-
-  const getColorScheme = (item: string) => {
-    const key = Object.keys(genreColors).find(k => item.toLowerCase().includes(k.toLowerCase()));
-    return key ? genreColors[key as keyof typeof genreColors] : genreColors.Horror;
-  }
-
-  const handleResetFilters = useCallback(() => {
-    // Reset all filter states
-    setSelectedGenres('');
-    setExcludedGenres('');
-    setGenreLogic('OR');
-    setTagLogic('OR');
-    setTagSearchInclude('');
-    setTagSearchExclude('');
-    setReadingStatus('all');
-    setPublisherSearch('');
-    setSearchTerm('');
-    setCurrentPage(1);
-    
-    // Reset the novels display
-    setFilteredNovels(novels);
-    setDisplayedNovels(novels.slice(0, ITEMS_PER_LOAD));
-    setHasMore(novels.length > ITEMS_PER_LOAD);
-  }, [novels, ITEMS_PER_LOAD]);
-
-  // Add a ref for the timeout
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
-
-  // Update the search input onChange handler
-  <Input
-    className="pl-10 pr-10 bg-transparent border-2 border-[#F1592A]/50 hover:border-[#F1592A] text-[#232120] dark:text-[#E7E7E8] placeholder:text-[#232120]/60 dark:placeholder:text-[#E7E7E8]/60 transition-colors focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-    placeholder="Search novels, authors, genres..."
-    value={searchTerm}
-    onChange={(e) => {
-      const newValue = e.target.value;
-      setSearchTerm(newValue);
-      // Apply filters with the new search term
-      const filtered = novels.filter(novel => {
-        const searchLower = newValue.toLowerCase();
-        return (
-          novel.title.toLowerCase().includes(searchLower) ||
-          novel.publishers.original.toLowerCase().includes(searchLower) ||
-          novel.genres.some(g => g.name.toLowerCase().includes(searchLower)) ||
-          novel.tags.some(t => t.toLowerCase().includes(searchLower))
-        );
-      });
-      setFilteredNovels(filtered);
-      setDisplayedNovels(filtered.slice(0, ITEMS_PER_LOAD));
-      setHasMore(filtered.length > ITEMS_PER_LOAD);
-    }}
-  />
-
-  // Add cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, []);
 
   return (
     <div className={`min-h-screen bg-[#E7E7E8] dark:bg-[#232120]`}>
@@ -600,7 +651,7 @@ function BrowseContent() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#232120] dark:text-[#E7E7E8] opacity-70" />
                 <Input
-                  className="pl-10 pr-10 bg-transparent border-2 border-[#F1592A]/50 hover:border-[#F1592A] text-[#232120] dark:text-[#E7E7E8] placeholder:text-[#232120]/60 dark:placeholder:text-[#E7E7E8]/60 transition-colors focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="pl-10 pr-10 bg-transparent border-2 border-[#F1592A]/50 hover:border-[#F1592A] text-[#232120] dark:text-[#E7E7E8] placeholder:text-[#232120]/60 dark:placeholder:text-[#E7E7E8]/60 transition-colors focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-full"
                   placeholder="Search novels, authors, genres..."
                   value={searchTerm}
                   onChange={(e) => {
@@ -617,15 +668,7 @@ function BrowseContent() {
                       );
                     });
                     setFilteredNovels(filtered);
-                    setDisplayedNovels(filtered.slice(0, ITEMS_PER_LOAD));
-                    setHasMore(filtered.length > ITEMS_PER_LOAD);
-                  }}
-                  onPaste={(e) => {
-                    e.preventDefault();
-                    const pastedText = e.clipboardData.getData('text');
-                    // Update both state and input value immediately
-                    setSearchTerm(pastedText);
-                    e.currentTarget.value = pastedText;
+                    setCurrentPage(1); // Reset to first page when searching
                   }}
                 />
                 {searchTerm && (
@@ -637,10 +680,9 @@ function BrowseContent() {
                       // Reset to current filtered state or all novels
                       const currentFiltered = novels;
                       setFilteredNovels(currentFiltered);
-                      setDisplayedNovels(currentFiltered.slice(0, ITEMS_PER_LOAD));
-                      setHasMore(currentFiltered.length > ITEMS_PER_LOAD);
+                      setCurrentPage(1); // Reset to first page when resetting filters
                     }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 hover:bg-transparent p-0 h-auto"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 hover:bg-transparent p-0 h-auto rounded-full"
                   >
                     <X className="h-4 w-4 text-[#232120]/70 dark:text-[#E7E7E8]/70 hover:text-[#F1592A] transition-colors" />
                   </Button>
@@ -649,6 +691,24 @@ function BrowseContent() {
             </div>
 
             <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  // Get 10 random novels
+                  const randomNovels = [...novels]
+                    .sort(() => Math.random() - 0.5)
+                    .slice(0, 10);
+                  setFilteredNovels(randomNovels);
+                  setCurrentPage(1);
+                  toast.success("Here's a fresh batch of random novels!");
+                }}
+                className="relative animate-border p-[2px] rounded-full hover:scale-105 transition-transform"
+              >
+                <div className="animate-border-inner rounded-full px-4 py-2 flex items-center gap-2">
+                  <span className="text-[#232120] dark:text-[#E7E7E8] font-medium">Surprise Me!</span>
+                  <Star className="h-4 w-4 text-[#8B5CF6] animate-spin-slow" />
+                </div>
+              </Button>
               <Link href="/" passHref>
                 <Button
                   variant="outline"
@@ -675,222 +735,295 @@ function BrowseContent() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="flex flex-col gap-8">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h1 className="text-3xl font-bold text-[#232120] dark:text-[#E7E7E8]">Browse Novels</h1>
-            <div className="flex items-center gap-4">
-              <Sheet open={open} onOpenChange={setOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="outline" className="border-[#F1592A] text-[#232120] dark:text-[#E7E7E8]">
-                    Filters
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="h-full flex flex-col p-0">
-                  <SheetHeader className="p-6 pb-2">
-                    <SheetTitle>Filter Novels</SheetTitle>
-                    <SheetDescription>
-                      Customize your novel search with these filters
-                    </SheetDescription>
-                  </SheetHeader>
-                  <div className="flex-1 overflow-hidden">
-                    <FilterSection
-                      tagLogic={tagLogic}
-                      setTagLogic={setTagLogic}
-                      tagSearchInclude={tagSearchInclude}
-                      setTagSearchInclude={setTagSearchInclude}
-                      tagSearchExclude={tagSearchExclude}
-                      setTagSearchExclude={setTagSearchExclude}
-                      readingStatus={readingStatus}
-                      setReadingStatus={setReadingStatus}
-                      publisherSearch={publisherSearch}
-                      setPublisherSearch={setPublisherSearch}
-                      genreLogic={genreLogic}
-                      setGenreLogic={setGenreLogic}
-                      selectedGenres={selectedGenres}
-                      setSelectedGenres={setSelectedGenres}
-                      excludedGenres={excludedGenres}
-                      setExcludedGenres={setExcludedGenres}
-                      handleApplyFilters={handleApplyFilters}
-                      handleResetFilters={handleResetFilters}
-                      closeSheet={() => setOpen(false)}
-                    />
-                  </div>
-                </SheetContent>
-              </Sheet>
-              
-              <Select
-                value={sortBy}
-                onValueChange={(value: SortCriteria) => {
-                  setSortBy(value);
-                  // Sort the current filtered novels
-                  const sorted = sortNovels(filteredNovels, value);
-                  setFilteredNovels(sorted);
-                  // Reset displayed novels with first batch
-                  setDisplayedNovels(sorted.slice(0, ITEMS_PER_LOAD));
-                  setHasMore(sorted.length > ITEMS_PER_LOAD);
-                }}
-              >
-                <SelectTrigger className="w-[160px] border-[#F1592A]">
-                  <SelectValue placeholder="Sort by">
-                    {sortBy === 'latest' && "Latest Release"}
-                    {sortBy === 'oldest' && "Oldest Release"}
-                    {sortBy === 'alphabetical_asc' && "A to Z"}
-                    {sortBy === 'alphabetical_desc' && "Z to A"}
-                    {sortBy === 'rating' && "Highest Rating"}
-                    {sortBy === 'likes' && "Most Liked"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="latest">Latest Release</SelectItem>
-                  <SelectItem value="oldest">Oldest Release</SelectItem>
-                  <SelectItem value="alphabetical_asc">A to Z</SelectItem>
-                  <SelectItem value="alphabetical_desc">Z to A</SelectItem>
-                  <SelectItem value="rating">Highest Rating</SelectItem>
-                  <SelectItem value="likes">Most Liked</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      <div className="flex">
+        {/* Persistent Filter Section */}
+        <div className="w-80 shrink-0 sticky top-24 h-[calc(100vh-6rem)] overflow-y-auto bg-white dark:bg-black shadow-md">
+          <div className="p-6 border-b border-gray-100 dark:border-gray-800">
+            <h2 className="text-xl font-semibold text-[#232120] dark:text-[#E7E7E8]">Filters</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Refine your novel search</p>
           </div>
+          <FilterSection
+            tagLogic={tagLogic}
+            setTagLogic={setTagLogic}
+            tagSearchInclude={tagSearchInclude}
+            setTagSearchInclude={setTagSearchInclude}
+            tagSearchExclude={tagSearchExclude}
+            setTagSearchExclude={setTagSearchExclude}
+            publisherSearch={publisherSearch}
+            setPublisherSearch={setPublisherSearch}
+            genreLogic={genreLogic}
+            setGenreLogic={setGenreLogic}
+            selectedGenres={selectedGenres}
+            setSelectedGenres={setSelectedGenres}
+            excludedGenres={excludedGenres}
+            setExcludedGenres={setExcludedGenres}
+            handleApplyFilters={handleApplyFilters}
+            handleResetFilters={handleResetFilters}
+            closeSheet={() => {}}
+            seriesType={seriesType}
+            setSeriesType={setSeriesType}
+            chapterType={chapterType}
+            setChapterType={setChapterType}
+            seriesStatus={seriesStatus}
+            setSeriesStatus={setSeriesStatus}
+            availabilityType={availabilityType}
+            setAvailabilityType={setAvailabilityType}
+            releaseYearRange={releaseYearRange}
+            setReleaseYearRange={setReleaseYearRange}
+            ratingRange={ratingRange}
+            setRatingRange={setRatingRange}
+          />
+        </div>
 
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <LoadingSpinner />
-            </div>
-          ) : (
-            <motion.div 
-              className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 auto-rows-[250px]"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              layoutRoot
-            >
-              <AnimatePresence mode="popLayout">
-                {displayedNovels.map((novel) => (
-                  <motion.div
-                    key={novel.novelId}
-                    variants={itemVariants}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                    layout
-                    className="group relative overflow-hidden rounded-lg border bg-white dark:bg-black p-2 transition-colors cursor-pointer h-[250px]"
-                    onClick={() => handleTileClick(novel.novelId)}
+        {/* Main Content - With padding for better spacing */}
+        <main className="flex-1 px-8 py-8">
+          <div className="max-w-[1400px] mx-auto">
+            <div className="flex flex-col gap-8">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between bg-white dark:bg-black p-4 rounded-lg shadow-md">
+                <h1 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]">Browse Novels</h1>
+                <div className="flex items-center gap-4">
+                  <Select
+                    value={sortBy}
+                    onValueChange={handleSort}
                   >
-                    <div className="flex p-4 h-full">
-                      <div className="flex-shrink-0 w-24 h-36 mr-4 relative group">
-                        <div className="relative w-24 h-36">
-                          <NovelCoverImage
-                            src={novel.coverPhoto}
-                            alt={novel.title}
-                            priority={false}
-                          />
-                        </div>
-                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleReadNow(novel.novelId);
-                            }}
-                          >
-                            <Search className="mr-2" size={16} />
-                            Read Now
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="flex-grow flex flex-col">
-                        <h3 className="text-xl font-semibold text-[#232120] dark:text-[#E7E7E8] mb-2">
-                          {novel.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                          Published by{' '}
-                          <span className="font-semibold">
-                            {novel.publishers.original}
-                          </span>
-                          {novel.publishers.english && (
-                            <span> / {novel.publishers.english}</span>
-                          )}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 flex-grow overflow-y-auto custom-scrollbar">
-                          {novel.synopsis}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-2">
-                          {novel.genres.slice(0, 3).map((g, i) => (
-                            <span 
-                              key={i}
-                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                theme === 'dark'
-                                  ? getColorScheme(g.name).dark
-                                  : getColorScheme(g.name).light
-                              }`}
-                            >
-                              {g.name}
-                            </span>
-                          ))}
-                          <span className="text-sm text-gray-500 dark:text-gray-400">{novel.likes} likes</span>
-                          {novel.seriesInfo?.firstReleaseDate && (
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                              Released: {formatDate(novel.seriesInfo.firstReleaseDate)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 p-6 flex flex-col">
-                      <h3 className="text-xl font-semibold text-[#232120] dark:text-[#E7E7E8] mb-4">
-                        {novel.title}
-                      </h3>
-                      <div className="flex-grow overflow-y-auto custom-scrollbar">
-                        <p className="text-[#232120] dark:text-[#E7E7E8]">
-                          {novel.synopsis}
-                        </p>
-                      </div>
-                      <div className="mt-4 flex gap-2 pt-4 border-t border-[#232120]/10 dark:border-[#E7E7E8]/10">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="border-[#F1592A] hover:bg-[#F1592A] hover:text-white"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleReadNow(novel.novelId);
-                          }}
-                        >
-                          Read Now
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="border-[#F1592A] hover:bg-[#F1592A] hover:text-white"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleTileClick(novel.novelId);
-                          }}
-                        >
-                          View Details
-                        </Button>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-              
-              {!isLoading && hasMore && (
-                <div ref={ref} className="col-span-full flex justify-center p-4">
+                    <SelectTrigger className="w-[160px] border-[#F1592A]">
+                      <SelectValue placeholder="Sort by">
+                        {sortBy === 'latest' && "Latest Release"}
+                        {sortBy === 'oldest' && "Oldest Release"}
+                        {sortBy === 'alphabetical_asc' && "A to Z"}
+                        {sortBy === 'alphabetical_desc' && "Z to A"}
+                        {sortBy === 'rating' && "Highest Rating"}
+                        {sortBy === 'likes' && "Most Liked"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="latest">Latest Release</SelectItem>
+                      <SelectItem value="oldest">Oldest Release</SelectItem>
+                      <SelectItem value="alphabetical_asc">A to Z</SelectItem>
+                      <SelectItem value="alphabetical_desc">Z to A</SelectItem>
+                      <SelectItem value="rating">Highest Rating</SelectItem>
+                      <SelectItem value="likes">Most Liked</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {isLoading ? (
+                <div className="flex justify-center items-center h-64">
                   <LoadingSpinner />
                 </div>
-              )}
-            </motion.div>
-          )}
+              ) : (
+                <>
+                  <motion.div 
+                    className="flex flex-col gap-1.5"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                    layoutRoot
+                  >
+                    <AnimatePresence mode="popLayout">
+                      {currentNovels.map((novel, index) => (
+                        <motion.div
+                          key={novel.novelId}
+                          variants={itemVariants}
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                          layout
+                          className="group relative bg-[#1A1A1A] hover:bg-[#232323] transition-colors cursor-pointer rounded-lg overflow-hidden"
+                          onClick={() => handleTileClick(novel.novelId)}
+                        >
+                          <div className="flex p-4">
+                            {/* Cover Image Section */}
+                            <div className="flex-shrink-0 w-28 h-40 relative">
+                              <div className="relative w-full h-full overflow-hidden rounded">
+                                <NovelCoverImage
+                                  src={novel.coverPhoto}
+                                  alt={novel.title}
+                                  priority={index < 2}
+                                />
+                              </div>
+                            </div>
 
-          {filteredNovels.length === 0 && (
-            <p className="text-center text-[#232120] dark:text-[#E7E7E8] mt-8">
-              No novels found matching your criteria.
-            </p>
-          )}
-        </div>
-      </main>
+                            {/* Content Section */}
+                            <div className="flex-grow flex flex-col ml-4">
+                              {/* Title and Basic Info */}
+                              <div className="flex items-start justify-between gap-4 mb-2">
+                                <div>
+                                  <h3 className="text-lg font-semibold text-white group-hover:text-[#F1592A] transition-colors line-clamp-1">
+                                    {novel.title}
+                                  </h3>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-sm text-gray-400">{novel.publishers.original}</span>
+                                    {novel.publishers.english && (
+                                      <>
+                                        <span className="text-sm text-gray-600">•</span>
+                                        <span className="text-sm text-gray-400">{novel.publishers.english}</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {novel.status && (
+                                    <Badge 
+                                      variant="secondary" 
+                                      className={`text-xs px-3 py-1 ${
+                                        novel.status === 'Ongoing' ? 'bg-green-900 text-green-300' :
+                                        novel.status === 'Completed' ? 'bg-blue-900 text-blue-300' :
+                                        novel.status === 'Hiatus' ? 'bg-yellow-900 text-yellow-300' :
+                                        'bg-red-900 text-red-300'
+                                      }`}
+                                    >
+                                      {novel.status}
+                                    </Badge>
+                                  )}
+                                  {novel.chapterType && (
+                                    <Badge 
+                                      variant="secondary"
+                                      className="text-xs px-3 py-1 bg-gray-800 text-gray-300"
+                                    >
+                                      {novel.chapterType}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Tags Row */}
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                {novel.tags.slice(0, 3).map((tag, i) => (
+                                  <span
+                                    key={i}
+                                    className="text-sm font-bold text-[#F1592A] hover:text-[#F1592A]/80 transition-colors cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation(); // Prevent card click
+                                      setTagSearchInclude(tag);
+                                      handleApplyFilters();
+                                    }}
+                                  >
+                                    #{tag.toUpperCase()}
+                                  </span>
+                                ))}
+                              </div>
+
+                              {/* Synopsis */}
+                              <p className="text-sm text-gray-300 line-clamp-2 mb-3">
+                                {novel.synopsis}
+                              </p>
+
+                              {/* Stats Row */}
+                              <div className="flex items-center gap-4 text-sm text-gray-400 mb-3">
+                                <div className="flex items-center gap-1.5">
+                                  <Star className="h-4 w-4 text-yellow-500" />
+                                  <span>{novel.rating.toFixed(1)}</span>
+                                </div>
+                                <span className="text-gray-600">•</span>
+                                <div className="flex items-center gap-1.5">
+                                  <BookOpen className="h-4 w-4" />
+                                  <span>{novel.chapters} Chapters</span>
+                                </div>
+                                <span className="text-gray-600">•</span>
+                                <div className="flex items-center gap-1.5">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>{formatDate(novel.seriesInfo?.firstReleaseDate)}</span>
+                                </div>
+                              </div>
+
+                              {/* Genres */}
+                              <div className="flex flex-wrap items-center gap-2">
+                                {novel.genres.map((g, i) => (
+                                  <Badge 
+                                    key={i}
+                                    variant="secondary"
+                                    className="px-3 py-1 text-sm font-bold bg-[#F1592A] hover:bg-[#F1592A]/90 text-white dark:bg-[#F1592A] dark:hover:bg-[#F1592A]/90 dark:text-white transition-colors cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation(); // Prevent card click
+                                      setSelectedGenres(g.name);
+                                      handleApplyFilters();
+                                    }}
+                                  >
+                                    {g.name}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </motion.div>
+
+                  {/* Pagination Controls */}
+                  {filteredNovels.length > 0 && (
+                    <div className="flex justify-center items-center gap-2 mt-8">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => paginate(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="border-[#F1592A] hover:bg-[#F1592A] hover:text-white"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(page => {
+                          return (
+                            page === 1 ||
+                            page === totalPages ||
+                            Math.abs(page - currentPage) <= 1
+                          );
+                        })
+                        .map((page, index, array) => {
+                          if (index > 0 && page - array[index - 1] > 1) {
+                            return (
+                              <span
+                                key={`ellipsis-${page}`}
+                                className="px-3 py-1 text-[#232120] dark:text-[#E7E7E8]"
+                              >
+                                ...
+                              </span>
+                            );
+                          }
+                          return (
+                            <Button
+                              key={page}
+                              variant={currentPage === page ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => paginate(page)}
+                              className={`w-10 ${
+                                currentPage === page
+                                  ? "bg-[#F1592A] text-white"
+                                  : "border-[#F1592A] hover:bg-[#F1592A] hover:text-white"
+                              }`}
+                            >
+                              {page}
+                            </Button>
+                          );
+                        })}
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => paginate(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="border-[#F1592A] hover:bg-[#F1592A] hover:text-white"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {filteredNovels.length === 0 && (
+                <p className="text-center text-[#232120] dark:text-[#E7E7E8] mt-8">
+                  No novels found matching your criteria.
+                </p>
+              )}
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   )
 }
