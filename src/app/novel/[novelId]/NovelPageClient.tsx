@@ -140,6 +140,8 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
   const [recommendedLoading, setRecommendedLoading] = useState(true)
   const [userProfile, setUserProfile] = useState<{ profilePicture: string, username: string } | null>(null)
   const [userType, setUserType] = useState<string | null>(null)
+  const [randomNovels, setRandomNovels] = useState<Novel[]>([])
+  const [randomNovelsLoading, setRandomNovelsLoading] = useState(true)
 
   const ThemeToggle = () => {
     if (!mounted) return null
@@ -268,6 +270,39 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
     }
   }
 
+  const fetchRandomNovels = async () => {
+    setRandomNovelsLoading(true)
+    try {
+      // First, get the total count of novels
+      const countQuery = query(collection(db, 'novels'))
+      const snapshot = await getDocs(countQuery)
+      const totalNovels = snapshot.size
+
+      // Get a larger batch of novels to ensure we have enough after filtering
+      const q = query(
+        collection(db, 'novels'),
+        orderBy('views', 'desc'), // Order by views to get popular novels
+        limit(30) // Get more novels than needed to ensure variety
+      )
+      const querySnapshot = await getDocs(q)
+      const novels = querySnapshot.docs
+        .map(doc => ({ novelId: doc.id, ...doc.data() } as Novel))
+        .filter(novel => novel.novelId !== params.novelId) // Filter out current novel
+
+      // Shuffle the array to get random novels
+      const shuffledNovels = novels
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 10) // Take only 10 novels after shuffling
+
+      setRandomNovels(shuffledNovels)
+    } catch (error) {
+      console.error('Error fetching random novels:', error)
+      toast.error('Failed to fetch random novels')
+    } finally {
+      setRandomNovelsLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (user && novel) {
       checkIfFollowing()
@@ -366,6 +401,7 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
     if (params.novelId) {
       fetchNovel()
       fetchChapters()
+      fetchRandomNovels()
     }
     if (user) {
       fetchUserProfile()
@@ -878,13 +914,23 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
             )}
 
             {/* Recommended Novels Section */}
-            {/* <div className="mt-12">
+            <div className="mt-12">
               <RecommendedList 
-                novels={recommendedNovels} 
-                loading={recommendedLoading}
-                onFollowChange={handleFollowChange}
+                novels={randomNovels} 
+                loading={randomNovelsLoading}
+                onFollowChange={handleFollowNovel}
               />
-            </div> */}
+              {/* <div className="flex justify-center mt-6">
+                <Link href="/browse">
+                  <Button 
+                    variant="outline" 
+                    className="border-[#F1592A] text-[#F1592A] hover:bg-[#F1592A] hover:text-white dark:border-[#F1592A] dark:text-[#F1592A] dark:hover:bg-[#F1592A] dark:hover:text-white rounded-full"
+                  >
+                    View All Recommendations
+                  </Button>
+                </Link>
+              </div> */}
+            </div>
           </div>
         )}
 

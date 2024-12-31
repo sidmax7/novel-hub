@@ -709,7 +709,7 @@ export default function ModernLightNovelsHomepage() {
         </section>
 
         {/* Trending Section */}
-        <section id="trending" className="py-8 md:py-12">
+        <section id="trending" className="">
           <NovelRankings
             newReleases={latestNovels}
             trending={popularNovels}
@@ -718,7 +718,7 @@ export default function ModernLightNovelsHomepage() {
         </section>
 
         {/* Weekly Books Section */}
-        <section className="py-8 md:py-12">
+        <section className="">
           <WeeklyBookSection 
             popularNovels={popularNovels} 
             announcements={announcements} 
@@ -726,7 +726,7 @@ export default function ModernLightNovelsHomepage() {
         </section>
 
         {/* Latest Releases Section */}
-        <section id="latest" className="py-8 md:py-12">
+        <section id="latest" className="">
           <TopReleasesSection
             latestNovels={latestNovels}
             editorsPicks={editorsPicks}
@@ -735,14 +735,14 @@ export default function ModernLightNovelsHomepage() {
         </section>
 
         {/* Popular Section */}
-        <section id="popular" className="py-8 md:py-12">
+        <section id="popular" className="">
           <LatestReleasesCarousel
             novels={latestNovels}
             loading={loading}
             onFollowChange={handleFollowChange}
           />
         </section>
-        <section id="popular" className="py-8 md:py-12">
+        <section id="popular" className="">
           <LatestReleasesCarousel
             novels={latestNovels}
             loading={loading}
@@ -752,7 +752,7 @@ export default function ModernLightNovelsHomepage() {
 
 
         {/* You May Also Like Section */}
-        <section className="py-8 md:py-12">
+        <section className="">
           <YouMayAlsoLikeSection 
             novels={recommendedNovels as RecommendedNovel[]}
             onFollowNovel={handleFollowNovel}

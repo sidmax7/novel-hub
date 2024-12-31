@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Home, Moon, Sun, ChevronLeft, ChevronRight, X, BookOpen, Heart, Calendar, Building2, Hash, Star } from "lucide-react"
+import { Search, Home, Moon, Sun, ChevronLeft, ChevronRight, X, BookOpen, Heart, Calendar, Building2, Hash, Star, Plus } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -33,6 +33,7 @@ import FilterSection from '@/components/FilterSection'
 import { useInView } from 'react-intersection-observer';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Badge } from "@/components/ui/badge"
+import { ChatButton } from '@/components/ChatButton';
 
 interface Novel {
   novelId: string;
@@ -638,6 +639,25 @@ function BrowseContent() {
 
   return (
     <div className={`min-h-screen bg-[#E7E7E8] dark:bg-[#232120]`}>
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #F1592A;
+          border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #F1592A/80;
+        }
+      `}</style>
       <header className="sticky top-0 z-50 bg-white dark:bg-[#232120] shadow">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -815,7 +835,7 @@ function BrowseContent() {
               ) : (
                 <>
                   <motion.div 
-                    className="flex flex-col gap-1.5"
+                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
@@ -830,23 +850,37 @@ function BrowseContent() {
                           animate="visible"
                           exit="exit"
                           layout
-                          className="group relative bg-[#1A1A1A] hover:bg-[#232323] transition-colors cursor-pointer rounded-lg overflow-hidden"
+                          className="group relative bg-[#1A1A1A] hover:bg-[#232323] transition-colors cursor-pointer rounded-lg overflow-hidden h-[280px]"
                           onClick={() => handleTileClick(novel.novelId)}
                         >
-                          <div className="flex p-4">
-                            {/* Cover Image Section */}
-                            <div className="flex-shrink-0 w-28 h-40 relative">
-                              <div className="relative w-full h-full overflow-hidden rounded">
-                                <NovelCoverImage
-                                  src={novel.coverPhoto}
-                                  alt={novel.title}
-                                  priority={index < 2}
-                                />
+                          <div className="flex p-4 h-full">
+                            {/* Cover Image Section with Add Button */}
+                            <div className="flex flex-col gap-2">
+                              <div className="flex-shrink-0 w-32 h-48 relative">
+                                <div className="relative w-full h-full overflow-hidden rounded">
+                                  <NovelCoverImage
+                                    src={novel.coverPhoto}
+                                    alt={novel.title}
+                                    priority={index < 4}
+                                  />
+                                </div>
                               </div>
+                              <Button
+                                variant="outline"
+                                className="w-full hover:bg-[#F1592A]/10 text-[#F1592A] hover:text-[#F1592A] border-2 border-[#F1592A] font-semibold rounded-full flex items-center justify-center gap-1 transition-all"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Add functionality here
+                                  toast.success(`Added ${novel.title} to your library!`);
+                                }}
+                              >
+                                <Plus className="h-4 w-4" />
+                                ADD
+                              </Button>
                             </div>
 
                             {/* Content Section */}
-                            <div className="flex-grow flex flex-col ml-4">
+                            <div className="flex-grow flex flex-col ml-4 h-full overflow-hidden">
                               {/* Title and Basic Info */}
                               <div className="flex items-start justify-between gap-4 mb-2">
                                 <div>
@@ -867,7 +901,7 @@ function BrowseContent() {
                                   {novel.status && (
                                     <Badge 
                                       variant="secondary" 
-                                      className={`text-xs px-3 py-1 ${
+                                      className={`text-xs px-2 py-0.5 ${
                                         novel.status === 'Ongoing' ? 'bg-green-900 text-green-300' :
                                         novel.status === 'Completed' ? 'bg-blue-900 text-blue-300' :
                                         novel.status === 'Hiatus' ? 'bg-yellow-900 text-yellow-300' :
@@ -877,14 +911,7 @@ function BrowseContent() {
                                       {novel.status}
                                     </Badge>
                                   )}
-                                  {novel.chapterType && (
-                                    <Badge 
-                                      variant="secondary"
-                                      className="text-xs px-3 py-1 bg-gray-800 text-gray-300"
-                                    >
-                                      {novel.chapterType}
-                                    </Badge>
-                                  )}
+                                 
                                 </div>
                               </div>
 
@@ -895,7 +922,7 @@ function BrowseContent() {
                                     key={i}
                                     className="text-sm font-bold text-[#F1592A] hover:text-[#F1592A]/80 transition-colors cursor-pointer"
                                     onClick={(e) => {
-                                      e.stopPropagation(); // Prevent card click
+                                      e.stopPropagation();
                                       setTagSearchInclude(tag);
                                       handleApplyFilters();
                                     }}
@@ -905,10 +932,12 @@ function BrowseContent() {
                                 ))}
                               </div>
 
-                              {/* Synopsis */}
-                              <p className="text-sm text-gray-300 line-clamp-2 mb-3">
-                                {novel.synopsis}
-                              </p>
+                              {/* Synopsis with Scrollbar */}
+                              <div className="flex-grow overflow-y-auto mb-3 pr-2 custom-scrollbar">
+                                <p className="text-sm text-gray-300">
+                                  {novel.synopsis}
+                                </p>
+                              </div>
 
                               {/* Stats Row */}
                               <div className="flex items-center gap-4 text-sm text-gray-400 mb-3">
@@ -930,20 +959,23 @@ function BrowseContent() {
 
                               {/* Genres */}
                               <div className="flex flex-wrap items-center gap-2">
-                                {novel.genres.map((g, i) => (
-                                  <Badge 
-                                    key={i}
-                                    variant="secondary"
-                                    className="px-3 py-1 text-sm font-bold bg-[#F1592A] hover:bg-[#F1592A]/90 text-white dark:bg-[#F1592A] dark:hover:bg-[#F1592A]/90 dark:text-white transition-colors cursor-pointer"
-                                    onClick={(e) => {
-                                      e.stopPropagation(); // Prevent card click
-                                      setSelectedGenres(g.name);
-                                      handleApplyFilters();
-                                    }}
-                                  >
-                                    {g.name}
-                                  </Badge>
-                                ))}
+                                {novel.genres.slice(0, 3).map((g, i) => {
+                                  const genreColor = genreColors[g.name as keyof typeof genreColors] || genreColors.Horror;
+                                  return (
+                                    <Badge 
+                                      key={i}
+                                      variant="secondary"
+                                      className={`px-2 py-0.5 text-xs font-bold cursor-pointer ${theme === 'dark' ? genreColor.dark : genreColor.light}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedGenres(g.name);
+                                        handleApplyFilters();
+                                      }}
+                                    >
+                                      {g.name}
+                                    </Badge>
+                                  );
+                                })}
                               </div>
                             </div>
                           </div>
@@ -1024,6 +1056,14 @@ function BrowseContent() {
           </div>
         </main>
       </div>
+
+      {/* Add ChatButton at the root level */}
+      <ChatButton 
+        onUpdateRecommendations={(recommendedNovels) => {
+          setFilteredNovels(recommendedNovels);
+          setCurrentPage(1);
+        }} 
+      />
     </div>
   )
 }

@@ -75,12 +75,13 @@ export function RecommendedList({ novels, loading, onFollowChange }: Recommended
           >
             <CarouselContent className="-ml-1 md:-ml-2">
               {novels.map((novel, index) => (
-                <CarouselItem key={novel.novelId} className="pl-1 md:pl-2 md:basis-1/2 lg:basis-1/4">
+                <CarouselItem key={novel.novelId} className="pl-1 md:pl-2 md:basis-1/3 lg:basis-1/5">
                   <motion.div
                     variants={fadeIn}
                     whileHover={{ scale: 1.03 }}
                     onHoverStart={() => setHoveredIndex(index)}
                     onHoverEnd={() => setHoveredIndex(null)}
+                    className="transform scale-90"
                   >
                     <NovelCard novel={{...novel, availability: {type: "FREE"}}} onFollowChange={onFollowChange} />
                   </motion.div>
@@ -97,11 +98,11 @@ export function RecommendedList({ novels, loading, onFollowChange }: Recommended
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.95 }}
         >
-          <Link href="/recommendations">
+          {/* <Link href="/recommendations">
             <Button variant="outline" className="text-sm border-[#F1592A] text-[#F1592A] hover:bg-[#F1592A] hover:text-white dark:border-[#F1592A] dark:text-[#F1592A] dark:hover:bg-[#F1592A] dark:hover:text-[#E7E7E8]">
               View All Recommendations
             </Button>
-          </Link>
+          </Link> */}
         </motion.div>
       </div>
     </section>
