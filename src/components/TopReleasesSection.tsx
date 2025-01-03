@@ -175,14 +175,24 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                           key={`pre-${novel.novelId}`}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.1 }}
+                          transition={{ 
+                            delay: index * 0.1,
+                            duration: 0.5,
+                            ease: [0.4, 0, 0.2, 1]
+                          }}
+                          whileHover={{ 
+                            scale: 1.05,
+                            y: -5,
+                            transition: { duration: 0.2 }
+                          }}
+                          whileTap={{ scale: 0.95 }}
                           className="relative cursor-pointer flex-shrink-0 pt-1"
                           onClick={() => handleNovelSelect(novel)}
                         >
-                          <div className={`relative w-24 h-36 rounded-lg ${
+                          <div className={`relative w-24 h-36 rounded-lg transform transition-all duration-300 ${
                             selectedNovel?.novelId === novel.novelId
-                              ? 'ring-2 ring-[#F1592A]'
-                              : ''
+                              ? 'ring-2 ring-[#F1592A] scale-105 shadow-lg'
+                              : 'hover:shadow-md'
                           }`}>
                             <Image
                               src={novel.coverPhoto}
@@ -192,6 +202,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                               sizes="96px"
                               quality={75}
                             />
+                            <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                           </div>
                         </motion.div>
                       ))}
@@ -273,7 +284,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                         {selectedNovel.title}
                       </h3>
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm text-[#464646] dark:text-[#C3C3C3]">
+                        <span className="text-sm text-[#464646] dark:text-[#C3C3C3] px-2 py-0.5 bg-black/5 dark:bg-white/5 rounded-md">
                           {selectedNovel.publishers.original}
                         </span>
                         <div className="flex items-center">
@@ -289,7 +300,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                             key={index}
                             href={`/browse?selectedGenres=${encodeURIComponent(genre.name)}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="text-xs px-2 py-1 bg-[#F1592A]/10 text-[#F1592A] rounded-full hover:bg-[#F1592A]/20 transition-colors"
+                            className="text-xs font-bold px-2 py-1 bg-[#F1592A]/10 text-[#F1592A] rounded-full hover:bg-[#F1592A]/20 transition-colors"
                           >
                             {genre.name}
                           </Link>
@@ -300,11 +311,11 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                       </p>
                       <div className="flex gap-2">
                         <Link href={`/novel/${selectedNovel.novelId}`}>
-                          <Button className="bg-[#F1592A] text-white hover:bg-[#F1592A]/90">
+                          <Button className="bg-[#F1592A] rounded-full text-white hover:bg-[#F1592A]/90">
                             READ NOW
                           </Button>
                         </Link>
-                        <Button variant="outline" size="icon">
+                        <Button variant="outline" size="icon" className="rounded-full">
                           <Plus className="w-4 h-4" />
                         </Button>
                       </div>
@@ -338,7 +349,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
                           />
                         </div>
                         <div className="flex flex-col justify-center flex-1 min-w-0">
-                          <h3 className="font-medium text-sm text-white truncate group-hover:text-[#4B6BFB] leading-tight mb-1">
+                          <h3 className="font-medium text-sm text-white line-clamp-2 group-hover:text-[#4B6BFB] leading-tight mb-1">
                             {novel.title}
                           </h3>
                           <div className="flex items-center gap-2 mb-1">

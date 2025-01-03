@@ -29,10 +29,13 @@ interface WeeklyBookSectionProps {
 
 export default function WeeklyBookSection({ popularNovels, announcements }: WeeklyBookSectionProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [currentAnnouncementPage, setCurrentAnnouncementPage] = useState(0)
   const [direction, setDirection] = useState(0)
   const [autoSlideInterval, setAutoSlideInterval] = useState<NodeJS.Timeout | null>(null)
 
   const filteredNovels = popularNovels.filter(novel => novel.coverPhoto && novel.title).slice(0, 5)
+  const announcementsPerPage = 4
+  const totalAnnouncementPages = Math.ceil(announcements.length / announcementsPerPage)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -70,8 +73,13 @@ export default function WeeklyBookSection({ popularNovels, announcements }: Week
     }),
   }
 
+  const getCurrentPageAnnouncements = () => {
+    const start = currentAnnouncementPage * announcementsPerPage
+    return announcements.slice(start, start + announcementsPerPage)
+  }
+
   return (
-    <section className="py-8 md:py-12 bg-[#E7E7E8] dark:bg-[#3e3f3e]">
+    <section className="py-6 bg-[#E7E7E8] dark:bg-[#3e3f3e]">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Weekly Featured Novel */}
@@ -124,7 +132,8 @@ export default function WeeklyBookSection({ popularNovels, announcements }: Week
                             {filteredNovels[currentSlide].title}
                           </h3>
                           <p className="text-gray-200 text-sm md:text-base mb-2 line-clamp-3 md:line-clamp-4">
-                            {filteredNovels[currentSlide].synopsis}
+                            <span className="font-bold">{filteredNovels[currentSlide].synopsis.split('.')[0]}.</span>
+                            {filteredNovels[currentSlide].synopsis.split('.').slice(1).join('.')}
                           </p>
                           <div className="flex items-center space-x-2 text-lg text-[#F1592A]">
                             <span>★</span>
@@ -161,48 +170,75 @@ export default function WeeklyBookSection({ popularNovels, announcements }: Week
           {/* Announcements */}
           <div className="bg-white dark:bg-[#3E3F3E] rounded-2xl p-6 lg:col-span-1">
             <h2 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8] mb-4">Announcements</h2>
-            <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2">
-              {announcements.slice(0, 3).map((announcement) => (
-                <Link 
-                  href={`/forum/post/${announcement.id}`} 
-                  key={announcement.id}
-                  className="group block p-4 rounded-lg bg-[#232120] dark:bg-[#232120] hover:bg-gray-900 
-                    transition-all duration-300 flex items-center gap-3"
+            <div className="space-y-3 max-h-[350px] relative">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentAnnouncementPage}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-3"
                 >
-                  {/* Icon/Avatar container */}
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 bg-white dark:bg-white rounded-lg flex items-center justify-center">
-                      <Image
-                        src="/assets/favicon.png" // Replace with your announcement icon
-                        alt="Announcement icon"
-                        width={24}
-                        height={24}
-                        className="object-contain"
-                      />
-                    </div>
-                  </div>
+                  {getCurrentPageAnnouncements().map((announcement) => (
+                    <Link 
+                      href={`/forum/post/${announcement.id}`} 
+                      key={announcement.id}
+                      className="group block p-4 rounded-lg bg-[#232120] dark:bg-[#232120] hover:bg-gray-900 
+                        transition-all duration-300 flex items-center gap-3"
+                    >
+                      <div className="flex-shrink-0">
+                        <div className="w-10 h-10 bg-white dark:bg-white rounded-lg flex items-center justify-center">
+                          <Image
+                            src="/assets/favicon.png"
+                            alt="Announcement icon"
+                            width={24}
+                            height={24}
+                            className="object-contain"
+                          />
+                        </div>
+                      </div>
 
-                  {/* Content container */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-white font-medium line-clamp-1">
-                      {announcement.title}
-                    </h3>
-                    <p className="text-sm text-gray-400 mt-1">
-                      {(() => {
-                        const date = announcement.createdAt?.toDate();
-                        if (!date) return '9 days ago';
-                        
-                        const now = new Date();
-                        const diffTime = Math.abs(now.getTime() - date.getTime());
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                        
-                        if (diffDays === 1) return '1 day ago';
-                        return `${diffDays} days ago`;
-                      })()}
-                    </p>
-                  </div>
-                </Link>
-              ))}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-white font-medium line-clamp-1">
+                          {announcement.title}
+                        </h3>
+                        <p className="text-sm text-gray-400 mt-1">
+                          {(() => {
+                            const date = announcement.createdAt?.toDate();
+                            if (!date) return '9 days ago';
+                            
+                            const now = new Date();
+                            const diffTime = Math.abs(now.getTime() - date.getTime());
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            
+                            if (diffDays === 1) return '1 day ago';
+                            return `${diffDays} days ago`;
+                          })()}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Pagination dots */}
+              {totalAnnouncementPages > 1 && (
+                <div className="flex justify-center gap-2 mt-4">
+                  {Array.from({ length: totalAnnouncementPages }).map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentAnnouncementPage(index)}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        currentAnnouncementPage === index 
+                          ? 'bg-[#F1592A] w-4' 
+                          : 'bg-gray-300 dark:bg-gray-600'
+                      }`}
+                      aria-label={`Go to page ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

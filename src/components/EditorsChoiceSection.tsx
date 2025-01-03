@@ -40,7 +40,7 @@ export default function EditorsChoiceSection({ novels }: EditorsChoiceSectionPro
               </div>
               
               {/* Title */}
-              <h3 className="text-sm font-medium text-[#232120] dark:text-[#E7E7E8] line-clamp-1">
+              <h3 className="text-sm font-medium text-[#232120] dark:text-[#E7E7E8] line-clamp-2 min-h-[2.5rem] mb-0.5">
                 {novel.title}
               </h3>
               

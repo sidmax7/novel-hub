@@ -213,7 +213,7 @@ export const NovelCard: React.FC<NovelCardProps> = ({ novel, onFollowChange }) =
             <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col p-4">
               <div className="mb-2 transform translate-y-8 group-hover:translate-y-0 transition-transform duration-300">
                 <h3 className="font-semibold text-base text-white mb-1">{novel.title}</h3>
-                <p className="text-xs text-gray-300">by {novel.publishers.original}</p>
+                <p className="text-xs text-gray-300">by   <span className="text-sm text-[#464646] dark:text-[#C3C3C3] px-2 py-0.2 bg-black/5 dark:bg-white/5 rounded-md"> {novel.publishers.original}</span></p>
               </div>
               
               <div className="flex-grow overflow-y-auto mb-2 custom-scrollbar transform translate-y-8 group-hover:translate-y-0 transition-transform duration-300 delay-75">

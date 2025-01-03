@@ -99,7 +99,8 @@ export function YouMayAlsoLikeSection({ novels, onFollowNovel, userFollowedNovel
                   
                   {/* Category & Author */}
                   <div className="text-sm text-[#464646] dark:text-[#C3C3C3] mb-2">
-                    {novel.category} · {novel.author.name}
+                    {novel.category} ·                         <span className="text-sm text-[#464646] dark:text-[#C3C3C3] px-2 py-0.2 bg-black/5 dark:bg-white/5 rounded-md">
+                    {novel.author.name}</span>
                   </div>
                   
                   {/* Synopsis */}

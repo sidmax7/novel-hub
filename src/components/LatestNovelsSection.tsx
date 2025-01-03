@@ -46,7 +46,7 @@ export default function LatestNovelsSection({
         {/* New Arrivals Section */}
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">New Arrivals</h2>
+            <h2 className="text-xl font-semibold">New Asrrivals</h2>
             <Button variant="ghost" size="sm" className="text-blue-500">
               SWITCH
             </Button>
