@@ -6,24 +6,22 @@ import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { Slider } from "@/components/ui/slider"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { 
   Tag, 
   BookOpen, 
   Building2, 
   Filter, 
   X,
-  BookMarked,
-  BookOpenCheck,
-  BookX,
-  BookPlus,
   Hash,
   Star,
   Calendar,
-  Globe,
   Type,
   BookText,
-  Banknote
+  Banknote,
+  Globe,
+  MessageSquare,
+  Users
 } from "lucide-react"
 import { useCallback, useState } from "react"
 import { tags } from "@/app/tags"
@@ -41,6 +39,65 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { ChevronDown, ChevronUp } from "lucide-react"
+
+// Define the options for each filter category
+const SERIES_TYPES = [
+  { id: "ORIGINAL", label: "Original" },
+  { id: "TRANSLATED", label: "Translated" },
+  { id: "FAN_FIC", label: "Fan Fiction" }
+]
+
+const STYLE_CATEGORIES = [
+  { id: "LIGHT_NOVEL", label: "Light Novels" },
+  { id: "PUBLISHED_NOVEL", label: "Published Novels" },
+  { id: "WEB_NOVEL", label: "Web Novels" },
+  { id: "GRAPHIC_NOVEL", label: "Graphic Novels" },
+  { id: "NOVELLA", label: "Novella/Short Story" },
+  { id: "SERIALIZED", label: "Serialized Novels" },
+  { id: "EPISODIC", label: "Episodic Novels" },
+  { id: "EPISTOLARY", label: "Epistolary Novels" },
+  { id: "ANTHOLOGY", label: "Anthology Novels" },
+  { id: "CYOA", label: "Choose Your Own Adventure Novels" },
+  { id: "VERSE", label: "Novels-in-Verse" }
+]
+
+const CHAPTER_TYPES = [
+  { id: "TEXT", label: "Text" },
+  { id: "MANGA", label: "Manga" },
+  { id: "VIDEO", label: "Video" },
+  { id: "AUDIO", label: "Audio" }
+]
+
+const LANGUAGES = [
+  { id: "EN", label: "English" },
+  { id: "JP", label: "Japanese" },
+  { id: "KR", label: "Korean" },
+  { id: "CN", label: "Chinese" },
+  // Add more languages as needed
+]
+
+const SERIES_STATUS = [
+  { id: "ONGOING", label: "Ongoing" },
+  { id: "COMPLETED", label: "Completed" },
+  { id: "ON_HOLD", label: "On Hold" },
+  { id: "CANCELLED", label: "Cancelled" },
+  { id: "UPCOMING", label: "Upcoming" }
+]
+
+const AVAILABILITY_TYPES = [
+  { id: "FREE", label: "Free" },
+  { id: "FREEMIUM", label: "Freemium" },
+  { id: "PAID", label: "Paid" }
+]
+
+const RELEASE_FREQUENCY = [
+  { id: "DAILY", label: "Daily" },
+  { id: "WEEKLY", label: "Weekly" },
+  { id: "BI_WEEKLY", label: "Bi-Weekly" },
+  { id: "MONTHLY", label: "Monthly" },
+  { id: "IRREGULAR", label: "Irregular" }
+]
 
 interface FilterSectionProps {
   tagLogic: 'AND' | 'OR'
@@ -53,25 +110,45 @@ interface FilterSectionProps {
   setPublisherSearch: (value: string) => void
   genreLogic: 'AND' | 'OR'
   setGenreLogic: (value: 'AND' | 'OR') => void
-  selectedGenres: string
-  setSelectedGenres: (value: string) => void
-  excludedGenres: string
-  setExcludedGenres: (value: string) => void
+  selectedGenres: string[]
+  setSelectedGenres: (value: string[]) => void
+  excludedGenres: string[]
+  setExcludedGenres: (value: string[]) => void
   handleApplyFilters: () => void
   handleResetFilters: () => void
   closeSheet: () => void
-  seriesType: string
-  setSeriesType: (value: string) => void
-  chapterType: string
-  setChapterType: (value: string) => void
-  seriesStatus: string
-  setSeriesStatus: (value: string) => void
-  availabilityType: string
-  setAvailabilityType: (value: string) => void
+  selectedSeriesTypes: string[]
+  setSelectedSeriesTypes: (value: string[]) => void
+  selectedChapterTypes: string[]
+  setSelectedChapterTypes: (value: string[]) => void
+  selectedSeriesStatus: string[]
+  setSelectedSeriesStatus: (value: string[]) => void
+  selectedAvailabilityTypes: string[]
+  setSelectedAvailabilityTypes: (value: string[]) => void
   releaseYearRange: [number, number]
   setReleaseYearRange: (value: [number, number]) => void
   ratingRange: [number, number]
   setRatingRange: (value: [number, number]) => void
+  selectedStyleCategories: string[]
+  setSelectedStyleCategories: (value: string[]) => void
+  selectedLanguages: string[]
+  setSelectedLanguages: (value: string[]) => void
+  originalPublisher: string
+  setOriginalPublisher: (value: string) => void
+  englishPublisher: string
+  setEnglishPublisher: (value: string) => void
+  releaseFrequency: string[]
+  setReleaseFrequency: (value: string[]) => void
+  releasedChaptersRange: [number, number]
+  setReleasedChaptersRange: (value: [number, number]) => void
+  totalChaptersRange: [number, number]
+  setTotalChaptersRange: (value: [number, number]) => void
+  reviewsRange: [number, number]
+  setReviewsRange: (value: [number, number]) => void
+  ratingsRange: [number, number]
+  setRatingsRange: (value: [number, number]) => void
+  ratingsCountRange: [number, number]
+  setRatingsCountRange: (value: [number, number]) => void
 }
 
 export default function FilterSection({
@@ -92,23 +169,42 @@ export default function FilterSection({
   handleApplyFilters,
   handleResetFilters,
   closeSheet,
-  seriesType,
-  setSeriesType,
-  chapterType,
-  setChapterType,
-  seriesStatus,
-  setSeriesStatus,
-  availabilityType,
-  setAvailabilityType,
+  selectedSeriesTypes,
+  setSelectedSeriesTypes,
+  selectedChapterTypes,
+  setSelectedChapterTypes,
+  selectedSeriesStatus,
+  setSelectedSeriesStatus,
+  selectedAvailabilityTypes,
+  setSelectedAvailabilityTypes,
   releaseYearRange,
   setReleaseYearRange,
   ratingRange,
-  setRatingRange
+  setRatingRange,
+  selectedStyleCategories,
+  setSelectedStyleCategories,
+  selectedLanguages,
+  setSelectedLanguages,
+  originalPublisher,
+  setOriginalPublisher,
+  englishPublisher,
+  setEnglishPublisher,
+  releaseFrequency,
+  setReleaseFrequency,
+  releasedChaptersRange,
+  setReleasedChaptersRange,
+  totalChaptersRange,
+  setTotalChaptersRange,
+  reviewsRange,
+  setReviewsRange,
+  ratingsRange,
+  setRatingsRange,
+  ratingsCountRange,
+  setRatingsCountRange
 }: FilterSectionProps) {
   const [openIncludeTags, setOpenIncludeTags] = useState(false);
   const [openExcludeTags, setOpenExcludeTags] = useState(false);
-  const [openIncludeGenres, setOpenIncludeGenres] = useState(false);
-  const [openExcludeGenres, setOpenExcludeGenres] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const handleTagSelect = (tag: string, type: 'include' | 'exclude') => {
     const setter = type === 'include' ? setTagSearchInclude : setTagSearchExclude;
@@ -117,16 +213,6 @@ export default function FilterSection({
     
     if (!currentTags.includes(tag)) {
       setter(current ? `${current}, ${tag}` : tag);
-    }
-  };
-
-  const handleGenreSelect = (genre: string, type: 'include' | 'exclude') => {
-    const setter = type === 'include' ? setSelectedGenres : setExcludedGenres;
-    const current = type === 'include' ? selectedGenres : excludedGenres;
-    const currentGenres = current.split(',').map(g => g.trim()).filter(Boolean);
-    
-    if (!currentGenres.includes(genre)) {
-      setter(current ? `${current}, ${genre}` : genre);
     }
   };
 
@@ -163,11 +249,133 @@ export default function FilterSection({
     );
   };
 
+  const renderCheckboxGrid = (
+    options: { id: string; label: string }[],
+    selectedValues: string[],
+    onChange: (values: string[]) => void,
+    title: string,
+    icon: React.ReactNode
+  ) => (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 mb-3">
+        {icon}
+        <h3 className="text-sm font-semibold text-[#232120] dark:text-[#E7E7E8]">{title}</h3>
+      </div>
+      <div className="grid grid-cols-3 gap-x-4 gap-y-2">
+        {options.map((option) => (
+          <div key={option.id} className="flex items-center gap-2">
+            <Checkbox
+              id={option.id}
+              checked={selectedValues.includes(option.id)}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  onChange([...selectedValues, option.id]);
+                } else {
+                  onChange(selectedValues.filter((value) => value !== option.id));
+                }
+              }}
+              className="h-4 w-4 rounded-sm border-[#F1592A]/50 data-[state=checked]:bg-[#F1592A] data-[state=checked]:border-[#F1592A]"
+            />
+            <Label
+              htmlFor={option.id}
+              className="text-sm font-medium leading-none cursor-pointer select-none text-gray-700 dark:text-gray-300"
+            >
+              {option.label}
+            </Label>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex flex-col h-full">
-      <ScrollArea className="h-[calc(100vh-300px)] px-6">
-        <div className="space-y-6 py-4">
-          {/* Tag Filters */}
+      <ScrollArea className="h-[calc(100vh-300px)] px-4">
+        <div className="space-y-4 py-4">
+          {/* Primary Filters */}
+          {/* Series Type */}
+          {renderCheckboxGrid(
+            SERIES_TYPES,
+            selectedSeriesTypes,
+            setSelectedSeriesTypes,
+            "Series Type",
+            <Type className="h-4 w-4 text-[#F1592A]" />
+          )}
+
+          <Separator className="bg-gray-100 dark:bg-gray-800" />
+
+          {/* Style Category */}
+          {renderCheckboxGrid(
+            STYLE_CATEGORIES,
+            selectedStyleCategories,
+            setSelectedStyleCategories,
+            "Style Category",
+            <BookText className="h-4 w-4 text-[#F1592A]" />
+          )}
+
+          <Separator className="bg-gray-100 dark:bg-gray-800" />
+
+          {/* Chapter Type */}
+          {renderCheckboxGrid(
+            CHAPTER_TYPES,
+            selectedChapterTypes,
+            setSelectedChapterTypes,
+            "Chapter Type",
+            <BookOpen className="h-4 w-4 text-[#F1592A]" />
+          )}
+
+          <Separator className="bg-gray-100 dark:bg-gray-800" />
+
+          {/* Genres */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="h-5 w-5 text-[#F1592A]" />
+                <h3 className="text-base font-semibold text-[#232120] dark:text-[#E7E7E8]">Genres</h3>
+              </div>
+              <RadioGroup
+                value={genreLogic}
+                onValueChange={(value: 'AND' | 'OR') => setGenreLogic(value)}
+                className="flex gap-2"
+              >
+                <div className="flex items-center space-x-1">
+                  <RadioGroupItem value="AND" id="genre-and" />
+                  <Label htmlFor="genre-and" className="text-xs">AND</Label>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <RadioGroupItem value="OR" id="genre-or" />
+                  <Label htmlFor="genre-or" className="text-xs">OR</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {genres.map((genre) => (
+                <div key={genre} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={genre}
+                    checked={selectedGenres.includes(genre)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedGenres([...selectedGenres, genre]);
+                      } else {
+                        setSelectedGenres(selectedGenres.filter((g) => g !== genre));
+                      }
+                    }}
+                  />
+                  <Label
+                    htmlFor={genre}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {genre}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Separator className="bg-gray-100 dark:bg-gray-800" />
+
+          {/* Tags */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -273,280 +481,285 @@ export default function FilterSection({
 
           <Separator className="bg-gray-100 dark:bg-gray-800" />
 
-          {/* Genre Filters */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Filter className="h-5 w-5 text-[#F1592A]" />
-                <h3 className="text-base font-semibold text-[#232120] dark:text-[#E7E7E8]">Genres</h3>
-              </div>
-              <RadioGroup
-                value={genreLogic}
-                onValueChange={(value: 'AND' | 'OR') => setGenreLogic(value)}
-                className="flex gap-2"
-              >
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="AND" id="genre-and" />
-                  <Label htmlFor="genre-and" className="text-xs">AND</Label>
+          {/* Language */}
+          {renderCheckboxGrid(
+            LANGUAGES,
+            selectedLanguages,
+            setSelectedLanguages,
+            "Language",
+            <Globe className="h-5 w-5 text-[#F1592A]" />
+          )}
+
+          <Separator className="bg-gray-100 dark:bg-gray-800" />
+
+          {/* Series Status */}
+          {renderCheckboxGrid(
+            SERIES_STATUS,
+            selectedSeriesStatus,
+            setSelectedSeriesStatus,
+            "Series Status",
+            <BookOpen className="h-5 w-5 text-[#F1592A]" />
+          )}
+
+          <Separator className="bg-gray-100 dark:bg-gray-800" />
+
+          {/* Availability Criteria */}
+          {renderCheckboxGrid(
+            AVAILABILITY_TYPES,
+            selectedAvailabilityTypes,
+            setSelectedAvailabilityTypes,
+            "Availability",
+            <Banknote className="h-5 w-5 text-[#F1592A]" />
+          )}
+
+          <Separator className="bg-gray-100 dark:bg-gray-800" />
+
+          {/* Advanced Filters Toggle */}
+          <Button
+            variant="ghost"
+            className="w-full flex items-center justify-between py-4 px-6 bg-[#F1592A]/10 hover:bg-[#F1592A]/20 border-y border-[#F1592A]/20"
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          >
+            <div className="flex items-center gap-2">
+              <Filter className="h-5 w-5 text-[#F1592A]" />
+              <span className="text-base font-semibold text-[#232120] dark:text-[#E7E7E8]">Advanced Filters</span>
+            </div>
+            {showAdvancedFilters ? (
+              <ChevronUp className="h-5 w-5 text-[#F1592A]" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-[#F1592A]" />
+            )}
+          </Button>
+
+          {showAdvancedFilters && (
+            <div className="space-y-6 p-4 bg-[#F1592A]/5">
+              {/* Original Publisher */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-[#F1592A]" />
+                  <h3 className="text-sm font-semibold text-[#232120] dark:text-[#E7E7E8]">Original Publisher</h3>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="OR" id="genre-or" />
-                  <Label htmlFor="genre-or" className="text-xs">OR</Label>
+                <Input
+                  value={originalPublisher}
+                  onChange={(e) => setOriginalPublisher(e.target.value)}
+                  placeholder="Search original publishers..."
+                  className="h-9 rounded-md bg-transparent border-[#F1592A]/50 hover:border-[#F1592A] focus:border-[#F1592A] transition-colors"
+                />
+              </div>
+
+              {/* English Publisher */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-[#F1592A]" />
+                  <h3 className="text-sm font-semibold text-[#232120] dark:text-[#E7E7E8]">English Publisher</h3>
                 </div>
-              </RadioGroup>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="include-genres" className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                  Include Genres
-                </Label>
-                <Popover open={openIncludeGenres} onOpenChange={setOpenIncludeGenres}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openIncludeGenres}
-                      className="w-full justify-between mt-1"
-                    >
-                      Select genres to include...
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
-                    <Command>
-                      <CommandInput placeholder="Search genres..." />
-                      <CommandList>
-                        <CommandEmpty>No genres found.</CommandEmpty>
-                        <CommandGroup>
-                          {genres.map((genre) => (
-                            <CommandItem
-                              key={genre}
-                              onSelect={() => {
-                                handleGenreSelect(genre, 'include');
-                                setOpenIncludeGenres(false);
-                              }}
-                            >
-                              {genre}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {renderTags(selectedGenres, 'include')}
+                <Input
+                  value={englishPublisher}
+                  onChange={(e) => setEnglishPublisher(e.target.value)}
+                  placeholder="Search English publishers..."
+                  className="h-9 rounded-md bg-transparent border-[#F1592A]/50 hover:border-[#F1592A] focus:border-[#F1592A] transition-colors"
+                />
               </div>
-              <div>
-                <Label htmlFor="exclude-genres" className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                  Exclude Genres
-                </Label>
-                <Popover open={openExcludeGenres} onOpenChange={setOpenExcludeGenres}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openExcludeGenres}
-                      className="w-full justify-between mt-1"
-                    >
-                      Select genres to exclude...
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
-                    <Command>
-                      <CommandInput placeholder="Search genres..." />
-                      <CommandList>
-                        <CommandEmpty>No genres found.</CommandEmpty>
-                        <CommandGroup>
-                          {genres.map((genre) => (
-                            <CommandItem
-                              key={genre}
-                              onSelect={() => {
-                                handleGenreSelect(genre, 'exclude');
-                                setOpenExcludeGenres(false);
-                              }}
-                            >
-                              {genre}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {renderTags(excludedGenres, 'exclude')}
+
+              <Separator className="bg-[#F1592A]/20" />
+
+              {/* Release Frequency */}
+              {renderCheckboxGrid(
+                RELEASE_FREQUENCY,
+                releaseFrequency,
+                setReleaseFrequency,
+                "Release Frequency",
+                <Calendar className="h-4 w-4 text-[#F1592A]" />
+              )}
+
+              <Separator className="bg-[#F1592A]/20" />
+
+              {/* Released Chapters Range */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-[#F1592A]" />
+                  <h3 className="text-sm font-semibold text-[#232120] dark:text-[#E7E7E8]">Released Chapters</h3>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs text-gray-500">Min</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={releasedChaptersRange[1]}
+                      value={releasedChaptersRange[0]}
+                      onChange={(e) => setReleasedChaptersRange([parseInt(e.target.value), releasedChaptersRange[1]])}
+                      className="h-9 rounded-md bg-transparent border-[#F1592A]/50 hover:border-[#F1592A] focus:border-[#F1592A]"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs text-gray-500">Max</Label>
+                    <Input
+                      type="number"
+                      min={releasedChaptersRange[0]}
+                      max={1000}
+                      value={releasedChaptersRange[1]}
+                      onChange={(e) => setReleasedChaptersRange([releasedChaptersRange[0], parseInt(e.target.value)])}
+                      className="h-9 rounded-md bg-transparent border-[#F1592A]/50 hover:border-[#F1592A] focus:border-[#F1592A]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="bg-[#F1592A]/20" />
+
+              {/* Total Chapters Range */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-[#F1592A]" />
+                  <h3 className="text-sm font-semibold text-[#232120] dark:text-[#E7E7E8]">Total Chapters</h3>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs text-gray-500">Min</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={totalChaptersRange[1]}
+                      value={totalChaptersRange[0]}
+                      onChange={(e) => setTotalChaptersRange([parseInt(e.target.value), totalChaptersRange[1]])}
+                      className="h-9 rounded-md bg-transparent border-[#F1592A]/50 hover:border-[#F1592A] focus:border-[#F1592A]"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs text-gray-500">Max</Label>
+                    <Input
+                      type="number"
+                      min={totalChaptersRange[0]}
+                      max={1000}
+                      value={totalChaptersRange[1]}
+                      onChange={(e) => setTotalChaptersRange([totalChaptersRange[0], parseInt(e.target.value)])}
+                      className="h-9 rounded-md bg-transparent border-[#F1592A]/50 hover:border-[#F1592A] focus:border-[#F1592A]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="bg-[#F1592A]/20" />
+
+              {/* Reviews Range */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-[#F1592A]" />
+                  <h3 className="text-sm font-semibold text-[#232120] dark:text-[#E7E7E8]">Reviews</h3>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs text-gray-500">Min</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={reviewsRange[1]}
+                      value={reviewsRange[0]}
+                      onChange={(e) => setReviewsRange([parseInt(e.target.value), reviewsRange[1]])}
+                      className="h-9 rounded-md bg-transparent border-[#F1592A]/50 hover:border-[#F1592A] focus:border-[#F1592A]"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs text-gray-500">Max</Label>
+                    <Input
+                      type="number"
+                      min={reviewsRange[0]}
+                      max={10000}
+                      value={reviewsRange[1]}
+                      onChange={(e) => setReviewsRange([reviewsRange[0], parseInt(e.target.value)])}
+                      className="h-9 rounded-md bg-transparent border-[#F1592A]/50 hover:border-[#F1592A] focus:border-[#F1592A]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="bg-[#F1592A]/20" />
+
+              {/* Ratings Range */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-[#F1592A]" />
+                  <h3 className="text-sm font-semibold text-[#232120] dark:text-[#E7E7E8]">Ratings</h3>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs text-gray-500">Min</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={ratingsRange[1]}
+                      step={0.1}
+                      value={ratingsRange[0]}
+                      onChange={(e) => setRatingsRange([parseFloat(e.target.value), ratingsRange[1]])}
+                      className="h-9 rounded-md bg-transparent border-[#F1592A]/50 hover:border-[#F1592A] focus:border-[#F1592A]"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs text-gray-500">Max</Label>
+                    <Input
+                      type="number"
+                      min={ratingsRange[0]}
+                      max={5}
+                      step={0.1}
+                      value={ratingsRange[1]}
+                      onChange={(e) => setRatingsRange([ratingsRange[0], parseFloat(e.target.value)])}
+                      className="h-9 rounded-md bg-transparent border-[#F1592A]/50 hover:border-[#F1592A] focus:border-[#F1592A]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="bg-[#F1592A]/20" />
+
+              {/* Number of Ratings Range */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-[#F1592A]" />
+                  <h3 className="text-sm font-semibold text-[#232120] dark:text-[#E7E7E8]">Number of Ratings</h3>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs text-gray-500">Min</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={ratingsCountRange[1]}
+                      value={ratingsCountRange[0]}
+                      onChange={(e) => setRatingsCountRange([parseInt(e.target.value), ratingsCountRange[1]])}
+                      className="h-9 rounded-md bg-transparent border-[#F1592A]/50 hover:border-[#F1592A] focus:border-[#F1592A]"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs text-gray-500">Max</Label>
+                    <Input
+                      type="number"
+                      min={ratingsCountRange[0]}
+                      max={10000}
+                      value={ratingsCountRange[1]}
+                      onChange={(e) => setRatingsCountRange([ratingsCountRange[0], parseInt(e.target.value)])}
+                      className="h-9 rounded-md bg-transparent border-[#F1592A]/50 hover:border-[#F1592A] focus:border-[#F1592A]"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-
-          <Separator className="bg-gray-100 dark:bg-gray-800" />
-
-          {/* Series Type Filter */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Type className="h-5 w-5 text-[#F1592A]" />
-              <h3 className="text-base font-semibold text-[#232120] dark:text-[#E7E7E8]">Series Type</h3>
-            </div>
-            <Select value={seriesType} onValueChange={setSeriesType}>
-              <SelectTrigger className="rounded-full">
-                <SelectValue placeholder="Select series type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="ORIGINAL">Original</SelectItem>
-                <SelectItem value="TRANSLATED">Translated</SelectItem>
-                <SelectItem value="FAN_FIC">Fan Fiction</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Separator className="bg-gray-100 dark:bg-gray-800" />
-
-          {/* Chapter Type Filter */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <BookText className="h-5 w-5 text-[#F1592A]" />
-              <h3 className="text-base font-semibold text-[#232120] dark:text-[#E7E7E8]">Chapter Type</h3>
-            </div>
-            <Select value={chapterType} onValueChange={setChapterType}>
-              <SelectTrigger className="rounded-full">
-                <SelectValue placeholder="Select chapter type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="TEXT">Text</SelectItem>
-                <SelectItem value="MANGA">Manga</SelectItem>
-                <SelectItem value="VIDEO">Video</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Separator className="bg-gray-100 dark:bg-gray-800" />
-
-          {/* Series Status Filter */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-[#F1592A]" />
-              <h3 className="text-base font-semibold text-[#232120] dark:text-[#E7E7E8]">Series Status</h3>
-            </div>
-            <Select value={seriesStatus} onValueChange={setSeriesStatus}>
-              <SelectTrigger className="rounded-full">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="ONGOING">Ongoing</SelectItem>
-                <SelectItem value="COMPLETED">Completed</SelectItem>
-                <SelectItem value="ON HOLD">On Hold</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                <SelectItem value="UPCOMING">Upcoming</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Separator className="bg-gray-100 dark:bg-gray-800" />
-
-          {/* Availability Type Filter */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Banknote className="h-5 w-5 text-[#F1592A]" />
-              <h3 className="text-base font-semibold text-[#232120] dark:text-[#E7E7E8]">Availability</h3>
-            </div>
-            <Select value={availabilityType} onValueChange={setAvailabilityType}>
-              <SelectTrigger className="rounded-full">
-                <SelectValue placeholder="Select availability" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="FREE">Free</SelectItem>
-                <SelectItem value="FREEMIUM">Freemium</SelectItem>
-                <SelectItem value="PAID">Paid</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Separator className="bg-gray-100 dark:bg-gray-800" />
-
-          {/* Release Year Range Filter */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-[#F1592A]" />
-              <h3 className="text-base font-semibold text-[#232120] dark:text-[#E7E7E8]">Release Year</h3>
-            </div>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">{releaseYearRange[0]}</span>
-                <span className="text-sm text-gray-500">{releaseYearRange[1]}</span>
-              </div>
-              <Slider
-                value={releaseYearRange}
-                min={2000}
-                max={new Date().getFullYear()}
-                step={1}
-                onValueChange={(value) => setReleaseYearRange(value as [number, number])}
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          <Separator className="bg-gray-100 dark:bg-gray-800" />
-
-          {/* Rating Range Filter */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Star className="h-5 w-5 text-[#F1592A]" />
-              <h3 className="text-base font-semibold text-[#232120] dark:text-[#E7E7E8]">Rating</h3>
-            </div>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">{ratingRange[0].toFixed(1)}★</span>
-                <span className="text-sm text-gray-500">{ratingRange[1].toFixed(1)}★</span>
-              </div>
-              <Slider
-                value={ratingRange}
-                min={0}
-                max={5}
-                step={0.1}
-                onValueChange={(value) => setRatingRange(value as [number, number])}
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          <Separator className="bg-gray-100 dark:bg-gray-800" />
-
-          {/* Publisher Filter */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-[#F1592A]" />
-              <h3 className="text-base font-semibold text-[#232120] dark:text-[#E7E7E8]">Publisher</h3>
-            </div>
-            <div>
-              <Label htmlFor="publisher" className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                Publisher Name
-              </Label>
-              <Input
-                id="publisher"
-                value={publisherSearch}
-                onChange={(e) => setPublisherSearch(e.target.value)}
-                placeholder="Search publishers..."
-                className="mt-1 text-sm rounded-full"
-              />
-            </div>
-          </div>
+          )}
         </div>
       </ScrollArea>
 
-      <div className="p-6 border-t border-gray-100 dark:border-gray-800">
-        <div className="flex gap-4">
+      <div className="p-4 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex gap-3">
           <Button
             onClick={handleApplyFilters}
-            className="flex-1 bg-[#F1592A] text-white hover:bg-[#F1592A]/90 rounded-full"
+            className="flex-1 bg-[#F1592A] text-white hover:bg-[#F1592A]/90 h-9 rounded-md"
           >
             Apply Filters
           </Button>
           <Button
             onClick={handleResetFilters}
             variant="outline"
-            className="flex-1 rounded-full"
+            className="flex-1 h-9 rounded-md border-[#F1592A]/50 hover:border-[#F1592A] hover:bg-[#F1592A]/10"
           >
             Reset
           </Button>
