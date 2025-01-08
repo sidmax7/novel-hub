@@ -1188,7 +1188,7 @@ function BrowseContent() {
                                 {novel.tags.slice(0, 3).map((tag, i) => (
                                   <span
                                     key={i}
-                                    className="text-[10px] font-bold px-1.5 py-0.5 bg-[#4B6BFB]/10 text-[#4B6BFB] hover:bg-[#4B6BFB]/20 transition-colors cursor-pointer rounded-md flex items-center"
+                                    className="text-[10px] font-bold px-1.5 py-0.5 bg-[#2563EB]/10 text-[#2563EB] hover:bg-[#2563EB]/20 transition-colors cursor-pointer rounded-md flex items-center"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setTagSearchInclude(tag);

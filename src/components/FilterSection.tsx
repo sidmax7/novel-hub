@@ -205,6 +205,8 @@ export default function FilterSection({
   const [openIncludeTags, setOpenIncludeTags] = useState(false);
   const [openExcludeTags, setOpenExcludeTags] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [includeTagsFocused, setIncludeTagsFocused] = useState(false);
+  const [excludeTagsFocused, setExcludeTagsFocused] = useState(false);
 
   const handleTagSelect = (tag: string, type: 'include' | 'exclude') => {
     const setter = type === 'include' ? setTagSearchInclude : setTagSearchExclude;
@@ -402,78 +404,68 @@ export default function FilterSection({
                 <Label htmlFor="include-tags" className="text-xs font-medium text-gray-600 dark:text-gray-400">
                   Include Tags
                 </Label>
-                <Popover open={openIncludeTags} onOpenChange={setOpenIncludeTags}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openIncludeTags}
-                      className="w-full justify-between mt-1"
-                    >
-                      Select tags to include...
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
-                    <Command>
-                      <CommandInput placeholder="Search tags..." />
-                      <CommandList>
-                        <CommandEmpty>No tags found.</CommandEmpty>
-                        <CommandGroup>
-                          {tags.map((tag) => (
-                            <CommandItem
-                              key={tag}
-                              onSelect={() => {
-                                handleTagSelect(tag, 'include');
-                                setOpenIncludeTags(false);
-                              }}
-                            >
-                              {tag}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <Command className="rounded-lg border border-[#F1592A]/50 mt-1">
+                  <CommandInput 
+                    placeholder="Search tags to include..." 
+                    className="h-9"
+                    onFocus={() => setIncludeTagsFocused(true)}
+                    onBlur={() => {
+                      // Small delay to allow for item selection
+                      setTimeout(() => setIncludeTagsFocused(false), 200);
+                    }}
+                  />
+                  {includeTagsFocused && (
+                    <CommandList className="max-h-[200px] overflow-auto custom-scrollbar">
+                      <CommandEmpty>No tags found.</CommandEmpty>
+                      <CommandGroup>
+                        {tags.map((tag) => (
+                          <CommandItem
+                            key={tag}
+                            onSelect={() => handleTagSelect(tag, 'include')}
+                            className="cursor-pointer hover:bg-[#F1592A]/10"
+                          >
+                            <Hash className="h-3 w-3 mr-2" />
+                            {tag}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  )}
+                </Command>
                 {renderTags(tagSearchInclude, 'include')}
               </div>
               <div>
                 <Label htmlFor="exclude-tags" className="text-xs font-medium text-gray-600 dark:text-gray-400">
                   Exclude Tags
                 </Label>
-                <Popover open={openExcludeTags} onOpenChange={setOpenExcludeTags}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openExcludeTags}
-                      className="w-full justify-between mt-1"
-                    >
-                      Select tags to exclude...
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
-                    <Command>
-                      <CommandInput placeholder="Search tags..." />
-                      <CommandList>
-                        <CommandEmpty>No tags found.</CommandEmpty>
-                        <CommandGroup>
-                          {tags.map((tag) => (
-                            <CommandItem
-                              key={tag}
-                              onSelect={() => {
-                                handleTagSelect(tag, 'exclude');
-                                setOpenExcludeTags(false);
-                              }}
-                            >
-                              {tag}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <Command className="rounded-lg border border-[#F1592A]/50 mt-1">
+                  <CommandInput 
+                    placeholder="Search tags to exclude..." 
+                    className="h-9"
+                    onFocus={() => setExcludeTagsFocused(true)}
+                    onBlur={() => {
+                      // Small delay to allow for item selection
+                      setTimeout(() => setExcludeTagsFocused(false), 200);
+                    }}
+                  />
+                  {excludeTagsFocused && (
+                    <CommandList className="max-h-[200px] overflow-auto custom-scrollbar">
+                      <CommandEmpty>No tags found.</CommandEmpty>
+                      <CommandGroup>
+                        {tags.map((tag) => (
+                          <CommandItem
+                            key={tag}
+                            onSelect={() => handleTagSelect(tag, 'exclude')}
+                            className="cursor-pointer hover:bg-[#F1592A]/10"
+                          >
+                            <Hash className="h-3 w-3 mr-2" />
+                            {tag}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  )}
+                </Command>
                 {renderTags(tagSearchExclude, 'exclude')}
               </div>
             </div>
@@ -533,32 +525,32 @@ export default function FilterSection({
 
           {showAdvancedFilters && (
             <div className="space-y-6 p-4 bg-[#F1592A]/5">
-              {/* Original Publisher */}
+              {/* Publishers Section */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-[#F1592A]" />
-                  <h3 className="text-sm font-semibold text-[#232120] dark:text-[#E7E7E8]">Original Publisher</h3>
+                  <h3 className="text-sm font-semibold text-[#232120] dark:text-[#E7E7E8]">Publishers</h3>
                 </div>
-                <Input
-                  value={originalPublisher}
-                  onChange={(e) => setOriginalPublisher(e.target.value)}
-                  placeholder="Search original publishers..."
-                  className="h-9 rounded-md bg-transparent border-[#F1592A]/50 hover:border-[#F1592A] focus:border-[#F1592A] transition-colors"
-                />
-              </div>
-
-              {/* English Publisher */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-[#F1592A]" />
-                  <h3 className="text-sm font-semibold text-[#232120] dark:text-[#E7E7E8]">English Publisher</h3>
+                <div className="flex gap-4">
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs text-gray-500">Original Publisher</Label>
+                    <Input
+                      value={originalPublisher}
+                      onChange={(e) => setOriginalPublisher(e.target.value)}
+                      placeholder="Search original publishers..."
+                      className="h-9 rounded-md bg-transparent border-[#F1592A]/50 hover:border-[#F1592A] focus:border-[#F1592A] transition-colors"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs text-gray-500">English Publisher</Label>
+                    <Input
+                      value={englishPublisher}
+                      onChange={(e) => setEnglishPublisher(e.target.value)}
+                      placeholder="Search English publishers..."
+                      className="h-9 rounded-md bg-transparent border-[#F1592A]/50 hover:border-[#F1592A] focus:border-[#F1592A] transition-colors"
+                    />
+                  </div>
                 </div>
-                <Input
-                  value={englishPublisher}
-                  onChange={(e) => setEnglishPublisher(e.target.value)}
-                  placeholder="Search English publishers..."
-                  className="h-9 rounded-md bg-transparent border-[#F1592A]/50 hover:border-[#F1592A] focus:border-[#F1592A] transition-colors"
-                />
               </div>
 
               <Separator className="bg-[#F1592A]/20" />
