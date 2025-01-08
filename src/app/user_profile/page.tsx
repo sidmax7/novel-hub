@@ -59,6 +59,7 @@ interface Novel {
   availability: {
     type: "FREE" | "PAID" | "FREEMIUM"
   }
+  tags: string[] // Added tags property
 }
 
 export default function UserProfilePage() {
@@ -124,12 +125,14 @@ export default function UserProfilePage() {
             genres: novelData.genres,
             likes: novelData.likes,
             title: novelData.title,
+            synopsis: novelData.synopsis,
             coverPhoto: novelData.coverPhoto,
             publishers: Array.isArray(novelData.publishers) ? novelData.publishers.map((publisher: any) => ({
               original: publisher.original || '',
               english: publisher.english
             })) : novelData.publishers,
-            availability: novelData.availability // Add this line
+            availability: novelData.availability,
+            tags: novelData.tags || []
           } as Novel
         }
         return null
@@ -149,7 +152,21 @@ export default function UserProfilePage() {
     try {
       const recommendationsQuery = query(collection(db, 'novels'), orderBy('rating', 'desc'), limit(4))
       const querySnapshot = await getDocs(recommendationsQuery)
-      const novels = querySnapshot.docs.map(doc => ({ novelId: doc.id, ...doc.data() } as Novel))
+      const novels = querySnapshot.docs.map(doc => {
+        const data = doc.data()
+        return {
+          novelId: doc.id,
+          title: data.title,
+          genres: data.genres,
+          synopsis: data.synopsis,
+          rating: data.rating,
+          coverPhoto: data.coverPhoto,
+          publishers: data.publishers,
+          likes: data.likes,
+          availability: data.availability,
+          tags: data.tags || []
+        } as Novel
+      })
       setRecommendations(novels)
     } catch (error) {
       console.error('Error fetching recommendations:', error)
