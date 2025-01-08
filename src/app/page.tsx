@@ -542,10 +542,13 @@ export default function ModernLightNovelsHomepage() {
               <Link href="/forum" className="hidden md:block">
                 <Button
                   variant="outline"
-                  className="rounded-full border-2 border-[#F1592A] border-opacity-50 bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group px-4 gap-2"
+                  className="rounded-full border-2 border-[#F1592A] border-opacity-50 bg-[#E7E7E8] dark:bg-[#232120] group px-4 gap-2
+                     transition-all duration-300 relative overflow-hidden"
                 >
-                  <MessageSquare className="h-4 w-4 text-[#232120] dark:text-[#E7E7E8] group-hover:text-white" />
-                  <span className="text-[#232120] dark:text-[#E7E7E8] group-hover:text-white">Forum</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#F1592A] via-[#FF6B6B] to-[#FF8C94] opacity-100 animate-gradient-x transition-opacity duration-500"></div>
+                  <MessageSquare className="h-4 w-4 text-white transform rotate-0 animate-rotate transition-transform duration-500" />
+                  <span className="text-white drop-shadow-md">Forum</span>
+                  <div className="absolute inset-0 border-2 border-transparent border-[#F1592A] rounded-full animate-pulse"></div>
                 </Button>
               </Link>
 
@@ -698,10 +701,10 @@ export default function ModernLightNovelsHomepage() {
                   Discover Your Next Adventure
                 </h2>
                 <p className="text-base md:text-lg lg:text-xl dark:text-[#E7E7E8] text-[#232120] mb-6 text-center md:text-left">
-                Welcome to Novellize, your ultimate destination for discovering and exploring a vast collection of web novels from diverse genres and authors worldwide. 
+                  Welcome to Novellize, your ultimate destination for discovering and exploring a vast collection of web novels from diverse genres and authors worldwide. 
                 </p>
                 <p className="text-base md:text-lg dark:text-[#E7E7E8] text-[#232120] text-center md:text-left">
-                As a dedicated repository, we aim to connect readers and writers by providing a platform that celebrates creativity, storytelling, and imagination.
+                  As a dedicated repository, we aim to connect readers and writers by providing a platform that celebrates creativity, storytelling, and imagination.
                 </p>
               </div>
             </div>
@@ -735,21 +738,25 @@ export default function ModernLightNovelsHomepage() {
         </section>
 
         {/* Popular Section */}
-        <section id="popular" className="">
-          <LatestReleasesCarousel
-            novels={latestNovels}
-            loading={loading}
-            onFollowChange={handleFollowChange}
-          />
+        <section id="popular" className="py-8 bg-[#232120] text-center">
+          <h1 className="text-4xl font-extrabold gradient-text cool-underline floating inline-block">
+            Our Popular
+          </h1>
+          <div className="space-y-8">
+            <LatestReleasesCarousel
+              title="Novel Popular"
+              novels={latestNovels}
+              loading={loading}
+              onFollowChange={handleFollowChange}
+            />
+            <LatestReleasesCarousel
+              title="Manga Popular"
+              novels={latestNovels}
+              loading={loading}
+              onFollowChange={handleFollowChange}
+            />
+          </div>
         </section>
-        <section id="popular" className="">
-          <LatestReleasesCarousel
-            novels={latestNovels}
-            loading={loading}
-            onFollowChange={handleFollowChange}
-          />
-        </section>
-
 
         {/* You May Also Like Section */}
         <section className="">

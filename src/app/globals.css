@@ -226,3 +226,28 @@ body.dark .text-gray-600 {
     --header-height: 70px; /* Original height for larger screens */
   }
 }
+@keyframes gradient-x {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-gradient-x {
+  animation: gradient-x 5s linear infinite;
+}
+
+.animate-rotate {
+  animation: rotate 2s linear infinite;
+}
