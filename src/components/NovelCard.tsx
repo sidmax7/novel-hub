@@ -14,6 +14,7 @@ import { genreColors } from '@/app/genreColors'
 import { useTheme } from 'next-themes'
 import { Hash, Plus } from 'lucide-react'
 import { Badge } from "@/components/ui/badge"
+import { Novel } from '@/types/novel'
 
 // Custom scrollbar styles
 const scrollbarStyles = `
@@ -53,26 +54,6 @@ if (typeof document !== 'undefined') {
   const style = document.createElement('style')
   style.textContent = scrollbarStyles
   document.head.appendChild(style)
-}
-
-interface Novel {
-  novelId: string
-  title: string
-  genres: {
-    name: string
-  }[] // Update to an array of strings
-  synopsis: string
-  rating: number
-  coverPhoto: string
-  publishers: {
-    original: string
-    english?: string
-  }
-  likes: number
-  availability: {
-    type: "FREE" | "PAID" | "FREEMIUM"
-  }
-  tags: string[] // Fix: Change to array of strings
 }
 
 interface NovelCardProps {

@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import ReactCrop, { Crop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import { NovelCard } from '@/components/NovelCard'
+import { Novel } from '@/types/novel'
 
 interface UserProfile {
   uid: string
@@ -40,26 +41,6 @@ interface UserProfile {
   totalWorks?: number
   totalLikes?: number
   verified: boolean
-}
-
-interface Novel {
-  novelId: string
-  title: string
-  genres: {
-    name: string
-  }[] // Update to an array of strings
-  rating: number
-  synopsis: string
-  coverPhoto: string
-  publishers: {
-    original: string
-    english?: string
-  }
-  likes: number
-  availability: {
-    type: "FREE" | "PAID" | "FREEMIUM"
-  }
-  tags: string[] // Added tags property
 }
 
 export default function UserProfilePage() {

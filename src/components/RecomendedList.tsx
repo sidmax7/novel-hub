@@ -26,6 +26,7 @@ interface Novel {
     english?: string
   }
   likes: number
+  tags?: string[]
 }
 
 interface RecommendedListProps {
@@ -83,7 +84,7 @@ export function RecommendedList({ novels, loading, onFollowChange }: Recommended
                     onHoverEnd={() => setHoveredIndex(null)}
                     className="transform scale-90"
                   >
-                    <NovelCard novel={{...novel, availability: {type: "FREE"}}} onFollowChange={onFollowChange} />
+                    <NovelCard novel={{...novel, availability: {type: "FREE"}, tags: []}} onFollowChange={onFollowChange} />
                   </motion.div>
                 </CarouselItem>
               ))}
