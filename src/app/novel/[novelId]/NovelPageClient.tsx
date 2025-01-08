@@ -13,7 +13,8 @@ import { StarRating } from '@/components/ui/starrating'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { BookOpen, ThumbsUp, BookMarked, Gift, Eye, Info, MessageCircle, Search, Moon, Sun, LogOut, User, ChevronsLeftRight, MessageSquare, Menu, X, Calendar, Users, FileText } from 'lucide-react'
+import { Badge } from "@/components/ui/badge"
+import { BookOpen, ThumbsUp, BookMarked, Gift, Eye, Info, MessageCircle, Search, Moon, Sun, LogOut, User, ChevronsLeftRight, MessageSquare, Menu, X, Calendar, Users, FileText, Hash } from 'lucide-react'
 import CommentSystem from '@/components/ui/commentsystem'
 import { motion } from 'framer-motion'
 import { toast, Toaster } from 'react-hot-toast'
@@ -584,15 +585,16 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
                 {/* Genres */}
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Genres</h3>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-wrap gap-2">
                     {novel.genres.map((genre, index) => (
-                      <Link
+                      <Badge 
                         key={index}
-                        href={`/browse?selectedGenres=${encodeURIComponent(genre.name)}`}
-                        className={`rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 cursor-pointer ${getGenreColor(genre.name, theme)}`}
+                        variant="secondary"
+                        className="text-xs font-bold px-3 py-1 bg-[#F1592A]/10 text-[#F1592A] hover:bg-[#F1592A]/20 transition-colors cursor-pointer"
+                        onClick={() => router.push(`/browse?selectedGenres=${encodeURIComponent(genre.name)}`)}
                       >
-                        {genre.name.toUpperCase()}
-                      </Link>
+                        {genre.name}
+                      </Badge>
                     ))}
                   </div>
                 </div>
@@ -606,13 +608,10 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
                         <Link
                           key={index}
                           href={`/browse?tagSearchInclude=${encodeURIComponent(tag)}`}
-                          className="px-4 py-2 rounded-full text-sm font-semibold tracking-wide uppercase 
-                                   bg-[#F1592A]/10 text-[#F1592A] hover:bg-[#F1592A]/20 
-                                   dark:bg-[#F1592A]/20 dark:hover:bg-[#F1592A]/30
-                                   shadow-lg hover:shadow-xl transition-all duration-200 
-                                   hover:-translate-y-0.5 cursor-pointer backdrop-blur-sm"
+                          className="text-xs font-bold px-3 py-1 bg-[#1A1A1A] text-[#4B6BFB] hover:bg-[#232323] transition-colors cursor-pointer rounded-md flex items-center"
                         >
-                          #{tag.toUpperCase()}
+                          <Hash className="h-4 w-4 mr-1 text-[#4B6BFB]" />
+                          {tag.toUpperCase()}
                         </Link>
                       ))}
                     </div>
