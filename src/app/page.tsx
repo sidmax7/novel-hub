@@ -463,13 +463,13 @@ export default function ModernLightNovelsHomepage() {
     return (
       <button 
         onClick={() => scrollToSection(id)} 
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors duration-200
+        className={`flex items-center gap-2 px-3 py-2 sm:py-1.5 rounded-lg sm:rounded-full w-full sm:w-auto transition-colors duration-200
           ${isActive 
             ? 'text-[#F1592A] bg-[#F1592A]/10' 
             : 'text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] hover:bg-[#F1592A]/5'
           }`}
       >
-        <Icon className={`w-4 h-4 transition-transform duration-200 ${
+        <Icon className={`w-5 h-5 sm:w-4 sm:h-4 transition-transform duration-200 ${
           isActive ? 'scale-110' : ''
         } ${
           id === 'trending' && isActive ? 'text-orange-500' : ''
@@ -478,7 +478,7 @@ export default function ModernLightNovelsHomepage() {
         } ${
           id === 'popular' && isActive ? 'text-yellow-500' : ''
         }`} />
-        <span className={`${isActive ? 'font-medium' : ''}`}>{label}</span>
+        <span className={`${isActive ? 'font-medium' : ''} text-base sm:text-sm`}>{label}</span>
       </button>
     );
   };
@@ -622,38 +622,40 @@ export default function ModernLightNovelsHomepage() {
 
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
-            <div className="lg:hidden border-t border-gray-200 dark:border-gray-800 py-4">
-              <div className="flex flex-col space-y-4">
+            <div className="lg:hidden border-t border-gray-200 dark:border-gray-800 py-6">
+              <div className="flex flex-col space-y-5 px-4">
                 {/* Mobile Search */}
                 <div className="relative">
                   <Input
                     type="text"
                     placeholder="Search novels..."
-                    className="pl-10 pr-4 py-2 w-full bg-white dark:bg-[#2A2827] border-[#F1592A] border-opacity-50 rounded-full focus-visible:ring-[#F1592A]"
+                    className="pl-10 pr-4 py-2.5 w-full bg-white dark:bg-[#2A2827] border-[#F1592A] border-opacity-50 rounded-full focus-visible:ring-[#F1592A]"
                   />
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 </div>
 
                 {/* Mobile Navigation */}
-                <NavButton id="trending" icon={Flame} label="Trending" />
-                <NavButton id="latest" icon={Sparkles} label="Latest" />
-                <NavButton id="popular" icon={Crown} label="Popular" />
-                <Link 
-                  href="/browse" 
-                  className="flex items-center gap-2 text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] transition-colors px-2 py-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <BookOpen className="w-4 h-4" />
-                  <span>Browse All</span>
-                </Link>
-                <Link 
-                  href="/forum" 
-                  className="flex items-center gap-2 text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] transition-colors px-2 py-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>Forum</span>
-                </Link>
+                <div className="flex flex-col space-y-4">
+                  <NavButton id="trending" icon={Flame} label="Trending" />
+                  <NavButton id="latest" icon={Sparkles} label="Latest" />
+                  <NavButton id="popular" icon={Crown} label="Popular" />
+                  <Link 
+                    href="/browse" 
+                    className="flex items-center gap-2 text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] transition-colors px-3 py-2.5 rounded-lg"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    <span>Browse All</span>
+                  </Link>
+                  <Link 
+                    href="/forum" 
+                    className="flex items-center gap-2 text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] transition-colors px-3 py-2.5 rounded-lg"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Forum</span>
+                  </Link>
+                </div>
               </div>
             </div>
           )}
@@ -661,7 +663,7 @@ export default function ModernLightNovelsHomepage() {
       </header>
 
       <main className="flex-grow">
-        <section className="relative py-16 md:py-24 overflow-hidden">
+        <section className="relative py-12 md:py-16 lg:py-24 overflow-hidden">
           {/* Hero Section with Background */}
           <div className="absolute inset-0 z-0">
             <Image
@@ -678,32 +680,32 @@ export default function ModernLightNovelsHomepage() {
           </div>
 
           {/* Hero Content */}
-          <div className="container mx-auto px-4 relative z-2">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-12">
+          <div className="container mx-auto px-4 sm:px-6 relative z-2">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12">
               {/* Left column: Logo and Brand */}
-              <div className="w-full md:w-1/2 flex flex-col items-center md:items-start">
+              <div className="w-full md:w-1/2 flex flex-col items-center md:items-start space-y-6">
                 <Image
                   src="/assets/favicon.png"
                   alt="Company Logo"
-                  width={300}
-                  height={300}
-                  className="mb-6 mx-auto p-2"
+                  width={200}
+                  height={200}
+                  className="md:w-[300px] md:h-[300px] p-2"
                   priority
                 />
-                <h1 className="text-3xl rounded-md bg-opacity-60 bg-gray-200 dark:bg-opacity-60 dark:bg-[#232120] md:text-4xl lg:text-5xl font-bold text-[#F1592A] mb-4 text-center md:text-left mx-auto pb-2 pt-1 px-2">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-[#F1592A] text-center md:text-left rounded-md bg-opacity-60 bg-gray-200 dark:bg-opacity-60 dark:bg-[#232120] pb-2 pt-1 px-3">
                   Novellize
                 </h1>
               </div>
 
               {/* Right column: Company Description */}
-              <div className="w-full md:w-1/2 dark:text-[#E7E7E8] text-[#232120]">
-                <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold dark:text-[#E7E7E8] text-[#232120] mb-4 text-center md:text-left">
+              <div className="w-full md:w-1/2 dark:text-[#E7E7E8] text-[#232120] space-y-4 md:space-y-6">
+                <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold dark:text-[#E7E7E8] text-[#232120] text-center md:text-left">
                   Discover Your Next Adventure
                 </h2>
-                <p className="text-base md:text-lg lg:text-xl dark:text-[#E7E7E8] text-[#232120] mb-6 text-center md:text-left">
+                <p className="text-sm sm:text-base md:text-lg lg:text-xl dark:text-[#E7E7E8] text-[#232120] text-center md:text-left">
                   Welcome to Novellize, your ultimate destination for discovering and exploring a vast collection of web novels from diverse genres and authors worldwide. 
                 </p>
-                <p className="text-base md:text-lg dark:text-[#E7E7E8] text-[#232120] text-center md:text-left">
+                <p className="text-sm sm:text-base md:text-lg dark:text-[#E7E7E8] text-[#232120] text-center md:text-left">
                   As a dedicated repository, we aim to connect readers and writers by providing a platform that celebrates creativity, storytelling, and imagination.
                 </p>
               </div>
