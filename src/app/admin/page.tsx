@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast, Toaster } from 'react-hot-toast'
-import { PlusIcon, Pencil, Trash, AlertTriangle, BookOpen, Home, User, Eye, Star } from 'lucide-react'
+import { PlusIcon, Pencil, Trash, AlertTriangle, BookOpen, Home, User, Eye, Star, UserPlus, Clock, X } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Timestamp } from 'firebase/firestore'
@@ -65,6 +65,15 @@ const StatsCard = ({ title, value, icon: Icon }: { title: string, value: string 
     <p className="text-2xl font-bold">{value}</p>
   </div>
 );
+
+interface AuthorRequest {
+  id: string;
+  userId: string;
+  email: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: any;
+  type: 'author_access';
+}
 
 export default function AdminDashboard() {
   const [novels, setNovels] = useState<Novel[]>([])
@@ -142,6 +151,8 @@ export default function AdminDashboard() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [authorsList, setAuthorsList] = useState<{ id: string; name: string; username: string; }[]>([]);
   const [authorsInput, setAuthorsInput] = useState<string[]>([]);
+  const [authorRequests, setAuthorRequests] = useState<AuthorRequest[]>([])
+  const [loadingRequests, setLoadingRequests] = useState(true)
 
   useEffect(() => {
     if (currentNovel) {
@@ -435,6 +446,64 @@ export default function AdminDashboard() {
     return "Author Dashboard";
   };
 
+  // Add this new useEffect for fetching author requests
+  useEffect(() => {
+    const fetchAuthorRequests = async () => {
+      if (!isAdmin) return;
+      try {
+        setLoadingRequests(true);
+        const requestsRef = collection(db, 'requests');
+        const q = query(
+          requestsRef,
+          where('type', '==', 'author_access'),
+          orderBy('createdAt', 'desc')
+        );
+        const querySnapshot = await getDocs(q);
+        const requests = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as AuthorRequest));
+        setAuthorRequests(requests);
+      } catch (error) {
+        console.error('Error fetching author requests:', error);
+        toast.error('Failed to fetch author requests');
+      } finally {
+        setLoadingRequests(false);
+      }
+    };
+
+    fetchAuthorRequests();
+  }, [isAdmin]);
+
+  const handleAuthorRequest = async (requestId: string, userId: string, status: 'approved' | 'rejected') => {
+    try {
+      // Update request status
+      await updateDoc(doc(db, 'requests', requestId), {
+        status,
+        updatedAt: new Date()
+      });
+
+      if (status === 'approved') {
+        // Update user type to author
+        await updateDoc(doc(db, 'users', userId), {
+          userType: 'author'
+        });
+        toast.success('Author request approved successfully');
+      } else {
+        toast.success('Author request rejected');
+      }
+
+      // Refresh the requests list
+      const updatedRequests = authorRequests.map(request => 
+        request.id === requestId ? { ...request, status } : request
+      );
+      setAuthorRequests(updatedRequests);
+    } catch (error) {
+      console.error('Error handling author request:', error);
+      toast.error('Failed to process author request');
+    }
+  };
+
   if (!user) {
     return (
       <Alert variant="destructive">
@@ -452,6 +521,109 @@ export default function AdminDashboard() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold mb-6">{getPageTitle()}</h1>
         
+        {/* Author Requests Section for Admins */}
+        {isAdmin && (
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <UserPlus className="h-6 w-6 text-[#F1592A]" />
+                Author Access Requests
+              </h2>
+              <span className="px-3 py-1 bg-[#F1592A] text-white rounded-full text-sm">
+                {authorRequests.filter(r => r.status === 'pending').length} Pending
+              </span>
+            </div>
+
+            {/* Stats for Requests */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <StatsCard
+                title="Total Requests"
+                value={authorRequests.length}
+                icon={UserPlus}
+              />
+              <StatsCard
+                title="Pending"
+                value={authorRequests.filter(r => r.status === 'pending').length}
+                icon={Clock}
+              />
+              <StatsCard
+                title="Approved"
+                value={authorRequests.filter(r => r.status === 'approved').length}
+                icon={User}
+              />
+              <StatsCard
+                title="Rejected"
+                value={authorRequests.filter(r => r.status === 'rejected').length}
+                icon={X}
+              />
+            </div>
+
+            {loadingRequests ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F1592A]"></div>
+              </div>
+            ) : authorRequests.length > 0 ? (
+              <div className="bg-white dark:bg-[#232120] rounded-lg shadow-sm border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Requested At</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {authorRequests.map((request) => (
+                      <TableRow key={request.id}>
+                        <TableCell className="font-medium">{request.email}</TableCell>
+                        <TableCell>
+                          <span className={`px-3 py-1 rounded-full text-sm ${
+                            request.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                            request.status === 'approved' ? 'bg-green-100 text-green-800 border border-green-200' :
+                            'bg-red-100 text-red-800 border border-red-200'
+                          }`}>
+                            {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {new Date(request.createdAt.toDate()).toLocaleDateString()} at {new Date(request.createdAt.toDate()).toLocaleTimeString()}
+                        </TableCell>
+                        <TableCell>
+                          {request.status === 'pending' && (
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleAuthorRequest(request.id, request.userId, 'approved')}
+                                className="bg-green-500 hover:bg-green-600 text-white"
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleAuthorRequest(request.id, request.userId, 'rejected')}
+                              >
+                                Reject
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-gray-50 dark:bg-[#2A2827] rounded-lg border border-dashed">
+                <UserPlus className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400 text-lg">No author access requests found</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">New requests will appear here</p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <StatsCard
@@ -1447,13 +1619,6 @@ export default function AdminDashboard() {
             ))}
           </TableBody>
         </Table>
-      )}
-      {!isAdmin && (
-        <Alert variant="default" className="mb-4">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Author View</AlertTitle>
-          <AlertDescription>You are viewing your uploaded novels. Only administrators can view all novels.</AlertDescription>
-        </Alert>
       )}
     </div>
   )

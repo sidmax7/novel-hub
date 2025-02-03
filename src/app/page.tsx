@@ -48,6 +48,8 @@ import { LatestReleasesCarousel } from '@/components/CarouselList'
 import { TopReleasesSection } from '@/components/TopReleasesSection'
 import { YouMayAlsoLikeSection } from '@/components/YouMayAlsoLikeSection'
 import InitialLoader from '@/components/InitialLoader'
+import { AuthorRequestSection } from '@/components/AuthorRequestSection'
+import { Toaster } from 'sonner'
 
 
 interface Novel {
@@ -663,6 +665,7 @@ export default function ModernLightNovelsHomepage() {
       </header>
 
       <main className="flex-grow">
+        <Toaster position="top-center" />
         <section className="relative py-12 md:py-16 lg:py-24 overflow-hidden">
           {/* Hero Section with Background */}
           <div className="absolute inset-0 z-0">
@@ -768,6 +771,9 @@ export default function ModernLightNovelsHomepage() {
             userFollowedNovels={followedNovels}
           />
         </section>
+
+        {/* Author Request Section */}
+        <AuthorRequestSection />
 
         {/* Explore Genres Section */}
         <section className="py-12 md:py-16 bg-white dark:bg-[#232120] relative overflow-hidden">
