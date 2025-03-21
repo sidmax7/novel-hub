@@ -244,10 +244,36 @@ body.dark .text-gray-600 {
   }
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes subtle-scale {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
 .animate-gradient-x {
   animation: gradient-x 5s linear infinite;
 }
 
 .animate-rotate {
   animation: rotate 2s linear infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s infinite;
+}
+
+.animate-subtle-scale {
+  animation: subtle-scale 1.5s ease-in-out infinite;
 }

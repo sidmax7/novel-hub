@@ -19,7 +19,8 @@ import {
   Crown, 
   Sparkles,
   Menu,
-  X
+  X,
+  Library
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -49,6 +50,7 @@ import { TopReleasesSection } from '@/components/TopReleasesSection'
 import { YouMayAlsoLikeSection } from '@/components/YouMayAlsoLikeSection'
 import InitialLoader from '@/components/InitialLoader'
 import { AuthorRequestSection } from '@/components/AuthorRequestSection'
+import { FAQSection } from '@/components/FAQSection'
 import { Toaster } from 'sonner'
 
 
@@ -518,10 +520,18 @@ export default function ModernLightNovelsHomepage() {
                 <NavButton id="popular" icon={Crown} label="Popular" />
                 <Link 
                   href="/browse" 
-                  className="flex items-center gap-2 text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] transition-colors px-3 py-1.5"
+                  className="relative group"
                 >
-                  <BookOpen className="w-4 h-4" />
-                  <span>Browse All</span>
+                  <Button
+                    variant="outline"
+                    className="rounded-full border-2 border-[#3B82F6] border-opacity-50 bg-[#E7E7E8] dark:bg-[#232120] group px-4 gap-2
+                       transition-all duration-300 relative overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#3B82F6] via-[#60A5FA] to-[#93C5FD] opacity-100 animate-gradient-x transition-opacity duration-500"></div>
+                    <BookOpen className="h-4 w-4 text-white transform rotate-0 animate-rotate transition-transform duration-500" />
+                    <span className="text-white drop-shadow-md">Browse All</span>
+                    <div className="absolute inset-0 border-2 border-transparent border-[#3B82F6] rounded-full animate-pulse"></div>
+                  </Button>
                 </Link>
               </nav>
             </div>
@@ -540,19 +550,32 @@ export default function ModernLightNovelsHomepage() {
 
               <ThemeToggle />
 
-              {/* Desktop Forum Button */}
-              <Link href="/forum" className="hidden md:block">
-                <Button
-                  variant="outline"
-                  className="rounded-full border-2 border-[#F1592A] border-opacity-50 bg-[#E7E7E8] dark:bg-[#232120] group px-4 gap-2
-                     transition-all duration-300 relative overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#F1592A] via-[#FF6B6B] to-[#FF8C94] opacity-100 animate-gradient-x transition-opacity duration-500"></div>
-                  <MessageSquare className="h-4 w-4 text-white transform rotate-0 animate-rotate transition-transform duration-500" />
-                  <span className="text-white drop-shadow-md">Forum</span>
-                  <div className="absolute inset-0 border-2 border-transparent border-[#F1592A] rounded-full animate-pulse"></div>
-                </Button>
-              </Link>
+              {/* Desktop Forum and Library Buttons */}
+              <div className="hidden md:flex gap-2">
+                <Link href="/forum">
+                  <Button
+                    variant="outline"
+                    className="rounded-full border-2 border-[#F1592A] border-opacity-50 bg-[#E7E7E8] dark:bg-[#232120] group px-4 gap-2
+                       transition-all duration-300 relative overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#F1592A] via-[#FF6B6B] to-[#FF8C94] opacity-100 animate-gradient-x transition-opacity duration-500"></div>
+                    <MessageSquare className="h-4 w-4 text-white transform rotate-0 animate-rotate transition-transform duration-500" />
+                    <span className="text-white drop-shadow-md">Forum</span>
+                    <div className="absolute inset-0 border-2 border-transparent border-[#F1592A] rounded-full animate-pulse"></div>
+                  </Button>
+                </Link>
+
+                <Link href="/user_profile">
+                  <Button
+                    variant="outline"
+                    className="rounded-full border-2 border-[#F1592A] border-opacity-50 bg-[#E7E7E8] dark:bg-[#232120] group px-4 gap-2
+                       hover:bg-[#F1592A] hover:text-white transition-all duration-300"
+                  >
+                    <Library className="h-4 w-4" />
+                    <span>Library</span>
+                  </Button>
+                </Link>
+              </div>
 
               {/* User Menu */}
               {user ? (
@@ -643,7 +666,7 @@ export default function ModernLightNovelsHomepage() {
                   <NavButton id="popular" icon={Crown} label="Popular" />
                   <Link 
                     href="/browse" 
-                    className="flex items-center gap-2 text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] transition-colors px-3 py-2.5 rounded-lg"
+                    className="flex items-center gap-2 text-[#3B82F6] hover:text-[#60A5FA] transition-colors px-3 py-2.5 rounded-lg bg-[#3B82F6]/10"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <BookOpen className="w-4 h-4" />
@@ -656,6 +679,14 @@ export default function ModernLightNovelsHomepage() {
                   >
                     <MessageSquare className="w-4 h-4" />
                     <span>Forum</span>
+                  </Link>
+                  <Link 
+                    href="" 
+                    className="flex items-center gap-2 text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] transition-colors px-3 py-2.5 rounded-lg"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Library className="w-4 h-4" />
+                    <span>Library</span>
                   </Link>
                 </div>
               </div>
@@ -754,12 +785,12 @@ export default function ModernLightNovelsHomepage() {
               loading={loading}
               onFollowChange={handleFollowChange}
             />
-            <LatestReleasesCarousel
+            {/* <LatestReleasesCarousel
               title="Manga Popular"
               novels={latestNovels}
               loading={loading}
               onFollowChange={handleFollowChange}
-            />
+            /> */}
           </div>
         </section>
 
@@ -774,6 +805,9 @@ export default function ModernLightNovelsHomepage() {
 
         {/* Author Request Section */}
         <AuthorRequestSection />
+
+        {/* FAQ Section */}
+        <FAQSection />
 
         {/* Explore Genres Section */}
         <section className="py-12 md:py-16 bg-white dark:bg-[#232120] relative overflow-hidden">

@@ -40,6 +40,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { ChevronDown, ChevronUp } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 
 // Define the options for each filter category
 const SERIES_TYPES = [
@@ -335,20 +336,15 @@ export default function FilterSection({
                 <Filter className="h-5 w-5 text-[#F1592A]" />
                 <h3 className="text-base font-semibold text-[#232120] dark:text-[#E7E7E8]">Genres</h3>
               </div>
-              <RadioGroup
-                value={genreLogic}
-                onValueChange={(value: 'AND' | 'OR') => setGenreLogic(value)}
-                className="flex gap-2"
-              >
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="AND" id="genre-and" />
-                  <Label htmlFor="genre-and" className="text-xs">AND</Label>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="OR" id="genre-or" />
-                  <Label htmlFor="genre-or" className="text-xs">OR</Label>
-                </div>
-              </RadioGroup>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">OR</span>
+                <Switch
+                  checked={genreLogic === 'AND'}
+                  onCheckedChange={(checked) => setGenreLogic(checked ? 'AND' : 'OR')}
+                  className="data-[state=checked]:bg-[#F1592A] data-[state=unchecked]:bg-blue-500"
+                />
+                <span className="text-sm text-gray-500">AND</span>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {genres.map((genre) => (
@@ -384,20 +380,15 @@ export default function FilterSection({
                 <Tag className="h-5 w-5 text-[#F1592A]" />
                 <h3 className="text-base font-semibold text-[#232120] dark:text-[#E7E7E8]">Tags</h3>
               </div>
-              <RadioGroup
-                value={tagLogic}
-                onValueChange={(value: 'AND' | 'OR') => setTagLogic(value)}
-                className="flex gap-2"
-              >
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="AND" id="tag-and" />
-                  <Label htmlFor="tag-and" className="text-xs">AND</Label>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="OR" id="tag-or" />
-                  <Label htmlFor="tag-or" className="text-xs">OR</Label>
-                </div>
-              </RadioGroup>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">OR</span>
+                <Switch
+                  checked={tagLogic === 'AND'}
+                  onCheckedChange={(checked) => setTagLogic(checked ? 'AND' : 'OR')}
+                  className="data-[state=checked]:bg-[#F1592A] data-[state=unchecked]:bg-blue-500"
+                />
+                <span className="text-sm text-gray-500">AND</span>
+              </div>
             </div>
             <div className="space-y-3">
               <div>

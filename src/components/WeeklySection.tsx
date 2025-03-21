@@ -84,7 +84,7 @@ export default function WeeklyBookSection({ popularNovels, announcements }: Week
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Weekly Featured Novel */}
           <div className="bg-white dark:bg-[#3E3F3E] rounded-2xl p-4 lg:col-span-2">
-            <h2 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8] mb-4">Weekly Book</h2>
+            <h2 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8] mb-4 relative inline-block after:content-[''] after:absolute after:left-0 after:right-0 after:bottom-0 after:h-[2px] after:bg-[#F1592A]">Weekly Book</h2>
             {filteredNovels.length > 1 && (
               <div className="relative h-[280px] lg:h-[350px] rounded-xl overflow-hidden">
                 <AnimatePresence initial={false} custom={direction}>

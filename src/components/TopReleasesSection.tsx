@@ -142,7 +142,7 @@ export function TopReleasesSection({ latestNovels, editorsPicks, loading }: TopR
             {latestNovels.length > 0 && (
               <div className="lg:w-[60%]">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl md:text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]">
+                  <h2 className="text-xl md:text-2xl font-bold text-[#232120] dark:text-[#E7E7E8] relative inline-block after:content-[''] after:absolute after:left-0 after:right-0 after:bottom-0 after:h-[2px] after:bg-[#F1592A]">
                     New Arrivals
                   </h2>
                   {/* Navigation Arrows */}

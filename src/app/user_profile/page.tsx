@@ -287,56 +287,53 @@ export default function UserProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#E7E7E8] dark:bg-[#232120]">
+    <div className="min-h-screen bg-background">
       <Toaster />
-      <header className="border-b border-white/30 bg-[#E7E7E8] dark:bg-[#232120] dark:border-[#3E3F3E] sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-4 py-6 flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-[#F1592A]">
-              <Link href="/" className="text-3xl font-bold text-[#232120] dark:text-[#E7E7E8] hover:text-[#F1592A] dark:hover:text-[#F1592A] transition-colors">
-            Novellize
-          </Link>
-          </h1>
-          <div className="flex items-center space-x-4">
-          <Link href="/" passHref>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
-                >
-                  <Home className="h-4 w-4 text-gray-900 dark:text-gray-100 group-hover:text-white" />
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 items-center">
+          <div className="mr-4 flex">
+            <Link href="/" className="mr-6 flex items-center space-x-2">
+              <span className="font-bold text-xl sm:text-2xl bg-gradient-to-r from-orange-500 to-orange-800 bg-clip-text text-transparent">Novellize</span>
+            </Link>
+          </div>
+          <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+            <nav className="flex items-center space-x-2">
+              <Link href="/" passHref>
+                <Button variant="ghost" size="icon" className="w-9 h-9">
+                  <Home className="h-4 w-4" />
                   <span className="sr-only">Home</span>
                 </Button>
               </Link>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={toggleDarkMode}
-              className="w-10 h-10 rounded-full border-2 border-[#F1592A] border-opacity-50 dark:border-opacity-50 dark:border-[#F1592A] bg-[#E7E7E8] dark:bg-[#232120] hover:bg-[#F1592A] dark:hover:bg-[#F1592A] group"
-            >
-              {theme === 'dark' ? (
-                <Sun className="h-4 w-4 text-[#E7E7E8]" />
-              ) : (
-                <Moon className="h-4 w-4 text-[#232120] group-hover:text-white" />
-              )}
-            </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleDarkMode}
+                className="w-9 h-9"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+                <span className="sr-only">Toggle theme</span>
+              </Button>
+            </nav>
           </div>
         </div>
       </header>
-      <main className="container mx-auto p-4">
-        <Card className="mb-8 bg-white dark:bg-[#3E3F3E]">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]">User Profile</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-              <div className="flex flex-col items-center">
-                <Avatar className="w-32 h-32">
+
+      <main className="container py-6 space-y-8">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row gap-8">
+              <div className="flex flex-col items-center space-y-4">
+                <Avatar className="w-32 h-32 border-2 border-muted">
                   <AvatarImage src={profile?.profilePicture} alt={profile?.username} />
-                  <AvatarFallback>{profile?.username.charAt(0).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback className="text-4xl">{profile?.username?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <Dialog open={isAvatarDialogOpen} onOpenChange={setIsAvatarDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="mt-4 comic-button">
+                    <Button variant="outline" size="sm" className="w-full md:w-auto">
                       <Upload className="mr-2 h-4 w-4" /> Change Avatar
                     </Button>
                   </DialogTrigger>
@@ -344,25 +341,22 @@ export default function UserProfilePage() {
                     <DialogHeader>
                       <DialogTitle>Change Avatar</DialogTitle>
                       <DialogDescription>
-                        Upload and crop a new avatar image. Max file size: 5MB. Supported formats: JPEG, PNG, GIF
+                        Upload and crop a new avatar image
                       </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                       {!uploadedImage ? (
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="avatar-upload" className="text-right">
-                            Choose File
-                          </Label>
+                        <div className="space-y-4">
+                          <Label htmlFor="avatar-upload">Choose File</Label>
                           <Input
                             id="avatar-upload"
                             type="file"
                             accept="image/jpeg,image/png,image/gif"
-                            className="col-span-3"
                             onChange={handleFileUpload}
                           />
                         </div>
                       ) : (
-                        <>
+                        <div className="space-y-4">
                           <ReactCrop
                             crop={crop}
                             onChange={(c) => setCrop(c)}
@@ -371,17 +365,18 @@ export default function UserProfilePage() {
                           >
                             <img ref={imageRef} src={uploadedImage} alt="Upload" />
                           </ReactCrop>
-                          <Button onClick={handleImageCrop}>Upload Cropped Image</Button>
-                        </>
+                          <Button onClick={handleImageCrop} className="w-full">Upload Cropped Image</Button>
+                        </div>
                       )}
                     </div>
                   </DialogContent>
                 </Dialog>
               </div>
-              <div className="flex-grow">
+
+              <div className="flex-1 space-y-6">
                 {isEditing ? (
                   <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="username">Username</Label>
                       <Input
                         id="username"
@@ -391,7 +386,7 @@ export default function UserProfilePage() {
                         required
                       />
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="bio">Bio</Label>
                       <Textarea
                         id="bio"
@@ -401,16 +396,17 @@ export default function UserProfilePage() {
                         rows={3}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="favoriteGenres">Favorite Genres (comma-separated)</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="favoriteGenres">Favorite Genres</Label>
                       <Input
                         id="favoriteGenres"
                         name="favoriteGenres"
                         value={profile?.favoriteGenres.join(', ')}
                         onChange={(e) => setProfile(prev => prev ? { ...prev, favoriteGenres: e.target.value.split(',').map(g => g.trim()) } : null)}
+                        placeholder="Fantasy, Romance, Mystery..."
                       />
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="readingGoal">Daily Reading Goal (pages)</Label>
                       <Input
                         id="readingGoal"
@@ -421,21 +417,29 @@ export default function UserProfilePage() {
                         min={1}
                       />
                     </div>
-                    <Button type="submit" className="comic-button">Save Changes</Button>
-                    <Button type="button" variant="outline" className="ml-2 comic-button" onClick={() => setIsEditing(false)}>Cancel</Button>
+                    <div className="flex gap-2 pt-4">
+                      <Button type="submit">Save Changes</Button>
+                      <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                    </div>
                   </form>
                 ) : (
                   <div className="space-y-4">
-                    <h2 className="text-xl font-semibold">{profile?.username}</h2>
-                    <p className="text-gray-600 dark:text-[#E7E7E8]"><strong>Email : </strong> {profile?.email}</p>
-                    <p className="text-justify">{profile?.bio}</p>
                     <div>
-                      <strong>Favorite Genres:</strong> {profile?.favoriteGenres.join(', ')}
+                      <h2 className="text-2xl font-bold">{profile?.username}</h2>
+                      <p className="text-muted-foreground">{profile?.email}</p>
                     </div>
-                    <div>
-                      <strong>Daily Reading Goal:</strong> {profile?.readingGoal} pages
+                    <p className="text-sm leading-relaxed">{profile?.bio || 'No bio added yet.'}</p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">Favorite Genres:</span>
+                        <span className="text-sm text-muted-foreground">{profile?.favoriteGenres.join(', ') || 'None set'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">Daily Reading Goal:</span>
+                        <span className="text-sm text-muted-foreground">{profile?.readingGoal || 0} pages</span>
+                      </div>
                     </div>
-                    <Button onClick={() => setIsEditing(true)} className="comic-button">
+                    <Button onClick={() => setIsEditing(true)} className="mt-4">
                       <Edit className="mr-2 h-4 w-4" /> Edit Profile
                     </Button>
                   </div>
@@ -445,52 +449,61 @@ export default function UserProfilePage() {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="followed" className="mb-8">
-          <TabsList className="bg-[#C3C3C3] dark:bg-[#3E3F3E]">
-            <TabsTrigger value="followed" className="text-[#232120] dark:text-[#E7E7E8]">Followed Novels</TabsTrigger>
-            <TabsTrigger value="recommendations" className="text-[#232120] dark:text-[#E7E7E8]">Recommendations</TabsTrigger>
-          </TabsList>
-          <TabsContent value="followed">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {followedNovels.length > 0 ? (
-                followedNovels.map((novel) => (
-                  <NovelCard key={novel.novelId} novel={novel} onFollowChange={handleFollowChange} />
-                ))
-              ) : (
-                <p className="col-span-full text-center text-[#8E8F8E] dark:text-[#C3C3C3]">You haven't followed any novels yet.</p>
-              )}
-            </div>
-          </TabsContent>
-          <TabsContent value="recommendations">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {recommendations.map((novel: Novel) => (
-                <NovelCard key={novel.novelId} novel={novel} />
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle>Library</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {followedNovels.length > 0 ? (
+                  followedNovels.map((novel) => (
+                    <NovelCard key={novel.novelId} novel={novel} onFollowChange={handleFollowChange} />
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-8">
+                    <p className="text-muted-foreground">Your library is empty. Start following some novels!</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-white dark:bg-[#3E3F3E]">
-          <CardHeader>
-            <CardTitle className="text-[#232120] dark:text-[#E7E7E8]">Reading Statistics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-[#232120] dark:text-[#E7E7E8]">Total Books Read</h3>
-                <p className="text-3xl font-bold text-[#F1592A]">27</p>
+          <Card>
+            <CardHeader>
+              <CardTitle>Reading Stats</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">Total Books Read</h3>
+                  <p className="text-2xl font-bold text-orange-500">27</p>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">Pages This Week</h3>
+                  <p className="text-2xl font-bold text-orange-500">342</p>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">Reading Streak</h3>
+                  <p className="text-2xl font-bold text-orange-500">5 days</p>
+                </div>
               </div>
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-[#232120] dark:text-[#E7E7E8]">Pages Read This Week</h3>
-                <p className="text-3xl font-bold text-[#F1592A]">342</p>
+            </CardContent>
+          </Card>
+
+          <Card className="md:col-span-3">
+            <CardHeader>
+              <CardTitle>Recommended For You</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {recommendations.map((novel) => (
+                  <NovelCard key={novel.novelId} novel={novel} />
+                ))}
               </div>
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-[#232120] dark:text-[#E7E7E8]">Reading Streak</h3>
-                <p className="text-3xl font-bold text-[#F1592A]">5 days</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </main>
     </div>
   )

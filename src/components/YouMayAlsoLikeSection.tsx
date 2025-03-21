@@ -127,7 +127,7 @@ export function YouMayAlsoLikeSection({ novels, onFollowNovel, userFollowedNovel
   return (
     <section className="py-8">
       <div className="container mx-auto px-4">
-        <h2 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8] mb-8">
+        <h2 className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8] mb-8 relative inline-block after:content-[''] after:absolute after:left-0 after:right-0 after:bottom-0 after:h-[2px] after:bg-[#F1592A]">
           You May Also Like
         </h2>
         

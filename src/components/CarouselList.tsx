@@ -98,7 +98,7 @@ export function LatestReleasesCarousel({
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-6">
           <motion.h2 
-            className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8]"
+            className="text-2xl font-bold text-[#232120] dark:text-[#E7E7E8] relative inline-block after:content-[''] after:absolute after:left-0 after:right-0 after:bottom-0 after:h-[2px] after:bg-[#F1592A]"
             variants={fadeIn}
           >
             {title}

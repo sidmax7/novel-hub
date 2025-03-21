@@ -70,7 +70,11 @@ interface Novel {
     firstReleaseDate: Timestamp;
   };
   credits: {
-    authors: string[];
+    authors: Array<string | {
+      id?: string;
+      name: string;
+      isAccount: boolean;
+    }>;
     artists?: {
       translators?: string[];
       editors?: string[];
@@ -83,7 +87,6 @@ interface Novel {
   likes: number;
   views: number;
   rating: number;
-  uploaderId: string;
   uploader: string;
 }
 
@@ -143,6 +146,150 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
   const [userType, setUserType] = useState<string | null>(null)
   const [randomNovels, setRandomNovels] = useState<Novel[]>([])
   const [randomNovelsLoading, setRandomNovelsLoading] = useState(true)
+  const [userRating, setUserRating] = useState<number | null>(null)
+  const [hasRated, setHasRated] = useState(false)
+  const [totalRatings, setTotalRatings] = useState(0)
+  const [isRatingProcessing, setIsRatingProcessing] = useState(false)
+  const [authorInfo, setAuthorInfo] = useState<{
+    name: string;
+    id?: string;
+    isAccount: boolean;
+    profilePicture?: string;
+    userType?: string;
+  } | null>(null)
+
+  const fetchAuthorInfo = async () => {
+    if (!novel) return
+    
+    try {
+      // Check if the first author is an object with isAccount flag
+      const firstAuthor = novel.credits.authors[0]
+      
+      if (typeof firstAuthor === 'object' && firstAuthor.isAccount) {
+        // If author has an account, fetch their profile
+        if (firstAuthor.id) {
+          const authorDoc = await getDoc(doc(db, 'users', firstAuthor.id))
+          if (authorDoc.exists()) {
+            const authorData = authorDoc.data()
+            setAuthorInfo({
+              name: authorData.username || firstAuthor.name,
+              id: firstAuthor.id,
+              isAccount: true,
+              profilePicture: authorData.profilePicture || '',
+              userType: authorData.userType || 'reader'
+            })
+            return
+          }
+        }
+        
+        // If author account not found, use the name but mark as non-account
+        setAuthorInfo({
+          name: firstAuthor.name,
+          isAccount: false
+        })
+      } 
+      // If author is a string, try to find a user with that username
+      else if (typeof firstAuthor === 'string') {
+        // First, try to find a user with this username
+        const usersQuery = query(
+          collection(db, 'users'),
+          where('username', '==', firstAuthor),
+          limit(1)
+        )
+        
+        const userSnapshot = await getDocs(usersQuery)
+        
+        if (!userSnapshot.empty) {
+          // Found a user with this username
+          const userData = userSnapshot.docs[0].data()
+          const userId = userSnapshot.docs[0].id
+          
+          setAuthorInfo({
+            name: userData.username || firstAuthor,
+            id: userId,
+            isAccount: true,
+            profilePicture: userData.profilePicture || '',
+            userType: userData.userType || 'reader'
+          })
+          return
+        }
+        
+        // If no user found, use the name as a non-account author
+        setAuthorInfo({
+          name: firstAuthor,
+          isAccount: false
+        })
+      }
+      // If author is an object without isAccount flag
+      else if (firstAuthor && typeof firstAuthor === 'object') {
+        setAuthorInfo({
+          name: firstAuthor.name || 'Unknown Author',
+          isAccount: false
+        })
+      }
+      // Fallback for any other case
+      else {
+        setAuthorInfo({
+          name: 'Unknown Author',
+          isAccount: false
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching author info:', error)
+      // Fallback to uploader info
+      try {
+        // Fetch uploader's user type
+        const uploaderDoc = await getDoc(doc(db, 'users', novel.uploader))
+        if (uploaderDoc.exists()) {
+          const uploaderData = uploaderDoc.data()
+          setAuthorInfo({
+            name: uploaderUsername,
+            id: novel.uploader,
+            isAccount: true,
+            profilePicture: uploaderData.profilePicture || '',
+            userType: uploaderData.userType || 'reader'
+          })
+        } else {
+          setAuthorInfo({
+            name: uploaderUsername,
+            id: novel.uploader,
+            isAccount: true
+          })
+        }
+      } catch (uploaderError) {
+        console.error('Error fetching uploader info:', uploaderError)
+        setAuthorInfo({
+          name: uploaderUsername,
+          id: novel.uploader,
+          isAccount: true
+        })
+      }
+    }
+  }
+
+  const handleAuthorClick = () => {
+    if (!novel) return
+    
+    // Show loading toast
+    toast.loading('Loading author profile...', {
+      id: 'author-loading',
+      duration: 3000
+    })
+    
+    // If we have an author ID, always try to navigate to their profile first
+    if (authorInfo?.id) {
+      // Pass the ID to the profile page to check the user type
+      router.push(`/author/profile?userId=${authorInfo.id}&name=${encodeURIComponent(authorInfo.name || 'Unknown Author')}`)
+    }
+    // If no ID but we have a name, navigate to the dummy profile page
+    else if (authorInfo?.name) {
+      router.push(`/author/profile?name=${encodeURIComponent(authorInfo.name)}&isAccount=false`)
+    }
+    // Fallback to uploader profile if no author info
+    else {
+      router.push(`/author/${novel.uploader}`)
+    }
+  }
 
   const ThemeToggle = () => {
     if (!mounted) return null
@@ -190,6 +337,11 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
         console.log('Tags:', novelData.tags)
         setNovel(novelData)
         setLikes(novelData.likes || 0)
+        
+        // Fetch total ratings count
+        const ratingsQuery = query(collection(db, 'novels', params.novelId, 'ratings'))
+        const ratingsSnapshot = await getDocs(ratingsQuery)
+        setTotalRatings(ratingsSnapshot.size)
         
         const uploaderDoc = await getDoc(doc(db, 'users', novelData.uploader))
         if (uploaderDoc.exists()) {
@@ -305,11 +457,30 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
   }
 
   useEffect(() => {
+    setMounted(true)
+    if (params.novelId) {
+      fetchNovel()
+      fetchChapters()
+      fetchRandomNovels()
+    }
+    if (user) {
+      fetchUserProfile()
+    }
+  }, [params.novelId, user])
+
+  useEffect(() => {
     if (user && novel) {
       checkIfFollowing()
       checkIfLiked()
+      checkIfRated()
     }
   }, [user, novel])
+
+  useEffect(() => {
+    if (novel) {
+      fetchAuthorInfo()
+    }
+  }, [novel, uploaderUsername])
 
   const checkIfFollowing = async () => {
     if (!user || !novel) return
@@ -333,6 +504,24 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
       }
     } catch (error) {
       console.error('Error checking like status:', error)
+    }
+  }
+
+  const checkIfRated = async () => {
+    if (!user || !novel) return
+    try {
+      const ratingRef = doc(db, 'novels', novel.novelId, 'ratings', user.uid)
+      const ratingDoc = await getDoc(ratingRef)
+      if (ratingDoc.exists()) {
+        const ratingData = ratingDoc.data()
+        setUserRating(ratingData.rating)
+        setHasRated(true)
+      } else {
+        setHasRated(false)
+        setUserRating(null)
+      }
+    } catch (error) {
+      console.error('Error checking rating status:', error)
     }
   }
 
@@ -392,22 +581,106 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
     }
   }
 
+  const handleRateNovel = async (rating: number) => {
+    if (!user) {
+      toast.error('Please log in to rate novels')
+      return
+    }
+
+    if (!novel || isRatingProcessing) return
+
+    try {
+      // Set processing state to prevent multiple submissions
+      setIsRatingProcessing(true)
+      
+      // Ensure rating is between 0.5-5 with 0.5 increments
+      const validRating = Math.min(Math.max(Math.round(rating * 2) / 2, 0.5), 5)
+      
+      // Show visual feedback immediately
+      setUserRating(validRating)
+      
+      const novelRef = doc(db, 'novels', novel.novelId)
+      const ratingRef = doc(db, 'novels', novel.novelId, 'ratings', user.uid)
+      const ratingDoc = await getDoc(ratingRef)
+      
+      // Get all existing ratings to calculate new average
+      const ratingsQuery = query(collection(db, 'novels', novel.novelId, 'ratings'))
+      const ratingsSnapshot = await getDocs(ratingsQuery)
+      
+      let totalRatingPoints = 0
+      let ratingCount = 0
+      
+      // Calculate sum of all ratings excluding the current user's rating
+      ratingsSnapshot.docs.forEach(doc => {
+        if (doc.id !== user.uid) {
+          totalRatingPoints += doc.data().rating
+          ratingCount++
+        }
+      })
+      
+      // Add the new rating
+      totalRatingPoints += validRating
+      ratingCount++
+      
+      // Calculate new average
+      const newAverageRating = totalRatingPoints / ratingCount
+      
+      // Update or create the user's rating
+      if (ratingDoc.exists()) {
+        await updateDoc(ratingRef, { 
+          rating: validRating,
+          updatedAt: Timestamp.now()
+        })
+        
+        // Add a small delay before showing the toast
+        await new Promise(resolve => setTimeout(resolve, 500))
+        toast.success('Your rating has been updated')
+      } else {
+        await setDoc(ratingRef, {
+          rating: validRating,
+          userId: user.uid,
+          username: userProfile?.username || user.email,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now()
+        })
+        
+        // Add a small delay before showing the toast
+        await new Promise(resolve => setTimeout(resolve, 500))
+        toast.success('Thank you for rating this novel!')
+      }
+      
+      // Update the novel's average rating
+      await updateDoc(novelRef, { rating: newAverageRating })
+      
+      // Update local state
+      setUserRating(validRating)
+      setHasRated(true)
+      setTotalRatings(ratingCount)
+      
+      // Update the novel object in state
+      setNovel({
+        ...novel,
+        rating: newAverageRating
+      })
+      
+      // Add a small additional delay before allowing new ratings
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+    } catch (error) {
+      console.error('Error updating rating:', error)
+      toast.error('Failed to update rating')
+      // Reset the user rating if there was an error
+      await checkIfRated()
+    } finally {
+      // Reset processing state
+      setIsRatingProcessing(false)
+    }
+  }
+
   const handleFollowChange = (novelId: string, isFollowing: boolean) => {
     // This can be implemented later if needed
     console.log('Follow status changed:', novelId, isFollowing)
   }
-
-  useEffect(() => {
-    setMounted(true)
-    if (params.novelId) {
-      fetchNovel()
-      fetchChapters()
-      fetchRandomNovels()
-    }
-    if (user) {
-      fetchUserProfile()
-    }
-  }, [params.novelId, user])
 
   const handleLogout = async () => {
     try {
@@ -565,20 +838,31 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
                   {novel.title}
                 </h1>
                 <span className="px-3 py-1 bg-blue-600 text-white text-sm rounded-full">
-                  ORIGINAL
+                  {novel.seriesType.replace('_', ' ')}
                 </span>
               </div>
-
+              
               {/* Author Info */}
-              <div className="flex items-center gap-2 mb-6">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Author:</span>
-                <Link 
-                  href={`/author/${novel.uploaderId}`}
-                  className="text-sm text-[#F1592A] hover:underline"
+              {authorInfo && (
+                <div 
+                  className="flex items-center gap-2 mb-4 cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={handleAuthorClick}
                 >
-                  {uploaderUsername}
-                </Link>
-              </div>
+                  <Avatar className="h-6 w-6">
+                    {authorInfo.profilePicture ? (
+                      <AvatarImage src={authorInfo.profilePicture} alt={authorInfo.name} />
+                    ) : (
+                      <AvatarFallback>{authorInfo.name.charAt(0)}</AvatarFallback>
+                    )}
+                  </Avatar>
+                  <span className="text-gray-600 dark:text-gray-300 font-medium">{authorInfo.name}</span>
+                  {authorInfo.isAccount && (
+                    <Badge variant="outline" className="px-1 py-0 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                      Verified
+                    </Badge>
+                  )}
+                </div>
+              )}
 
               {/* Genres and Tags Section */}
               <div className="space-y-4 mb-6">
@@ -626,14 +910,49 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
               <div className="flex items-center gap-4 mb-6">
                 <div className="flex flex-col items-center">
                   <div className="flex items-center gap-2">
-                    <StarRating rating={novel.rating} />
+                    <div className={`relative group ${isRatingProcessing ? 'animate-subtle-scale' : ''}`}>
+                      <StarRating 
+                        rating={novel.rating} 
+                        userRating={userRating || undefined}
+                        onRate={isRatingProcessing ? undefined : handleRateNovel}
+                        size={24}
+                      />
+                      {isRatingProcessing && (
+                        <div className="absolute inset-0 overflow-hidden rounded-full">
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-shimmer" 
+                               style={{ 
+                                 backgroundSize: '200% 100%',
+                                 animation: 'shimmer 1.5s infinite'
+                               }}
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-20" />
+                        </div>
+                      )}
+                      {user && !isRatingProcessing && (
+                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                          Click for half or full stars
+                        </div>
+                      )}
+                    </div>
                     <span className="text-lg font-medium text-gray-700 dark:text-gray-300">
                       {novel.rating.toFixed(1)}
                     </span>
                   </div>
-                  <span className="text-sm text-gray-500">Rating</span>
+                  <div className="flex flex-col items-center">
+                    <span className={`text-sm ${isRatingProcessing ? 'text-[#F1592A] animate-pulse' : 'text-gray-500'} transition-colors duration-300`}>
+                      {isRatingProcessing 
+                        ? 'Processing...' 
+                        : hasRated 
+                          ? `Your rating: ${userRating?.toFixed(1)}/5` 
+                          : user 
+                            ? 'Rate this novel' 
+                            : 'Login to rate'}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {totalRatings} {totalRatings === 1 ? 'rating' : 'ratings'}
+                    </span>
+                  </div>
                 </div>
-                
               </div>
 
               {/* Stats Icons Row */}
@@ -843,7 +1162,28 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
                     <div className="space-y-1">
                       <div className={itemClasses}>
                         <span className={labelClasses}>Authors</span>
-                        <span className={valueClasses}>{novel.credits.authors.join(', ')}</span>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {novel.credits.authors.map((author, index) => (
+                            <div 
+                              key={index} 
+                              className="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                              onClick={handleAuthorClick}
+                            >
+                              {index === 0 && authorInfo?.profilePicture && (
+                                <Avatar className="h-5 w-5">
+                                  <AvatarImage src={authorInfo.profilePicture} alt={authorInfo.name} />
+                                  <AvatarFallback>{authorInfo.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                              )}
+                              {typeof author === 'string' ? author : author.name}
+                              {index === 0 && authorInfo?.isAccount && (
+                                <Badge variant="outline" className="ml-1 px-1 py-0 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                                  Verified
+                                </Badge>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                       {novel.brand?.name && (
                         <div className={itemClasses}>
@@ -858,16 +1198,16 @@ export default function NovelPageClient({ params }: { params: { novelId: string 
                     <div>
                       <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Additional Credits</h3>
                       <div className="space-y-1">
-                        {Object.entries(novel.credits.artists).map(([role, people]) => (
-                          people && people.length > 0 && (
+                        {Object.entries(novel.credits.artists).map(([role, people]) => 
+                          people && people.length > 0 ? (
                             <div key={role} className={itemClasses}>
                               <span className={labelClasses}>
                                 {role.charAt(0).toUpperCase() + role.slice(1)}
                               </span>
                               <span className={valueClasses}>{people.join(', ')}</span>
                             </div>
-                          )
-                        ))}
+                          ) : null
+                        )}
                       </div>  
                     </div>
                   )}
